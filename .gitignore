@@ -1,0 +1,88 @@
+# =========================
+# Global Ignores & Common Files
+# =========================
+# OS-generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+
+# Log & temp files
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+
+# IDE configuration
+.vscode/
+.idea/
+*.iml
+
+# Environment variables
+# Ignore all .env files but keep the example template
+.env
+.env.*
+!.env.example
+
+# =========================
+# Frontend: Gaprio2.0
+# =========================
+# Node.js dependencies
+Gaprio2.0/node_modules/
+
+# Next.js build artifacts and cache
+Gaprio2.0/.next/
+Gaprio2.0/out/
+Gaprio2.0/.vercel/
+
+# Other common Node.js ignores
+Gaprio2.0/dist/
+Gaprio2.0/.turbo/
+Gaprio2.0/.cache/
+Gaprio2.0/coverage/
+Gaprio2.0/.eslintcache
+
+# Lockfiles (optional, you can uncomment these if you don't want to track them)
+# Gaprio2.0/package-lock.json
+# Gaprio2.0/yarn.lock
+# Gaprio2.0/pnpm-lock.yaml
+
+# =========================
+# Backend: contract-generator
+# =========================
+# Python virtual environment
+backend-code-contract-generator/venv/
+backend-code-contract-generator/.venv/
+
+# User-specified folders to ignore
+backend-code-contract-generator/audio/
+backend-code-contract-generator/contracts/
+backend-code-contract-generator/db/
+backend-code-contract-generator/knowledge_base/
+backend-code-contract-generator/templates/
+
+# Python cache and compiled files
+backend-code-contract-generator/__pycache__/
+backend-code-contract-generator/*.pyc
+backend-code-contract-generator/*.pyo
+backend-code-contract-generator/*.pyd
+
+# Python testing and linting caches
+backend-code-contract-generator/.pytest_cache/
+backend-code-contract-generator/.mypy_cache/
+backend-code-contract-generator/.ruff_cache/
+backend-code-contract-generator/.coverage
+backend-code-contract-generator/htmlcov/
+
+# Jupyter Notebook checkpoints
+backend-code-contract-generator/.ipynb_checkpoints/
+
+# =========================
+# Backend: server
+# =========================
+# Node.js dependencies
+server/node_modules/
+
+# User-specified config folder
+server/config/serviceAccountKey.json

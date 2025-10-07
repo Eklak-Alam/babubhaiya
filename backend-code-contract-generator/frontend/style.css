@@ -1,0 +1,60 @@
+/* Custom CSS for enhanced styling */
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+h1, h2, h3 {
+    font-family: 'Lexend', sans-serif;
+}
+
+/* Glassmorphism effect for containers */
+.glass-card {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+/* Enhanced button styling */
+.btn-gradient {
+    background-image: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px 0 rgba(79, 172, 254, 0.4);
+}
+.btn-gradient:hover {
+    background-position: right center;
+    box-shadow: 0 6px 20px 0 rgba(79, 172, 254, 0.6);
+}
+.btn-gradient:disabled {
+    background-image: none;
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Custom scrollbar for text areas */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Simple animation for the loading spinner */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+.spinner {
+    border-top-color: #4facfe;
+    animation: spin 1s linear infinite;
+}

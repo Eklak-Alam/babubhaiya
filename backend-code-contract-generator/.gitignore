@@ -1,0 +1,32 @@
+# Python virtual environment
+# Replace 'venv' with 'whisperenv' if you are using that name
+venv/
+whisperenv/
+.env/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Generated media and documents
+# These are created by the app at runtime
+audio/
+contracts/
+
+# AI Model Caches
+# Whisper downloads large model files. This will ignore them.
+/root/.cache/whisper
+*.pt
+
+# IDE and editor configuration files
+.vscode/
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+.env
+knowledge_base/
+db/

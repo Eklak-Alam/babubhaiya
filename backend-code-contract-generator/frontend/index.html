@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Contract Generator</title>
+    
+    <!-- Tailwind CSS for base styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for better typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Lexend:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Link to your custom CSS file -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-3xl">
+        
+        <!-- Header Section -->
+        <header class="text-center mb-10">
+            <h1 class="text-5xl font-bold text-gray-800">AI Contract Generator</h1>
+            <p class="text-gray-600 mt-3 text-lg">Upload an audio recording of a conversation, and let AI draft a legal contract based on the discussion.</p>
+        </header>
+
+        <!-- Upload Form Section -->
+        <div class="glass-card p-6 rounded-xl">
+            <form id="upload-form">
+                <div class="mb-4">
+                    <label for="audio-file" class="block text-gray-700 text-sm font-bold mb-2">Audio File:</label>
+                    <input type="file" id="audio-file" name="file" accept="audio/*" required class="w-full px-3 py-2 border border-gray-300 bg-white bg-opacity-50 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                </div>
+                <button type="submit" id="submit-button" class="w-full btn-gradient text-white font-bold py-3 px-4 rounded-lg">
+                    Generate Contract
+                </button>
+            </form>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading-spinner" class="hidden text-center my-8">
+            <div class="spinner w-12 h-12 border-4 border-gray-300 rounded-full inline-block"></div>
+            <p class="text-gray-600 mt-3">Analyzing audio and generating contract... This may take a moment.</p>
+        </div>
+
+        <!-- Error Message Display -->
+        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative my-6" role="alert">
+            <strong class="font-bold">Error:</strong>
+            <span class="block sm:inline" id="error-text"></span>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-container" class="hidden glass-card p-6 mt-8 rounded-xl">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4 border-b border-gray-300 pb-3">Results</h2>
+            
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Conversation Transcript</h3>
+                <div id="transcript-text" class="custom-scrollbar bg-gray-50 bg-opacity-70 p-4 rounded-lg text-gray-600 text-sm whitespace-pre-wrap h-48 overflow-y-auto border border-gray-200"></div>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Generated Contract</h3>
+                <div id="contract-text" class="custom-scrollbar bg-gray-50 bg-opacity-70 p-4 rounded-lg text-gray-800 whitespace-pre-wrap h-96 overflow-y-auto border border-gray-200"></div>
+            </div>
+
+            <div class="text-center mt-6">
+                <a id="pdf-download-link" href="#" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg transition duration-300 inline-block shadow-lg hover:shadow-xl">
+                    Download Contract as PDF
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link to your external JavaScript file -->
+    <script src="script.js"></script>
+
+</body>
+</html>
