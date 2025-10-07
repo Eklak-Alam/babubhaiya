@@ -1156,7 +1156,7 @@ export default function ChatWindow({ selectedUser, messages, socket, onGroupUpda
                 <button 
                   onClick={() => setShowEditGroupModal(false)}
                   className="p-1 hover:bg-blue-600/30 rounded-xl transition-colors"
-                >
+                > 
                   <IoClose size={20} />
                 </button>
               </div>
