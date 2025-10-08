@@ -5,8 +5,8 @@ import { io } from 'socket.io-client';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/chat/dashboard/Sidebar';
-import ChatWindow from '@/components/chat/dashboard/ChatWindow';
 import { useAuth } from '@/context/ApiContext';
+import ChatWindow from '@/components/ChatWindow';
 
 export default function ChatPage() {
   const { user, API } = useAuth();
@@ -118,6 +118,6 @@ export default function ChatPage() {
         onGroupUpdate={handleGroupUpdate}
         onGroupDelete={handleGroupDelete}
       />
-    </div>
+    </div> 
   );
 }

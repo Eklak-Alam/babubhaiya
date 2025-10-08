@@ -292,7 +292,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
     [fetchConversationsAndGroups, showToast]
   );
 
-  const handleClearConversation = useCallback(
+ ; const handleClearConversation = useCallback(
     async (otherUserId, otherUserName, e) => {
       e.stopPropagation();
 
@@ -335,7 +335,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
       }
     },
     [API, selectedUser, onSelectUser, showToast]
-  );
+  )
 
   const toggleMenu = useCallback(
     (menuId, e) => {

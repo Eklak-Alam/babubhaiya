@@ -1,15 +1,14 @@
 # File: ai-service/app.py
-# Purpose: Add a new, more detailed prompt for deep analysis.
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import requests
 import json
+import re
 
 class AskRequest(BaseModel):
     history: str = ""
     question: str
-    analysis_mode: bool = False # New flag to trigger deep analysis
+    analysis_mode: bool = False
 
 app = FastAPI()
 
@@ -18,10 +17,10 @@ OLLAMA_API_URL = "http://localhost:11434/api/generate"
 @app.post("/ask")
 async def ask_ai(request: AskRequest):
     chat_history = request.history
-    question = request.question
+    question = request.question.strip()
 
     if request.analysis_mode:
-        # This is the new, more detailed prompt for deep analysis
+        # Deep analysis prompt
         prompt = f"""
 You are Accord, an advanced AI psychologist and communication analyst. Your task is to perform a deep, unbiased analysis of the following conversation. Do not take sides. Your analysis should be structured into three parts:
 
@@ -35,22 +34,52 @@ You are Accord, an advanced AI psychologist and communication analyst. Your task
 Provide your analysis now:
 """
     else:
-        # This is the original prompt for direct questions
-        prompt = f"""
-You are Accord, an AI assistant. Based on the conversation history, answer the user's question factually and concisely.
+        # Check if this is a direct question or based on conversation history
+        if chat_history:
+            prompt = f"""
+You are Accord, an AI assistant in a chat application. You've been tagged in a conversation.
 
-**Conversation History:**
+**Conversation Context:**
 {chat_history}
----
-**User's Question:** "{question}"
 
-Your response:
+**Current Question/Directive:** {question}
+
+**Instructions:**
+- If the question refers to the conversation history, use that context to provide a relevant answer
+- If it's asking for analysis, summary, or insights about the conversation, provide that
+- If it's a general question not related to the history, answer based on your knowledge
+- Be conversational, helpful, and concise
+- If you need clarification, ask a follow-up question
+
+**Your response:**
+"""
+        else:
+            # No conversation history available
+            prompt = f"""
+You are Accord, an AI assistant in a chat application. A user has tagged you with a question.
+
+**Question:** {question}
+
+**Instructions:**
+- Be helpful, friendly, and conversational
+- Provide clear and concise answers
+- If the question is unclear, ask for clarification
+
+**Your response:**
 """
 
-    payload = { "model": "llama3:instruct", "prompt": prompt, "stream": False }
+    payload = { 
+        "model": "llama3:instruct", 
+        "prompt": prompt, 
+        "stream": False,
+        "options": {
+            "temperature": 0.7,
+            "top_p": 0.9
+        }
+    }
 
     try:
-        response = requests.post(OLLAMA_API_URL, json=payload)
+        response = requests.post(OLLAMA_API_URL, json=payload, timeout=30)
         response.raise_for_status()
         
         json_objects = [json.loads(line) for line in response.text.strip().split('\n') if line]
@@ -58,7 +87,9 @@ Your response:
 
         return {"answer": ai_answer}
 
+    except requests.exceptions.Timeout:
+        return {"answer": "I'm taking too long to respond. Please try again in a moment."}
     except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"Could not connect to the local AI model: {e}")
+        return {"answer": "I'm having trouble connecting right now. Please try again later."}
     except (json.JSONDecodeError, IndexError) as e:
-        raise HTTPException(status_code=500, detail=f"Received an invalid response from the AI model: {e}")
+        return {"answer": "There was an error processing your request. Please try again."}

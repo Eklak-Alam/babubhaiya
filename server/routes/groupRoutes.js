@@ -17,6 +17,16 @@ const {
     getGroupMembers  // ✅ Import from groupMemberController
 } = require('../controllers/groupMemberController');
 
+
+const {
+    editGroupMessage,
+    deleteGroupMessage,
+    getGroupMessage
+} = require('../controllers/groupMessageController');
+
+
+
+
 // All routes are protected
 router.use(protect);
 
@@ -34,6 +44,14 @@ router.route('/:groupId')
 // Group message routes
 router.route('/:groupId/messages')
     .get(getGroupMessages);
+
+
+// ✅ ADD THESE NEW ROUTES FOR GROUP MESSAGE ACTIONS
+router.route('/:groupId/messages/:messageId')
+    .get(getGroupMessage)        // Get specific message
+    .put(editGroupMessage)       // Edit group message
+    .delete(deleteGroupMessage); // Delete group message
+    
 
 // Group member routes
 router.route('/:groupId/members')
