@@ -132,7 +132,7 @@ export default function Hero() {
           </motion.div>
           
           <h1 className="hero-element text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tighter mb-6 leading-tight">
-            AI-Powered <span className={`${textGradient} animate-gradient`}>WhatsApp for Professionals</span>
+            The Workspace that Works! <span className={`${textGradient} animate-gradient`}></span>
           </h1>
 
           <p className="hero-element text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-10">
