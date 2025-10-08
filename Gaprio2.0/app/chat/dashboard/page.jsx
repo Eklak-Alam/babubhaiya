@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/chat/dashboard/Sidebar';
 import ChatWindow from '@/components/chat/dashboard/ChatWindow';
 import { useAuth } from '@/context/ApiContext';
@@ -13,7 +14,18 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [groups, setGroups] = useState([]);
   const socket = useRef(null);
+  const router = useRouter();
 
+  // ✅ Check for token or user, otherwise redirect to /chat/login
+  useEffect(() => {
+    const token = Cookies.get('token');
+    if (!token || !user) {
+      router.push('/chat/login');
+      return;
+    }
+  }, [user, router]);
+
+  // ✅ Socket connection and message handling
   useEffect(() => {
     if (!user) return;
 
@@ -27,7 +39,7 @@ export default function ChatPage() {
         (message.sender_id === user.id && message.receiver_id === selectedUser?.id) ||
         (message.sender_id === selectedUser?.id && message.receiver_id === user.id)
       ) {
-         setMessages((prevMessages) => [...prevMessages, message]);
+        setMessages((prevMessages) => [...prevMessages, message]);
       }
     });
 
@@ -44,6 +56,7 @@ export default function ChatPage() {
     };
   }, [user, selectedUser]);
 
+  // ✅ Handle user or group selection
   const handleSelectUser = async (userToSelect) => {
     setSelectedUser(userToSelect);
     try {
@@ -53,8 +66,7 @@ export default function ChatPage() {
       } else {
         response = await API.get(`/messages/${userToSelect.id}`);
       }
-      
-      // SAFE MESSAGES SETTING - This ensures messages is always an array
+
       const responseData = response.data;
       if (Array.isArray(responseData)) {
         setMessages(responseData);
@@ -68,10 +80,11 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error("Failed to fetch messages:", error);
-      setMessages([]); // Always set to empty array on error
+      setMessages([]);
     }
   };
 
+  // ✅ Handle group updates and deletions
   const handleGroupUpdate = useCallback((updatedGroup) => {
     setGroups(prev => prev.map(group => 
       group.id === updatedGroup.id ? updatedGroup : group
@@ -93,8 +106,8 @@ export default function ChatPage() {
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       <Sidebar
-        onSelectUser={handleSelectUser} 
-        groups={groups} 
+        onSelectUser={handleSelectUser}
+        groups={groups}
         setGroups={setGroups}
         onGroupDelete={handleGroupDelete}
       />

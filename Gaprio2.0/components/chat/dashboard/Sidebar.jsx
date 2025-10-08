@@ -2,6 +2,8 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/context/ApiContext";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import {
   FaSignOutAlt,
   FaSearch,
@@ -94,15 +96,40 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
   const [activeMenu, setActiveMenu] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [activeTab, setActiveTab] = useState("chats");
-  const [notification, setNotification] = useState({
-    show: false,
-    message: "",
-    type: "",
-  });
   const searchTimeoutRef = useRef(null);
   const menuRef = useRef(null);
 
   const isGroup = selectedUser?.type === "group";
+
+  // Toast configuration
+  const showToast = useCallback((message, type = "success") => {
+    const toastOptions = {
+      position: "top-right",
+      autoClose: 1000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: "dark",
+    };
+
+    switch (type) {
+      case "success":
+        toast.success(message, toastOptions);
+        break;
+      case "error":
+        toast.error(message, toastOptions);
+        break;
+      case "warning":
+        toast.warning(message, toastOptions);
+        break;
+      case "info":
+        toast.info(message, toastOptions);
+        break;
+      default:
+        toast(message, toastOptions);
+    }
+  }, []);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -173,10 +200,11 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
       console.error("Failed to fetch data:", error);
       setConversations([]);
       setGroups([]);
+      showToast("Failed to load conversations and groups", "error");
     } finally {
       setLoading(false);
     }
-  }, [API]);
+  }, [API, showToast]);
 
   const handleSearch = useCallback(
     async (e) => {
@@ -196,14 +224,19 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
         // Ensure search results is always an array
         const searchData = Array.isArray(response.data) ? response.data : [];
         setSearchResults(searchData);
+        
+        if (searchData.length === 0) {
+          showToast("No users found", "info");
+        }
       } catch (error) {
         console.error("Search failed:", error);
         setSearchResults([]);
+        showToast("Search failed. Please try again.", "error");
       } finally {
         setIsSearching(false);
       }
     },
-    [searchQuery, API]
+    [searchQuery, API, showToast]
   );
 
   const debouncedSearch = useCallback(
@@ -235,13 +268,13 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
 
   const startChat = useCallback(
     (selectedUserOrGroup) => {
-      console.log("Starting chat with:", selectedUserOrGroup);
       onSelectUser(selectedUserOrGroup);
       setSearchResults([]);
       setSearchQuery("");
       setActiveMenu(null);
+      showToast(`Chat started with ${selectedUserOrGroup.name}`, "success");
     },
-    [onSelectUser]
+    [onSelectUser, showToast]
   );
 
   const handleGroupCreated = useCallback(
@@ -249,13 +282,14 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
       setGroups((prev) => [newGroup, ...prev]);
       setShowGroupModal(false);
       setActiveTab("groups");
+      showToast(`Group "${newGroup.name}" created successfully!`, "success");
 
       // Refresh groups list to ensure we have the latest data
       setTimeout(() => {
         fetchConversationsAndGroups();
       }, 500);
     },
-    [fetchConversationsAndGroups]
+    [fetchConversationsAndGroups, showToast]
   );
 
   const handleClearConversation = useCallback(
@@ -284,30 +318,23 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
             onSelectUser(null);
           }
 
-          // Show success notification
-          setNotification({
-            show: true,
-            message: `Conversation with ${otherUserName} cleared successfully`,
-            type: "success",
-          });
-          
-          setTimeout(() => setNotification({ show: false, message: "", type: "" }), 3000);
-          
+          showToast(`Conversation with ${otherUserName} cleared successfully`, "success");
           console.log(`✅ Conversation with ${otherUserName} cleared successfully`);
         } else {
-          alert(response.data?.message || "Failed to clear conversation.");
+          showToast(response.data?.message || "Failed to clear conversation.", "error");
         }
       } catch (error) {
         console.error("❌ Error clearing conversation:", error);
-        alert(
+        showToast(
           error.response?.data?.message ||
-            "Failed to clear conversation. Please try again."
+            "Failed to clear conversation. Please try again.",
+          "error"
         );
       } finally {
         setActiveMenu(null);
       }
     },
-    [API, selectedUser, onSelectUser]
+    [API, selectedUser, onSelectUser, showToast]
   );
 
   const toggleMenu = useCallback(
@@ -344,18 +371,10 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
             onSelectUser(null);
           }
 
-          // Show success notification
-          setNotification({
-            show: true,
-            message: `You have left "${groupName}"`,
-            type: "success",
-          });
-          
-          setTimeout(() => setNotification({ show: false, message: "", type: "" }), 3000);
-          
+          showToast(`You have left "${groupName}"`, "success");
           console.log(`✅ Successfully left group "${groupName}"`);
         } else {
-          alert(response.data?.message || "Failed to leave group.");
+          showToast(response.data?.message || "Failed to leave group.", "error");
         }
       } catch (error) {
         console.error("❌ Error leaving group:", error);
@@ -364,20 +383,21 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
           if (
             error.response.data.message.includes("Group owner cannot leave")
           ) {
-            alert(
-              'As the group owner, you cannot leave the group. Please use the "Delete Group" option instead.'
+            showToast(
+              'As the group owner, you cannot leave the group. Please use the "Delete Group" option instead.',
+              "warning"
             );
           } else {
-            alert(error.response.data.message);
+            showToast(error.response.data.message, "error");
           }
         } else {
-          alert("Failed to leave group. Please try again.");
+          showToast("Failed to leave group. Please try again.", "error");
         }
       } finally {
         setActiveMenu(null);
       }
     },
-    [API, user, selectedUser, onSelectUser]
+    [API, user, selectedUser, onSelectUser, showToast]
   );
 
   // Delete Group function for group owners
@@ -407,32 +427,24 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
             onSelectUser(null);
           }
 
-          // Show success notification
-          setNotification({
-            show: true,
-            message: `Group "${groupName}" deleted successfully`,
-            type: "success",
-          });
-          
-          setTimeout(() => setNotification({ show: false, message: "", type: "" }), 3000);
-          
+          showToast(`Group "${groupName}" deleted successfully`, "success");
           console.log(`✅ Group "${groupName}" deleted successfully`);
         } else {
-          alert("Failed to delete group. Please try again.");
+          showToast("Failed to delete group. Please try again.", "error");
         }
       } catch (error) {
         console.error("❌ Error deleting group:", error);
 
         if (error.response?.data?.message) {
-          alert(error.response.data.message);
+          showToast(error.response.data.message, "error");
         } else {
-          alert("Failed to delete group. Please try again.");
+          showToast("Failed to delete group. Please try again.", "error");
         }
       } finally {
         setActiveMenu(null);
       }
     },
-    [API, onGroupDelete, selectedUser, onSelectUser]
+    [API, onGroupDelete, selectedUser, onSelectUser, showToast]
   );
 
   const fetchGroupMembers = useCallback(async (groupId) => {
@@ -453,8 +465,9 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
     } catch (error) {
       console.error("Error fetching group members:", error);
       setGroupMembers([]);
+      showToast("Failed to load group members", "error");
     }
-  }, [API]);
+  }, [API, showToast]);
 
   const getInitials = (name) => {
     if (!name) return "?";
@@ -494,6 +507,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
   // Refresh conversations manually
   const refreshConversations = () => {
     fetchConversationsAndGroups();
+    showToast("Refreshing conversations...", "info");
   };
 
   if (!user) {
@@ -508,25 +522,22 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
 
   return (
     <div className={STYLES.sidebar}>
-      {/* Notification */}
-      {notification.show && (
-        <div
-          className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg border backdrop-blur-sm max-w-sm ${
-            notification.type === "success"
-              ? "bg-green-500/20 border-green-500/30 text-green-400"
-              : "bg-red-500/20 border-red-500/30 text-red-400"
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {notification.type === "success" ? (
-              <FaCheck className="flex-shrink-0" />
-            ) : (
-              <FaTimesCircle className="flex-shrink-0" />
-            )}
-            <span className="text-sm font-medium">{notification.message}</span>
-          </div>
-        </div>
-      )}
+      {/* React Toastify Container */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+        style={{
+          zIndex: 9999,
+        }}
+      />
 
       {/* User Profile Header */}
       <div className={STYLES.header}>
