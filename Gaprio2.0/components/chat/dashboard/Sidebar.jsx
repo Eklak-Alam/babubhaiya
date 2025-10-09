@@ -2,8 +2,9 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/context/ApiContext";
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { FiRefreshCw } from "react-icons/fi";
 import {
   FaSignOutAlt,
   FaSearch,
@@ -19,9 +20,6 @@ import {
   FaExclamationTriangle,
   FaPlus,
   FaRobot,
-  FaCheck,
-  FaTimesCircle,
-  FaCircle,
 } from "react-icons/fa";
 import CreateGroupModal from "./CreateGroupModal";
 
@@ -59,11 +57,11 @@ const STYLES = {
 
   input: `w-full pl-10 pr-4 py-2.5 border border-gray-600 rounded-xl bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`,
 
-  listItem: (isActive) => 
+  listItem: (isActive) =>
     `group relative flex items-center justify-between p-3 mx-2 rounded-xl cursor-pointer transition-all duration-200 border mb-2 ${
-      isActive 
-        ? 'bg-blue-500/20 border-blue-500/50 shadow-lg shadow-blue-500/20' 
-        : 'border-transparent hover:bg-blue-500/20 hover:border-blue-500/30'
+      isActive
+        ? "bg-blue-500/20 border-blue-500/50 shadow-lg shadow-blue-500/20"
+        : "border-transparent hover:bg-blue-500/20 hover:border-blue-500/30"
     }`,
   avatar: (colorClass) =>
     `flex items-center justify-center w-10 h-10 bg-gradient-to-br ${colorClass} rounded-full shadow-md ring-1 ring-blue-500/30 transition-shadow duration-200`,
@@ -88,6 +86,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
   const { user, logout, API } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const [isRefreshing, setIsRefreshing] = useState(false); // ✅ add this
   const [conversations, setConversations] = useState([]);
   const [groupMembers, setGroupMembers] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -149,7 +148,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
   useEffect(() => {
     if (user) {
       fetchConversationsAndGroups();
-      
+
       // Set up interval to refresh conversations periodically
       const interval = setInterval(() => {
         fetchConversationsAndGroups();
@@ -178,7 +177,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
       } else if (conversationsRes.data?.data) {
         conversationsData = conversationsRes.data.data;
       }
-      
+
       setConversations(conversationsData);
 
       // Handle groups response - ensure it's always an array
@@ -190,9 +189,8 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
       } else if (groupsRes.data?.data) {
         groupsData = groupsRes.data.data;
       }
-      
-      setGroups(groupsData);
 
+      setGroups(groupsData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
       setConversations([]);
@@ -217,11 +215,11 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
           `/users/search?q=${encodeURIComponent(searchQuery)}`
         );
         console.log("Search results:", response.data);
-        
+
         // Ensure search results is always an array
         const searchData = Array.isArray(response.data) ? response.data : [];
         setSearchResults(searchData);
-        
+
         if (searchData.length === 0) {
           showToast("No users found", "info");
         }
@@ -289,7 +287,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
     [fetchConversationsAndGroups, showToast]
   );
 
- ; const handleClearConversation = useCallback(
+  const handleClearConversation = useCallback(
     async (otherUserId, otherUserName, e) => {
       e.stopPropagation();
 
@@ -315,10 +313,18 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
             onSelectUser(null);
           }
 
-          showToast(`Conversation with ${otherUserName} cleared successfully`, "success");
-          console.log(`✅ Conversation with ${otherUserName} cleared successfully`);
+          showToast(
+            `Conversation with ${otherUserName} cleared successfully`,
+            "success"
+          );
+          console.log(
+            `✅ Conversation with ${otherUserName} cleared successfully`
+          );
         } else {
-          showToast(response.data?.message || "Failed to clear conversation.", "error");
+          showToast(
+            response.data?.message || "Failed to clear conversation.",
+            "error"
+          );
         }
       } catch (error) {
         console.error("❌ Error clearing conversation:", error);
@@ -332,7 +338,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
       }
     },
     [API, selectedUser, onSelectUser, showToast]
-  )
+  );
 
   const toggleMenu = useCallback(
     (menuId, e) => {
@@ -371,7 +377,10 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
           showToast(`You have left "${groupName}"`, "success");
           console.log(`✅ Successfully left group "${groupName}"`);
         } else {
-          showToast(response.data?.message || "Failed to leave group.", "error");
+          showToast(
+            response.data?.message || "Failed to leave group.",
+            "error"
+          );
         }
       } catch (error) {
         console.error("❌ Error leaving group:", error);
@@ -444,27 +453,30 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
     [API, onGroupDelete, selectedUser, onSelectUser, showToast]
   );
 
-  const fetchGroupMembers = useCallback(async (groupId) => {
-    if (!groupId) return;
+  const fetchGroupMembers = useCallback(
+    async (groupId) => {
+      if (!groupId) return;
 
-    try {
-      const response = await API.get(`/groups/${groupId}/members`);
-      console.log("Group members response:", response.data);
+      try {
+        const response = await API.get(`/groups/${groupId}/members`);
+        console.log("Group members response:", response.data);
 
-      if (response.data?.success) {
-        const members =
-          response.data.data?.members || response.data.members || [];
-        setGroupMembers(Array.isArray(members) ? members : []);
-      } else {
-        const members = response.data?.members || response.data || [];
-        setGroupMembers(Array.isArray(members) ? members : []);
+        if (response.data?.success) {
+          const members =
+            response.data.data?.members || response.data.members || [];
+          setGroupMembers(Array.isArray(members) ? members : []);
+        } else {
+          const members = response.data?.members || response.data || [];
+          setGroupMembers(Array.isArray(members) ? members : []);
+        }
+      } catch (error) {
+        console.error("Error fetching group members:", error);
+        setGroupMembers([]);
+        showToast("Failed to load group members", "error");
       }
-    } catch (error) {
-      console.error("Error fetching group members:", error);
-      setGroupMembers([]);
-      showToast("Failed to load group members", "error");
-    }
-  }, [API, showToast]);
+    },
+    [API, showToast]
+  );
 
   const getInitials = (name) => {
     if (!name) return "?";
@@ -486,11 +498,11 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
 
   const getLastMessageTime = (timestamp) => {
     if (!timestamp) return "";
-    
+
     const messageDate = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now - messageDate) / (1000 * 60 * 60);
-    
+
     if (diffInHours < 1) {
       const diffInMinutes = Math.floor(diffInHours * 60);
       return diffInMinutes === 0 ? "Just now" : `${diffInMinutes}m ago`;
@@ -501,10 +513,16 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
     }
   };
 
-  // Refresh conversations manually
+  // ✅ Your existing function + animation
   const refreshConversations = () => {
+    if (isRefreshing) return; // prevent spamming
+
+    setIsRefreshing(true);
     fetchConversationsAndGroups();
     showToast("Refreshing conversations...", "info");
+
+    // Stop spinning after 1 second
+    setTimeout(() => setIsRefreshing(false), 1000);
   };
 
   if (!user) {
@@ -559,11 +577,19 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
           <div className="flex items-center gap-2">
             <button
               onClick={refreshConversations}
-              className={STYLES.button.icon}
+              className={`p-2 rounded-full transition-all duration-300
+              bg-white/5 hover:bg-gradient-to-br hover:from-green-400/20 hover:to-blue-400/20
+              hover:scale-110 hover:shadow-lg`}
               title="Refresh"
             >
-              <FaCircle className="text-green-400" size={12} />
+              <FiRefreshCw
+                className={`text-green-400 drop-shadow-md ${
+                  isRefreshing ? "animate-spin" : ""
+                }`}
+                size={16}
+              />
             </button>
+
             <button
               onClick={logout}
               className={STYLES.button.icon}
@@ -654,7 +680,9 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                 className={STYLES.listItem(false)}
               >
                 <div className="flex items-center gap-3 flex-1">
-                  <div className={STYLES.avatar(getRandomColor(foundUser.name))}>
+                  <div
+                    className={STYLES.avatar(getRandomColor(foundUser.name))}
+                  >
                     <span className="font-semibold text-white text-sm">
                       {getInitials(foundUser.name)}
                     </span>
@@ -697,11 +725,13 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                     </h4>
                     {groups.map((group) => {
                       const isOwner = group.owner_id === user.id;
-                      const isActive = selectedUser?.id === group.id && selectedUser?.type === "group";
-                      
+                      const isActive =
+                        selectedUser?.id === group.id &&
+                        selectedUser?.type === "group";
+
                       return (
-                        <div 
-                          key={group.id} 
+                        <div
+                          key={group.id}
                           className={STYLES.listItem(isActive)}
                           onClick={() => {
                             startChat({ ...group, type: "group" });
@@ -821,13 +851,17 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                       Recent Chats ({conversations.length})
                     </h4>
                     {conversations.map((convoUser) => {
-                      const isActive = selectedUser?.id === convoUser.id && selectedUser?.type === "user";
-                      
+                      const isActive =
+                        selectedUser?.id === convoUser.id &&
+                        selectedUser?.type === "user";
+
                       return (
-                        <div 
-                          key={convoUser.id} 
+                        <div
+                          key={convoUser.id}
                           className={STYLES.listItem(isActive)}
-                          onClick={() => startChat({ ...convoUser, type: "user" })}
+                          onClick={() =>
+                            startChat({ ...convoUser, type: "user" })
+                          }
                         >
                           <div className="flex items-center gap-3 flex-1">
                             <div
@@ -844,14 +878,18 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                                 <span>{convoUser.name}</span>
                                 {convoUser.last_message_at && (
                                   <span className="text-xs text-gray-400 font-normal">
-                                    {getLastMessageTime(convoUser.last_message_at)}
+                                    {getLastMessageTime(
+                                      convoUser.last_message_at
+                                    )}
                                   </span>
                                 )}
                               </div>
                               <div className="text-xs text-gray-400 truncate">
                                 @{convoUser.username}
                                 {convoUser.last_message && (
-                                  <span className="ml-2">• {convoUser.last_message}</span>
+                                  <span className="ml-2">
+                                    • {convoUser.last_message}
+                                  </span>
                                 )}
                               </div>
                             </div>
@@ -920,7 +958,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
       <div className="p-2 text-xs text-gray-500 border-t border-gray-700">
         <div>Conversations: {conversations.length}</div>
         <div>Groups: {groups.length}</div>
-        <button 
+        <button
           onClick={fetchConversationsAndGroups}
           className="text-blue-400 hover:text-blue-300 mt-1"
         >
@@ -962,7 +1000,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(156, 163, 175, 0.7);
         }
-      `}</style>
+      `}</style> 
     </div>
   );
 }
