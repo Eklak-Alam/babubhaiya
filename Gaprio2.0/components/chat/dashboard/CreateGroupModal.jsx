@@ -271,7 +271,7 @@ export default function CreateGroupModal({ onClose, onGroupCreated }) {
                       className="space-y-4 sm:space-y-6"
                     >
                       <div>
-                        <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+                        <label className="text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
                           <IoInformationCircle className="text-blue-400" />
                           Group Name *
                         </label>
@@ -295,7 +295,7 @@ export default function CreateGroupModal({ onClose, onGroupCreated }) {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
+                        <label className="text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
                           <IoInformationCircle className="text-blue-400" />
                           Description
                         </label>
