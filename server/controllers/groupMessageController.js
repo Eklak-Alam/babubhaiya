@@ -6,203 +6,106 @@ const db = require('../db');
 // @access  Private (Only message sender can edit)
 const editGroupMessage = async (req, res) => {
     try {
-        const { groupId, messageId } = req.params;
+        // ✅ Safely parse params to integers
+        const groupId = parseInt(req.params.groupId, 10);
+        const messageId = parseInt(req.params.messageId, 10);
         const { message_content } = req.body;
         const userId = req.user.id;
 
-        // Validate input
+        if (isNaN(groupId) || isNaN(messageId)) {
+            return res.status(400).json({ message: 'Invalid group or message ID.' });
+        }
+
         if (!message_content || message_content.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                message: 'Message content is required'
-            });
+            return res.status(400).json({ message: 'Message content is required.' });
         }
 
-        // Check if group exists
-        const [groups] = await db.query(
-            'SELECT id, name, owner_id FROM `groups` WHERE id = ?',
-            [groupId]
-        );
-
-        if (groups.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Group not found'
-            });
-        }
-
-        // Check if user is member of the group
-        const [membership] = await db.query(
-            'SELECT * FROM group_members WHERE group_id = ? AND user_id = ?',
-            [groupId, userId]
-        );
-
-        if (membership.length === 0) {
-            return res.status(403).json({
-                success: false,
-                message: 'You are not a member of this group'
-            });
-        }
-
-        // Find the message
+        // Find the message and verify the sender in one query
         const [messages] = await db.query(
-            `SELECT gm.*, u.name as sender_name 
-             FROM group_messages gm 
-             JOIN users u ON gm.sender_id = u.id 
-             WHERE gm.id = ? AND gm.group_id = ?`,
+            'SELECT sender_id FROM group_messages WHERE id = ? AND group_id = ?',
             [messageId, groupId]
         );
 
         if (messages.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Message not found'
-            });
+            return res.status(404).json({ message: 'Message not found in this group.' });
         }
 
-        const message = messages[0];
-
-        // Check if user is the sender of the message
-        if (message.sender_id !== userId) {
-            return res.status(403).json({
-                success: false,
-                message: 'You can only edit your own messages'
-            });
+        // Check if the user is the sender of the message
+        if (messages[0].sender_id !== userId) {
+            return res.status(403).json({ message: 'You can only edit your own messages.' });
         }
 
         // Update the message
-        const [result] = await db.query(
-            'UPDATE group_messages SET message_content = ?, edited_at = NOW() WHERE id = ? AND group_id = ?',
-            [message_content.trim(), messageId, groupId]
+        await db.query(
+            'UPDATE group_messages SET message_content = ?, edited_at = NOW() WHERE id = ?',
+            [message_content.trim(), messageId]
         );
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Message not found or no changes made'
-            });
-        }
-
-        // Fetch the updated message
+        // Fetch the updated message to send back
         const [updatedMessages] = await db.query(
             `SELECT gm.*, u.name as sender_name, u.username as sender_username 
              FROM group_messages gm 
              JOIN users u ON gm.sender_id = u.id 
-             WHERE gm.id = ? AND gm.group_id = ?`,
-            [messageId, groupId]
+             WHERE gm.id = ?`,
+            [messageId]
         );
-
-        const updatedMessage = updatedMessages[0];
 
         res.json({
             success: true,
             message: 'Message updated successfully',
-            data: updatedMessage
+            data: updatedMessages[0]
         });
 
     } catch (error) {
         console.error('Error editing group message:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while editing message'
-        });
+        res.status(500).json({ message: 'Server error while editing message' });
     }
 };
 
 // @desc    Delete a group message
 // @route   DELETE /api/groups/:groupId/messages/:messageId
-// @access  Private (Only message sender or group owner can delete)
 const deleteGroupMessage = async (req, res) => {
     try {
-        const { groupId, messageId } = req.params;
+        const groupId = parseInt(req.params.groupId, 10);
+        const messageId = parseInt(req.params.messageId, 10);
         const userId = req.user.id;
 
-        // Check if group exists
-        const [groups] = await db.query(
-            'SELECT id, name, owner_id FROM `groups` WHERE id = ?',
-            [groupId]
-        );
-
-        if (groups.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Group not found'
-            });
+        if (isNaN(groupId) || isNaN(messageId)) {
+            return res.status(400).json({ message: 'Invalid group or message ID.' });
         }
 
-        const group = groups[0];
-
-        // Check if user is member of the group
-        const [membership] = await db.query(
-            'SELECT * FROM group_members WHERE group_id = ? AND user_id = ?',
-            [groupId, userId]
-        );
-
-        if (membership.length === 0) {
-            return res.status(403).json({
-                success: false,
-                message: 'You are not a member of this group'
-            });
-        }
-
-        // Find the message
+        // Fetch group owner and message sender details simultaneously
         const [messages] = await db.query(
-            `SELECT gm.*, u.name as sender_name 
+            `SELECT gm.sender_id, g.owner_id 
              FROM group_messages gm 
-             JOIN users u ON gm.sender_id = u.id 
+             JOIN \`groups\` g ON gm.group_id = g.id
              WHERE gm.id = ? AND gm.group_id = ?`,
             [messageId, groupId]
         );
 
         if (messages.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Message not found'
-            });
+            return res.status(404).json({ message: 'Message not found in this group.' });
         }
 
-        const message = messages[0];
+        const { sender_id, owner_id } = messages[0];
 
-        // Check if user is the sender of the message OR group owner
-        const isOwner = group.owner_id === userId;
-        const isSender = message.sender_id === userId;
-
-        if (!isSender && !isOwner) {
-            return res.status(403).json({
-                success: false,
-                message: 'You can only delete your own messages'
-            });
+        // Check if user is the sender OR the group owner
+        if (sender_id !== userId && owner_id !== userId) {
+            return res.status(403).json({ message: 'You do not have permission to delete this message.' });
         }
 
         // Delete the message
-        const [result] = await db.query(
-            'DELETE FROM group_messages WHERE id = ? AND group_id = ?',
-            [messageId, groupId]
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Message not found'
-            });
-        }
+        await db.query('DELETE FROM group_messages WHERE id = ?', [messageId]);
 
         res.json({
             success: true,
             message: 'Message deleted successfully',
-            data: {
-                messageId: parseInt(messageId),
-                groupId: parseInt(groupId),
-                deletedBy: userId
-            }
+            data: { messageId, groupId }
         });
 
     } catch (error) {
         console.error('Error deleting group message:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server error while deleting message'
-        });
+        res.status(500).json({ message: 'Server error while deleting message.' });
     }
 };
 

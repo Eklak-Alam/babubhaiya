@@ -62,17 +62,21 @@ export default function GroupInfoSidebar({
 
   // Enhanced delete group with loading state and confirmation
  // Enhanced delete group with loading state and confirmation
+// Enhanced delete group with loading state and confirmation
 const handleDeleteGroup = async () => {
-  if (!window.confirm("Are you sure...?")) return;
+  if (!window.confirm("Are you sure you want to delete this group? This action cannot be undone.")) return;
 
   setLoadingStates(prev => ({ ...prev, deleteGroup: true }));
   
   try {
     await onDeleteGroup();
-    showToast("✅ Group deleted successfully!");
+    // Don't show toast here - let the parent component handle success
     onClose();
   } catch (error) {
-    showToast(`${error.message}`);
+    console.error("Error deleting group:", error);
+    // Show the actual error message from the backend
+    const errorMessage = error.message || "Failed to delete group";
+    showToast(`❌ ${errorMessage}`);
   } finally {
     setLoadingStates(prev => ({ ...prev, deleteGroup: false }));
   }

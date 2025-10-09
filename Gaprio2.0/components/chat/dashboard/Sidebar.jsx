@@ -169,9 +169,6 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
         API.get("/groups"),
       ]);
 
-      console.log("Conversations API Response:", conversationsRes.data);
-      console.log("Groups API Response:", groupsRes.data);
-
       // Handle conversations response - ensure it's always an array
       let conversationsData = [];
       if (Array.isArray(conversationsRes.data)) {

@@ -34,84 +34,108 @@ const initializeSocket = (io) => {
       }
     });
 
-    // 2. Handle private messages with tagging
-    socket.on('privateMessage', async ({ receiverId, messageContent }) => {
-      const senderId = socket.userId;
-      if (!senderId) return;
+// In socketManager.js - FIX THE DESTRUCTURING
 
-      try {
-        // Process tags in message
-        const { processedMessage, tags } = processMessageTags(messageContent);
+// 2. Handle private messages with tagging - FIX THIS
+socket.on('privateMessage', async (data) => {
+  const senderId = socket.userId;
+  if (!senderId) return;
+
+  // Debug log to see what's actually being received
+  console.log('📩 Received privateMessage data:', data);
+
+  try {
+    // Use the correct property name - messageContent (capital C)
+    const { receiverId, messageContent } = data;
+    
+    if (!messageContent) {
+      console.error('❌ messageContent is null or undefined');
+      return;
+    }
+
+    // Process tags in message
+    const { processedMessage, tags } = await processMessageTags(messageContent);
+    
+    await db.query(
+      'INSERT INTO messages (sender_id, receiver_id, message_content, tags) VALUES (?, ?, ?, ?)', 
+      [senderId, receiverId, processedMessage, JSON.stringify(tags)]
+    );
+
+    const message = { 
+      sender_id: senderId, 
+      receiver_id: receiverId, 
+      message_content: processedMessage,
+      tags: tags,
+      timestamp: new Date() 
+    };
+
+    const receiverSocketId = onlineUsers.get(receiverId);
+    if (receiverSocketId) io.to(receiverSocketId).emit('newMessage', message);
+    socket.emit('newMessage', message);
+
+    // Handle AI tagging in private messages
+    if (tags.includes('ai')) {
+      handleAITagging(senderId, receiverId, processedMessage, 'private', io);
+    }
+
+  } catch (error) { 
+    console.error('Error handling private message:', error); 
+  }
+});
+
+// 3. Handle group messages with tagging - FIX THIS TOO
+socket.on('groupMessage', async (data) => {
+    const senderId = socket.userId;
+    if (!senderId) return console.log('Cannot send group message: sender not authenticated.');
+
+    // Debug log
+    console.log('📩 Received groupMessage data:', data);
+
+    try {
+        // Use the correct property name - messageContent (capital C)
+        const { groupId, messageContent } = data;
         
-        await db.query(
-          'INSERT INTO messages (sender_id, receiver_id, message_content, tags) VALUES (?, ?, ?, ?)', 
-          [senderId, receiverId, processedMessage, JSON.stringify(tags)]
+        if (!messageContent) {
+          console.error('❌ messageContent is null or undefined in group message');
+          return;
+        }
+
+        // Process tags in message
+        const { processedMessage, tags } = await processMessageTags(messageContent);
+        
+        const [result] = await db.query(
+            'INSERT INTO group_messages (group_id, sender_id, message_content, tags) VALUES (?, ?, ?, ?)',
+            [groupId, senderId, processedMessage, JSON.stringify(tags)]
         );
 
-        const message = { 
-          sender_id: senderId, 
-          receiver_id: receiverId, 
-          message_content: processedMessage,
-          tags: tags,
-          timestamp: new Date() 
+        // Get sender info
+        const [users] = await db.query('SELECT name, username FROM users WHERE id = ?', [senderId]);
+        const senderInfo = users[0];
+
+        const message = {
+            id: result.insertId,
+            group_id: groupId,
+            sender_id: senderId,
+            message_content: processedMessage,
+            tags: tags,
+            timestamp: new Date(),
+            sender_name: senderInfo.name,
+            sender_username: senderInfo.username
         };
+        
+        // Broadcast to group room
+        const roomName = `group-${groupId}`;
+        io.to(roomName).emit('newGroupMessage', message);
 
-        const receiverSocketId = onlineUsers.get(receiverId);
-        if (receiverSocketId) io.to(receiverSocketId).emit('newMessage', message);
-        socket.emit('newMessage', message);
-
-        // Handle AI tagging in private messages
+        // Handle AI tagging in group messages
         if (tags.includes('ai')) {
-          handleAITagging(senderId, receiverId, processedMessage, 'private', io);
+          handleAITagging(senderId, groupId, processedMessage, 'group', io);
         }
 
-      } catch (error) { 
-        console.error('Error handling private message:', error); 
-      }
-    });
-    
-    // 3. Handle group messages with tagging
-    socket.on('groupMessage', async ({ groupId, messageContent }) => {
-        const senderId = socket.userId;
-        if (!senderId) return console.log('Cannot send group message: sender not authenticated.');
-
-        try {
-            // Process tags in message
-            const { processedMessage, tags } = processMessageTags(messageContent);
-            
-            const [result] = await db.query(
-                'INSERT INTO group_messages (group_id, sender_id, message_content, tags) VALUES (?, ?, ?, ?)',
-                [groupId, senderId, processedMessage, JSON.stringify(tags)]
-            );
-
-            // Get sender info
-            const [users] = await db.query('SELECT name, username FROM users WHERE id = ?', [senderId]);
-            const senderInfo = users[0];
-
-            const message = {
-                id: result.insertId,
-                group_id: groupId,
-                sender_id: senderId,
-                message_content: processedMessage,
-                tags: tags,
-                timestamp: new Date(),
-                sender_name: senderInfo.name,
-                sender_username: senderInfo.username
-            };
-            
-            // Broadcast to group room
-            const roomName = `group-${groupId}`;
-            io.to(roomName).emit('newGroupMessage', message);
-
-            // Handle AI tagging in group messages
-            if (tags.includes('ai')) {
-              handleAITagging(senderId, groupId, processedMessage, 'group', io);
-            }
-
-        } catch (error) {
-            console.error('Error handling group message:', error);
-        }
-    });
+    } catch (error) {
+        console.error('Error handling group message:', error);
+    }
+});
 
     // 4. NEW: Handle chat analysis request
     socket.on('analyzeChat', async ({ chatId, chatType }) => {
@@ -187,19 +211,42 @@ const initializeSocket = (io) => {
 };
 
 // Helper function to process tags in messages
-function processMessageTags(messageContent) {
-  const tagRegex = /@(\w+)/g;
-  const tags = [];
-  let processedMessage = messageContent;
-  
-  // Find all tags
-  let match;
-  while ((match = tagRegex.exec(messageContent)) !== null) {
-    const tag = match[1].toLowerCase();
-    tags.push(tag);
-  }
-  
-  return { processedMessage, tags };
+async function processMessageTags(messageContent) {
+    const mentionRegex = /@(\w+)/g;
+    const tags = [];
+    const mentions = [];
+    
+    // Find all potential mentions (e.g., @john, @ai)
+    const potentialUsernames = (messageContent.match(mentionRegex) || [])
+        .map(mention => mention.substring(1)); // remove '@'
+
+    if (potentialUsernames.length > 0) {
+        // Find which of these are actual users in the database
+        const [users] = await db.query(
+            'SELECT id, username FROM users WHERE username IN (?)',
+            [potentialUsernames]
+        );
+
+        const userMap = new Map(users.map(user => [user.username, user.id]));
+
+        for (const username of potentialUsernames) {
+            const lowerUser = username.toLowerCase();
+            if (lowerUser === 'ai') {
+                tags.push({ type: 'ai_request' });
+            } else if (userMap.has(username)) {
+                mentions.push({
+                    type: 'user_mention',
+                    userId: userMap.get(username),
+                    username: username
+                });
+            }
+        }
+    }
+
+    return {
+        processedMessage: messageContent, // Frontend can handle rendering mentions
+        tags: { mentions, tags } // Store structured data
+    };
 }
 
 // Handle AI tagging and responses
