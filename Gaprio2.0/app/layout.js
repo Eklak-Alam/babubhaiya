@@ -12,8 +12,11 @@ export const metadata = {
   },
   description:
     "Gaprio harnesses advanced AI to understand, interpret, and bridge communication gaps, fostering clarity, empathy, and genuine human connection.",
-  metadataBase: new URL("https://www.gaprio.com"),
+  icons: {
+    icon: "https://gaprio.vercel.app/logo.png", // ✅ ensures Next.js knows where to find it
+  },
 };
+
 
 export default function RootLayout({ children }) {
   return (

@@ -4,16 +4,16 @@ import Head from 'next/head'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { FaTwitter, FaFacebook, FaLinkedin, FaInstagram, FaEye, FaEyeSlash, FaUser, FaUserCheck } from "react-icons/fa"
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '@/context/ApiContext'
+import { FaCheckCircle, FaEye, FaEyeSlash, FaFacebook, FaGoogle, FaRocket, FaShieldAlt, FaTwitter, FaUser, FaUserCheck } from 'react-icons/fa'
 
 export default function Signup() {
   const router = useRouter();
   const { user, register } = useAuth();
 
-  // --- State Management inside the component ---
   const [formData, setFormData] = useState({
-    name: '', // Changed back to 'name' to match AuthContext
+    name: '',
     username: '',
     email: '',
     password: '',
@@ -25,14 +25,14 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false)
   const [registerSuccess, setRegisterSuccess] = useState(false)
 
-  // --- Redirect if already logged in ---
+  // Redirect if already logged in
   useEffect(() => {
     if (user) {
       router.push('/chat/dashboard');
     }
   }, [user, router]);
 
-  // --- Redirect on successful registration ---
+  // Redirect on successful registration
   useEffect(() => {
     if (registerSuccess) {
       const timer = setTimeout(() => {
@@ -86,7 +86,6 @@ export default function Signup() {
     setSuccessMessage('')
     
     try {
-      // Use AuthContext register function
       await register(formData.name, formData.username, formData.email, formData.password)
       setSuccessMessage('Account created successfully! Redirecting to login...')
       setRegisterSuccess(true)
@@ -102,40 +101,78 @@ export default function Signup() {
     }
   }
 
-  // --- Success Screen ---
+  // Enhanced Success Screen
   if (registerSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
         <Head>
           <title>Gaprio - Registration Successful</title>
         </Head>
+        
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center p-8 bg-white/5 backdrop-blur-md rounded-2xl shadow-xl"
+          className="text-center p-8 bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10 max-w-md w-full"
         >
+          {/* Animated Checkmark */}
           <motion.div
-            animate={{ scale: [1, 1.1, 1], rotate: [0, 5, 0, -5, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 200, 
+              delay: 0.2 
+            }}
+            className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg"
           >
             <FaUserCheck size={32} className="text-white" />
           </motion.div>
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Registration Successful!
-          </h2>
-          <p className="text-gray-300 mb-4">Welcome to Gaprio, {formData.name}!</p>
-          <p className="text-gray-400">Redirecting to login page...</p>
-          <div className="mt-6">
-            <div className="w-full bg-gray-700 rounded-full h-2">
-              <motion.div
-                className="bg-green-500 h-2 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: "100%" }}
-                transition={{ duration: 2, ease: "easeInOut" }}
-              />
-            </div>
-          </div>
+          
+          <motion.h2
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-3xl font-bold text-white mb-3"
+          >
+            Welcome to Gaprio!
+          </motion.h2>
+          
+          <motion.p
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-gray-300 mb-2 text-lg"
+          >
+            Hello, <span className="text-purple-300 font-semibold">{formData.name}</span>
+          </motion.p>
+
+          <motion.p
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="text-gray-400 mb-6 text-sm"
+          >
+            Your account has been created successfully
+          </motion.p>
+
+          {/* Progress Bar */}
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 2, ease: "easeInOut" }}
+            className="w-full bg-gray-700 rounded-full h-2 mb-2 overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full" />
+          </motion.div>
+          
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="text-gray-400 text-sm"
+          >
+            Redirecting to login...
+          </motion.p>
         </motion.div>
       </div>
     )
@@ -148,90 +185,207 @@ export default function Signup() {
         <meta name="description" content="Create your Gaprio account" />
       </Head>
 
-      {/* Animated Blobs Background */}
-      <div className="absolute inset-0 -z-10 opacity-30">
-        <div className="absolute top-0 left-0 w-72 h-72 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+      {/* Enhanced Background Effects */}
+      <div className="absolute inset-0 -z-10">
+        {/* Animated Gradient Orbs */}
+        <motion.div
+          animate={{ 
+            x: [0, 100, 0],
+            y: [0, -50, 0],
+          }}
+          transition={{ 
+            duration: 20, 
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{ 
+            x: [0, -80, 0],
+            y: [0, 60, 0],
+          }}
+          transition={{ 
+            duration: 25, 
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2
+          }}
+          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl"
+        />
+        
+        {/* Floating Particles */}
+        <div className="absolute inset-0">
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 bg-white/30 rounded-full"
+              animate={{
+                y: [0, -30, 0],
+                opacity: [0, 1, 0],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* Left Side - Branding */}
+      {/* Left Side - Enhanced Branding */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="hidden lg:flex w-1/2 flex-col items-center justify-center p-12 relative pt-28"
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8 }}
+        className="hidden lg:flex w-1/2 flex-col items-center justify-center p-12 relative"
       >
         <motion.div
-          initial={{ scale: 0.8 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 100 }}
-          className="mb-8"
+          initial={{ scale: 0.8, rotate: -10 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 100,
+            delay: 0.3
+          }}
+          className="mb-8 relative"
         >
-          <div className="flex items-center justify-center">
+          <div className="relative">
+            <motion.div
+              animate={{ 
+                rotate: [0, 5, 0, -5, 0],
+              }}
+              transition={{ 
+                duration: 8, 
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="absolute inset-0 rounded-2xl blur-md opacity-50"
+            />
             <Image
               src="/logo.png"
               alt="Gaprio Logo"
-              width={160}
-              height={160}
-              className="rounded-xl"
-              onError={(e) => { e.currentTarget.src = 'https://placehold.co/160x160/7c3aed/ffffff?text=Gaprio'; }}
+              width={140}
+              height={140}
+              className="rounded-2xl relative z-10 shadow-2xl"
+              onError={(e) => { 
+                e.currentTarget.src = 'https://placehold.co/140x140/7c3aed/ffffff?text=Gaprio'; 
+              }}
             />
           </div>
         </motion.div>
+
         <motion.h1
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-5xl font-extrabold mb-2 drop-shadow-[0_0_20px_rgba(139,92,246,0.7)]"
+          transition={{ delay: 0.5 }}
+          className="text-6xl font-black mb-4 bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent"
         >
           Gaprio
         </motion.h1>
+
         <motion.p
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-gray-300 text-lg mb-12 text-center max-w-sm"
+          transition={{ delay: 0.7 }}
+          className="text-gray-300 text-xl mb-8 text-center max-w-md leading-relaxed"
         >
-          Join our community and connect with people worldwide
+          Join our community and start connecting with amazing people worldwide
         </motion.p>
+
+        {/* Feature Highlights */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.9 }}
+          className="space-y-3 text-left"
+        >
+          {[
+            { icon: FaShieldAlt, text: "Secure & Encrypted", color: "text-green-400" },
+            { icon: FaRocket, text: "Lightning Fast", color: "text-blue-400" },
+            { icon: FaCheckCircle, text: "Easy to Use", color: "text-purple-400" }
+          ].map((feature, index) => (
+            <motion.div
+              key={index}
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 1 + index * 0.1 }}
+              className="flex items-center gap-3 text-gray-300"
+            >
+              <feature.icon className={`${feature.color} text-lg`} />
+              <span className="text-sm">{feature.text}</span>
+            </motion.div>
+          ))}
+        </motion.div>
       </motion.div>
 
-      {/* Right Side - Signup Form */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8">
+      {/* Right Side - Enhanced Signup Form */}
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6">
         <motion.div
-          initial={{ x: 20, opacity: 0 }}
+          initial={{ x: 50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="w-full max-w-md bg-white/5 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-white/10"
+          transition={{ delay: 0.3 }}
+          className="w-full max-w-md bg-gray-800/40 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10"
         >
-          <h2 className="text-3xl font-bold text-white mb-2">Create an Account</h2>
-          <p className="text-gray-400 mb-8">Join Gaprio today, it's fast and easy!</p>
+          {/* Header */}
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-center mb-8"
+          >
+            <h2 className="text-4xl font-bold text-white mb-3">
+              Join Gaprio
+            </h2>
+            <p className="text-gray-400 text-lg">
+              Create your account in seconds
+            </p>
+          </motion.div>
 
-          {error && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm"
+          {/* Error Message */}
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-sm backdrop-blur-sm"
+              >
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Success Message */}
+          <AnimatePresence>
+            {successMessage && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-6 p-4 bg-green-500/20 border border-green-500/50 rounded-xl text-green-300 text-sm backdrop-blur-sm"
+              >
+                {successMessage}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Signup Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Name Field */}
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.6 }}
             >
-              {error}
-            </motion.div>
-          )}
-
-          {successMessage && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-300 text-sm"
-            >
-              {successMessage}
-            </motion.div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-300">
-                <FaUser className="inline mr-2 text-indigo-400" />Full Name
+              <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+                <FaUser className="inline mr-2 text-purple-400" />
+                Full Name
               </label>
               <input
                 id="name" 
@@ -240,15 +394,30 @@ export default function Signup() {
                 value={formData.name} 
                 onChange={handleChange} 
                 required
-                className="mt-1 w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-                placeholder="Eklak Alam"
+                className="w-full px-4 py-4 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 backdrop-blur-sm"
+                placeholder="Enter your full name"
                 disabled={loading}
               />
-              {formErrors.name && <p className="text-red-400 text-xs mt-1">{formErrors.name}</p>}
-            </div>
+              {formErrors.name && (
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-red-400 text-xs mt-2"
+                >
+                  {formErrors.name}
+                </motion.p>
+              )}
+            </motion.div>
 
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300">Username</label>
+            {/* Username Field */}
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.65 }}
+            >
+              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
+                Username
+              </label>
               <input
                 id="username" 
                 name="username" 
@@ -256,15 +425,30 @@ export default function Signup() {
                 value={formData.username} 
                 onChange={handleChange} 
                 required
-                className="mt-1 w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-                placeholder="eklak_alam"
+                className="w-full px-4 py-4 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 backdrop-blur-sm"
+                placeholder="Choose a username"
                 disabled={loading}
               />
-              {formErrors.username && <p className="text-red-400 text-xs mt-1">{formErrors.username}</p>}
-            </div>
+              {formErrors.username && (
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-red-400 text-xs mt-2"
+                >
+                  {formErrors.username}
+                </motion.p>
+              )}
+            </motion.div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300">Email</label>
+            {/* Email Field */}
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                Email Address
+              </label>
               <input
                 id="email" 
                 name="email" 
@@ -272,15 +456,30 @@ export default function Signup() {
                 value={formData.email} 
                 onChange={handleChange} 
                 required
-                className="mt-1 w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                className="w-full px-4 py-4 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 backdrop-blur-sm"
                 placeholder="you@example.com"
                 disabled={loading}
               />
-              {formErrors.email && <p className="text-red-400 text-xs mt-1">{formErrors.email}</p>}
-            </div>
+              {formErrors.email && (
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-red-400 text-xs mt-2"
+                >
+                  {formErrors.email}
+                </motion.p>
+              )}
+            </motion.div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">Password</label>
+            {/* Password Field */}
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.75 }}
+            >
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                Password
+              </label>
               <div className="relative">
                 <input
                   id="password" 
@@ -289,114 +488,85 @@ export default function Signup() {
                   value={formData.password} 
                   onChange={handleChange} 
                   required
-                  className="mt-1 w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition pr-12"
+                  className="w-full px-4 py-4 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 pr-12 backdrop-blur-sm"
                   placeholder="Create a strong password"
                   disabled={loading}
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={loading}
                 >
                   {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                 </button>
               </div>
-              {formErrors.password && <p className="text-red-400 text-xs mt-1">{formErrors.password}</p>}
-            </div>
+              {formErrors.password && (
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-red-400 text-xs mt-2"
+                >
+                  {formErrors.password}
+                </motion.p>
+              )}
+            </motion.div>
             
+            {/* Submit Button */}
             <motion.button
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.8 }}
               whileHover={{ scale: loading ? 1 : 1.02 }}
               whileTap={{ scale: loading ? 1 : 0.98 }}
               type="submit"
               disabled={loading || !!successMessage}
-              className="w-full flex justify-center items-center bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-4 rounded-lg font-medium shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full flex justify-center items-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-4 px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-300 group"
             >
               {loading ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                  />
                   Creating Account...
                 </>
               ) : (
-                "Sign Up"
+                <>
+                  <span>Create Account</span>
+                  <motion.span
+                    initial={{ x: -5, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="group-hover:translate-x-1 transition-transform"
+                  >
+                    →
+                  </motion.span>
+                </>
               )}
             </motion.button>
           </form>
 
-          <div className="mt-6 text-center">
+          {/* Login Link */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.9 }}
+            className="mt-8 text-center"
+          >
             <p className="text-sm text-gray-400">
               Already have an account?{' '}
               <Link 
                 href="/chat/login" 
-                className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+                className="font-semibold text-purple-400 hover:text-purple-300 transition-colors underline"
               >
-                Log In
+                Sign In
               </Link>
             </p>
-          </div>
-
-          {/* Social Signup Options (Optional) */}
-          <div className="mt-8 pt-6 border-t border-gray-700">
-            <p className="text-center text-sm text-gray-400 mb-4">Or sign up with</p>
-            <div className="flex justify-center space-x-4">
-              <button 
-                type="button"
-                className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
-                disabled={loading}
-              >
-                <FaGoogle className="text-white text-xl" />
-              </button>
-              <button 
-                type="button"
-                className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
-                disabled={loading}
-              >
-                <FaFacebook className="text-white text-xl" />
-              </button>
-              <button 
-                type="button"
-                className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
-                disabled={loading}
-              >
-                <FaTwitter className="text-white text-xl" />
-              </button>
-            </div>
-          </div>
+          </motion.div>
         </motion.div>
       </div>
-
-       <style jsx>{`
-        .animate-blob {
-          animation: blob 20s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-      `}</style>
     </div>
   )
 }
-
-// Add FaGoogle import if you want social buttons
-import { FaGoogle } from "react-icons/fa";
-import { useAuth } from '@/context/ApiContext'

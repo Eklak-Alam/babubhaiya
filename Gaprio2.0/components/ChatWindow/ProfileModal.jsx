@@ -83,7 +83,7 @@ export default function ProfileModal({ isOpen, onClose, user }) {
             className="relative w-full max-w-md bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden max-h-[70vh]"
           >
             {/* Header */}
-            <div className="relative h-28 bg-gradient-to-br from-purple-900/50 via-blue-900/50 to-gray-900">
+            <div className="relative h-28 bg-gray-900">
               {/* Background Pattern */}
               <div className="absolute inset-0 opacity-10">
                 <div className="absolute top-2 left-2 w-16 h-16 bg-white rounded-full blur-xl"></div>
@@ -116,7 +116,7 @@ export default function ProfileModal({ isOpen, onClose, user }) {
                           type="text"
                           value={editedUser.name}
                           onChange={(e) => setEditedUser({...editedUser, name: e.target.value})}
-                          className="text-lg font-bold bg-transparent text-white border-b border-blue-500 outline-none w-32 text-sm"
+                          className="font-bold bg-transparent text-white border-b border-blue-500 outline-none w-32 text-sm"
                           placeholder="Your name"
                         />
                         <input
