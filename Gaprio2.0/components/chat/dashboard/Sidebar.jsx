@@ -5,6 +5,7 @@ import { useAuth } from "@/context/ApiContext";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FiRefreshCw } from "react-icons/fi";
+import { motion } from "framer-motion";
 import {
   FaSignOutAlt,
   FaSearch,
@@ -22,6 +23,7 @@ import {
   FaRobot,
 } from "react-icons/fa";
 import CreateGroupModal from "./CreateGroupModal";
+import ProfileModal from "@/components/ChatWindow/ProfileModal";
 
 // ================================
 // COLOR PALETTE CONSTANTS
@@ -97,6 +99,8 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
   const [activeTab, setActiveTab] = useState("chats");
   const searchTimeoutRef = useRef(null);
   const menuRef = useRef(null);
+  const [showProfileModal, setShowProfileModal] = useState(false)
+
 
   const isGroup = selectedUser?.type === "group";
 
@@ -554,24 +558,30 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
         }}
       />
 
-      {/* User Profile Header */}
-      <div className={STYLES.header}>
+   <div className={STYLES.header}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div
+          <div 
+            onClick={() => setShowProfileModal(true)}
+            className="flex items-center space-x-3 cursor-pointer group flex-1"
+          >
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               className={`flex items-center justify-center w-12 h-12 bg-gradient-to-br ${getRandomColor(
                 user.name
-              )} rounded-full shadow-lg ring-2 ring-blue-500/30`}
+              )} rounded-full shadow-lg ring-2 ring-blue-500/30 transition-all duration-300 group-hover:ring-blue-500/50 group-hover:shadow-xl`}
             >
               <span className="font-bold text-white text-lg">
                 {getInitials(user.name)}
               </span>
-            </div>
+            </motion.div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-white truncate text-lg">
+              <h3 className="font-bold text-white truncate text-lg group-hover:text-blue-300 transition-colors duration-200">
                 {user.name}
               </h3>
-              <p className="text-sm text-gray-400 truncate">@{user.username}</p>
+              <p className="text-sm text-gray-400 truncate group-hover:text-gray-300 transition-colors duration-200">
+                @{user.username}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -600,6 +610,23 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
           </div>
         </div>
       </div>
+
+
+       {/* Group Creation Modal */}
+      {showGroupModal && (
+        <CreateGroupModal
+          onClose={() => setShowGroupModal(false)}
+          onGroupCreated={handleGroupCreated}
+        />
+      )}
+
+      {/* Profile Modal - Add this at the bottom */}
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={user}
+      />
+
 
       {/* Create Group Button */}
       <div className="p-4 border-b border-gray-700">

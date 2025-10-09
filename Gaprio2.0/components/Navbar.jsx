@@ -97,7 +97,6 @@ export default function PremiumNavbar() {
                     width={36} 
                     height={36} 
                     className="object-contain"
-                    priority
                   />
                 </div>
                 <span className={`text-xl font-bold ${textGradient}`}>

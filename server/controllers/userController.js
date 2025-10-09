@@ -55,4 +55,51 @@ const searchUsers = async (req, res) => {
     }
 };
 
-module.exports = { getUserProfile, updateUserProfile, searchUsers };
+
+// @desc    Get user statistics
+// @route   GET /api/users/stats
+const getUserStats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get message count
+    const [messageCount] = await db.query(
+      'SELECT COUNT(*) as count FROM messages WHERE sender_id = ?',
+      [userId]
+    );
+    
+    // Get groups joined count
+    const [groupsCount] = await db.query(
+      'SELECT COUNT(*) as count FROM group_members WHERE user_id = ?',
+      [userId]
+    );
+    
+    // Get AI chats count (you might need to adjust this based on your AI chat tracking)
+    const [aiChatsCount] = await db.query(
+      'SELECT COUNT(*) as count FROM messages WHERE sender_id = ? AND is_ai = true',
+      [userId]
+    );
+    
+    // Calculate active days (days since account creation with activity)
+    const [activeDays] = await db.query(
+      `SELECT COUNT(DISTINCT DATE(created_at)) as count 
+       FROM messages 
+       WHERE sender_id = ? 
+       AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)`,
+      [userId]
+    );
+
+    res.json({
+      totalMessages: messageCount[0].count,
+      groupsJoined: groupsCount[0].count,
+      aiChats: aiChatsCount[0].count,
+      activeDays: activeDays[0].count
+    });
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+
+module.exports = { getUserProfile, updateUserProfile, searchUsers, getUserStats };
