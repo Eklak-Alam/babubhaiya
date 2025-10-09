@@ -2,7 +2,6 @@ import Navbar from "@/components/Navbar";
 import "./globals.css";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/context/ApiContext";
-import SmoothScroll from "@/components/useSmoothScroll";
 
 // --- Comprehensive SEO + Branding Metadata ---
 export const metadata = {
@@ -23,7 +22,6 @@ export default function RootLayout({ children }) {
     <html lang="en" className="scroll-smooth">
       <body className="bg-gray-900">
         <AuthProvider>
-          <SmoothScroll>
             {/* Sticky Responsive Navbar */}
             <Navbar />
 
@@ -35,7 +33,6 @@ export default function RootLayout({ children }) {
             {/* Responsive Footer */}
             {/* <Notification /> */}
             <Footer />
-          </SmoothScroll>
         </AuthProvider>
       </body>
     </html>
