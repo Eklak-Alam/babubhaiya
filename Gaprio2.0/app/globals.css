@@ -34,3 +34,19 @@
 .animate-in.zoom-in-95 {
   animation: zoom-in-95 0.2s ease-out;
 }
+
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0);
+    opacity: 0;
+  }
+  50% { 
+    transform: translateY(-30px);
+    opacity: 1;
+  }
+}
+
+.animate-float {
+  animation: float infinite ease-in-out;
+}
+

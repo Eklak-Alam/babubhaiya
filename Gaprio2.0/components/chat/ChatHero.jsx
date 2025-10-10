@@ -13,25 +13,34 @@ import {
 } from "react-icons/fi";
 import { useState, useEffect } from "react";
 
-// Particle component with stable positions
+// Stable particle component with deterministic animations
 const FloatingParticle = ({ index, totalParticles }) => {
-  // Use stable positions based on index to avoid hydration mismatch
+  // Use stable, deterministic values based on index
   const stableLeft = (index / totalParticles) * 100;
-  const stableTop = (index * 7) % 100; // Spread particles evenly
+  const stableTop = (index * 7) % 100;
+  const duration = 4 + (index % 3); // Deterministic duration
+  const delay = (index % 5) * 0.5; // Deterministic delay
+  const xMovement = Math.sin(index) * 20; // Deterministic movement
 
   return (
     <motion.div
       className="absolute w-1 h-1 bg-white/40 rounded-full"
+      initial={{
+        y: 0,
+        x: 0,
+        opacity: 0,
+        scale: 0.5,
+      }}
       animate={{
         y: [0, -40, 0],
-        x: [0, Math.sin(index) * 20, 0],
+        x: [0, xMovement, 0],
         opacity: [0, 0.8, 0],
         scale: [0.5, 1, 0.5],
       }}
       transition={{
-        duration: 4 + (index % 3),
+        duration: duration,
         repeat: Infinity,
-        delay: (index % 5) * 0.5,
+        delay: delay,
         ease: "easeInOut",
       }}
       style={{
@@ -98,6 +107,10 @@ export default function ChatHero() {
       <div className="absolute inset-0">
         {/* Animated Gradient Orbs - Fixed positions */}
         <motion.div
+          initial={{
+            scale: 1,
+            opacity: 0.2,
+          }}
           animate={{
             scale: [1, 1.4, 1],
             opacity: [0.2, 0.4, 0.2],
@@ -110,6 +123,10 @@ export default function ChatHero() {
           className="absolute top-1/4 -left-20 w-80 h-80 bg-purple-600/30 rounded-full blur-4xl"
         />
         <motion.div
+          initial={{
+            scale: 1.3,
+            opacity: 0.3,
+          }}
           animate={{
             scale: [1.3, 1, 1.3],
             opacity: [0.3, 0.1, 0.3],
@@ -123,12 +140,15 @@ export default function ChatHero() {
           className="absolute bottom-1/4 -right-24 w-96 h-96 bg-blue-600/30 rounded-full blur-4xl"
         />
 
-        {/* Stable Floating Particles */}
-        <div className="absolute inset-0">
-          {[...Array(15)].map((_, index) => (
-            <FloatingParticle key={index} index={index} totalParticles={15} />
-          ))}
-        </div>
+        {/* Stable Floating Particles - Only render on client */}
+        {isMounted && (
+  <div className="absolute inset-0">
+    {[...Array(15)].map((_, index) => (
+      <FloatingParticle key={index} index={index} totalParticles={15} />
+    ))}
+  </div>
+)}
+
 
         {/* Static Grid Pattern */}
         <div

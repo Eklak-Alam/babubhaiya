@@ -8,6 +8,41 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/ApiContext'
 import { FaCheckCircle, FaEye, FaEyeSlash, FaFacebook, FaGoogle, FaRocket, FaShieldAlt, FaTwitter, FaUser, FaUserCheck } from 'react-icons/fa'
 
+// Client-only particles component to prevent hydration errors
+function ClientOnlyParticles() {
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  if (!isClient) return null
+
+  return (
+    <div className="absolute inset-0">
+      {[...Array(8)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-white/30 rounded-full"
+          animate={{
+            y: [0, -30, 0],
+            opacity: [0, 1, 0],
+          }}
+          transition={{
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+          }}
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 export default function Signup() {
   const router = useRouter();
   const { user, register } = useAuth();
@@ -49,9 +84,9 @@ export default function Signup() {
       [name]: value
     }))
     if (formErrors[name]) {
-      setFormErrors(prev => ({ ...prev, [name]: null }))
+      setFormErrors(prev => ({ ...prev, [name]: '' }))
     }
-    if (error) setError('');
+    if (error) setError('')
   }
   
   const validateForm = () => {
@@ -214,28 +249,8 @@ export default function Signup() {
           className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl"
         />
         
-        {/* Floating Particles */}
-        <div className="absolute inset-0">
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 bg-white/30 rounded-full"
-              animate={{
-                y: [0, -30, 0],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-            />
-          ))}
-        </div>
+        {/* Floating Particles - Client Only */}
+        <ClientOnlyParticles />
       </div>
 
       {/* Left Side - Enhanced Branding */}
@@ -276,6 +291,7 @@ export default function Signup() {
               onError={(e) => { 
                 e.currentTarget.src = 'https://placehold.co/140x140/7c3aed/ffffff?text=Gaprio'; 
               }}
+              priority
             />
           </div>
         </motion.div>
@@ -394,7 +410,7 @@ export default function Signup() {
                 value={formData.name} 
                 onChange={handleChange} 
                 required
-                className="w-full px-4 py-4 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 backdrop-blur-sm"
+                className="w-full px-4 py-3 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 backdrop-blur-sm"
                 placeholder="Enter your full name"
                 disabled={loading}
               />
@@ -425,7 +441,7 @@ export default function Signup() {
                 value={formData.username} 
                 onChange={handleChange} 
                 required
-                className="w-full px-4 py-4 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 backdrop-blur-sm"
+                className="w-full px-4 py-3 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 backdrop-blur-sm"
                 placeholder="Choose a username"
                 disabled={loading}
               />
@@ -456,7 +472,7 @@ export default function Signup() {
                 value={formData.email} 
                 onChange={handleChange} 
                 required
-                className="w-full px-4 py-4 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 backdrop-blur-sm"
+                className="w-full px-4 py-3 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 backdrop-blur-sm"
                 placeholder="you@example.com"
                 disabled={loading}
               />
@@ -488,7 +504,7 @@ export default function Signup() {
                   value={formData.password} 
                   onChange={handleChange} 
                   required
-                  className="w-full px-4 py-4 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 pr-12 backdrop-blur-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 pr-12 backdrop-blur-sm"
                   placeholder="Create a strong password"
                   disabled={loading}
                 />

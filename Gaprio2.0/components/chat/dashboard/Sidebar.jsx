@@ -1,4 +1,3 @@
-// app/(main)/components/Sidebar.jsx
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/context/ApiContext";
@@ -6,6 +5,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FiRefreshCw } from "react-icons/fi";
 import { motion } from "framer-motion";
+import { useRouter } from 'next/navigation';
 import {
   FaSignOutAlt,
   FaSearch,
@@ -86,6 +86,7 @@ const STYLES = {
 
 export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
   const { user, logout, API } = useAuth();
+    const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false); // ✅ add this
@@ -102,37 +103,53 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
   const [showProfileModal, setShowProfileModal] = useState(false)
 
 
+
+
+// Toast configuration first
+const showToast = useCallback((message, type = "success") => {
+  const toastOptions = {
+    position: "top-right",
+    autoClose: 1000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    theme: "dark",
+  };
+
+  switch (type) {
+    case "success":
+      toast.success(message, toastOptions);
+      break;
+    case "error":
+      toast.error(message, toastOptions);
+      break;
+    case "warning":
+      toast.warning(message, toastOptions);
+      break;
+    case "info":
+      toast.info(message, toastOptions);
+      break;
+    default:
+      toast(message, toastOptions);
+  }
+}, []);
+
+// Now you can safely use showToast here
+const handleLogout = useCallback(async () => {
+  try {
+    await logout();
+    router.push('/chat/login');
+  } catch (error) {
+    console.error('Logout failed:', error);
+    showToast('Logout failed. Please try again.', 'error');
+  }
+}, [logout, router, showToast]);
+
+
+
+
   const isGroup = selectedUser?.type === "group";
-
-  // Toast configuration
-  const showToast = useCallback((message, type = "success") => {
-    const toastOptions = {
-      position: "top-right",
-      autoClose: 1000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      theme: "dark",
-    };
-
-    switch (type) {
-      case "success":
-        toast.success(message, toastOptions);
-        break;
-      case "error":
-        toast.error(message, toastOptions);
-        break;
-      case "warning":
-        toast.warning(message, toastOptions);
-        break;
-      case "info":
-        toast.info(message, toastOptions);
-        break;
-      default:
-        toast(message, toastOptions);
-    }
-  }, []);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -601,7 +618,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
             </button>
 
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className={STYLES.button.icon}
               title="Logout"
             >
@@ -610,15 +627,6 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
           </div>
         </div>
       </div>
-
-
-       {/* Group Creation Modal */}
-      {showGroupModal && (
-        <CreateGroupModal
-          onClose={() => setShowGroupModal(false)}
-          onGroupCreated={handleGroupCreated}
-        />
-      )}
 
       {/* Profile Modal - Add this at the bottom */}
       <ProfileModal
@@ -634,13 +642,13 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
           onClick={() => setShowGroupModal(true)}
           className={STYLES.button.primary}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute cursor-pointer inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <FaUsers className="flex-shrink-0" />
           <span>Create Group</span>
           <FaPlus
             className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-1"
             size={12}
-          />
+          />  
         </button>
       </div>
 

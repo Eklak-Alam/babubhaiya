@@ -193,26 +193,19 @@ export default function Login() {
         
         {/* Floating Particles */}
         <div className="absolute inset-0">
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 bg-white/30 rounded-full"
-              animate={{
-                y: [0, -30, 0],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-            />
-          ))}
-        </div>
+  {[...Array(8)].map((_, i) => (
+    <div
+      key={i}
+      className="absolute w-1 h-1 bg-white/30 rounded-full animate-float"
+      style={{
+        left: `${(i * 12.5)}%`,
+        top: `${(i * 12.5)}%`,
+        animationDelay: `${i * 0.5}s`,
+        animationDuration: `${3 + (i % 3)}s`,
+      }}
+    />
+  ))}
+</div>
       </div>
 
       {/* Left Side - Enhanced Branding */}
