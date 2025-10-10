@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { FiGithub, FiLinkedin, FiTwitter, FiMail } from 'react-icons/fi'
+import { FiGithub, FiLinkedin, FiTwitter, FiMail, FiInstagram } from 'react-icons/fi'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Image from 'next/image'
@@ -47,10 +47,21 @@ export default function TeamLeadership() {
       role: "Lead Developer",
       image: "/team/eklak.jpg",
       social: [
-        { icon: <FiGithub />, url: "#" },
-        { icon: <FiLinkedin />, url: "#" },
-        { icon: <FiTwitter />, url: "#" },
-        { icon: <FiMail />, url: "#" }
+        { icon: <FiGithub />, url: "https://github.com/Eklak-Alam" },
+        { icon: <FiLinkedin />, url: "https://www.linkedin.com/in/eklak-alam/" },
+        { icon: <FiTwitter />, url: "https://x.com/dev_eklak" },
+        { icon: <FiMail />, url: "mailto:eklakalam420@gmail.com" }
+      ],
+      borderColor: "from-purple-500 to-indigo-500"
+    },
+    {
+      name: "Aadil naushad khan",
+      role: "Team Member",
+      image: "/team/aadil.webp",
+      social: [
+        { icon: <FiGithub />, url: "https://github.com/hackingverse8" },
+        { icon: <FiLinkedin />, url: "https://www.linkedin.com/in/aadilnaushadkhan" },
+        { icon: <FiInstagram />, url: "https://instagram.com/aadilnaushadkhan" },
       ],
       borderColor: "from-purple-500 to-indigo-500"
     }
