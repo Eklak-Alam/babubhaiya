@@ -120,7 +120,7 @@ export default function ProblemSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="problem-section relative py-20 overflow-hidden bg-gray-900">
+    <section ref={sectionRef} className="problem-section relative pt-20 overflow-hidden bg-gray-900">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <motion.div

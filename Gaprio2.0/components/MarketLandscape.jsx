@@ -168,7 +168,7 @@ export default function MarketLandscape() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="relative py-24 overflow-hidden">
+    <section ref={sectionRef} className="relative pt-10 overflow-hidden">
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
@@ -228,45 +228,51 @@ export default function MarketLandscape() {
 
               {/* Traditional solution */}
               <div className="col-span-6 md:col-span-4 p-6 border-l border-gray-800">
-                <div className="flex items-center gap-3 mb-3">
-                  {item.traditional.icon}
-                  <span className="text-gray-300">{item.traditional.text}</span>
-                </div>
-                <ul className="space-y-2">
-                  {item.traditional.cons.map((con, i) => (
-                    <motion.li 
-                      key={i} 
-                      className="flex items-start text-sm text-gray-400"
-                      whileHover={{ x: 5 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                    >
-                      <FiX className="flex-shrink-0 mt-0.5 mr-2 text-red-400" />
-                      {con}
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
+  <div className="flex items-center gap-3 mb-3">
+    {item.traditional.icon}
+    <span className="text-white text-lg md:text-xl font-semibold tracking-wide">
+      {item.traditional.text}
+    </span>
+  </div>
+  <ul className="space-y-2">
+    {item.traditional.cons.map((con, i) => (
+      <motion.li 
+        key={i} 
+        className="flex items-start text-sm text-gray-400"
+        whileHover={{ x: 5 }}
+        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+      >
+        <FiX className="flex-shrink-0 mt-0.5 mr-2 text-red-400" />
+        {con}
+      </motion.li>
+    ))}
+  </ul>
+</div>
+
 
               {/* Gaprio advantage */}
               <div className="col-span-6 md:col-span-5 p-6 border-l border-gray-800">
-                <div className="flex items-center gap-3 mb-3">
-                  {item.gaprio.icon}
-                  <span className="text-gray-300">{item.gaprio.text}</span>
-                </div>
-                <ul className="space-y-2">
-                  {item.gaprio.pros.map((pro, i) => (
-                    <motion.li 
-                      key={i} 
-                      className="flex items-start text-sm text-gray-400"
-                      whileHover={{ x: 5 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                    >
-                      <FiCheck className="flex-shrink-0 mt-0.5 mr-2 text-emerald-400" />
-                      {pro}
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
+  <div className="flex items-center gap-3 mb-3">
+    {item.gaprio.icon}
+    <span className="text-white text-lg md:text-xl font-semibold tracking-wide">
+      {item.gaprio.text}
+    </span>
+  </div>
+  <ul className="space-y-2">
+    {item.gaprio.pros.map((pro, i) => (
+      <motion.li 
+        key={i} 
+        className="flex items-start text-sm text-gray-400"
+        whileHover={{ x: 5 }}
+        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+      >
+        <FiCheck className="flex-shrink-0 mt-0.5 mr-2 text-emerald-400" />
+        {pro}
+      </motion.li>
+    ))}
+  </ul>
+</div>
+
             </div>
           ))}
         </div>

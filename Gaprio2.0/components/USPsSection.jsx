@@ -177,7 +177,7 @@ export default function USPsSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="usps-section relative py-20 md:py-24 overflow-hidden bg-gray-900">
+    <section ref={sectionRef} className="usps-section relative pt-10 md:py-24 overflow-hidden bg-gray-900">
       {/* Decorative grid pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiM1NTUiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLW9wYWNpdHk9IjAuMiI+PHBhdGggZD0iTTAgMGg2MHY2MEgweiIvPjwvZz48L3N2Zz4=')] bg-[length:60px_60px]"></div>

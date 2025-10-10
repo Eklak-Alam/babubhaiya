@@ -204,11 +204,11 @@ useEffect(() => {
 
 
   return (
-    <section 
-      ref={heroRef}
-      className="relative min-h-screen w-full bg-gray-900 text-white overflow-hidden flex items-center justify-center py-8 sm:py-0"
-      style={{ '--x': '50%', '--y': '50%' }}
-    >
+<section
+  ref={heroRef}
+  className="relative w-full bg-gray-900 text-white overflow-hidden flex items-center justify-center min-h-auto sm:min-h-screen pt-14 sm:pt-0 pb-4 sm:py-8"
+  style={{ '--x': '50%', '--y': '50%' }}
+>
       {/* Enhanced Background Effects */}
       <div className="absolute inset-0 -z-20 grid-pattern"></div>
       <div 
