@@ -993,12 +993,6 @@ const handleLogout = useCallback(async () => {
       <div className="p-2 text-xs text-gray-500 border-t border-gray-700">
         <div>Conversations: {conversations.length}</div>
         <div>Groups: {groups.length}</div>
-        <button
-          onClick={fetchConversationsAndGroups}
-          className="text-blue-400 hover:text-blue-300 mt-1"
-        >
-          Refresh Data
-        </button>
       </div>
 
       {/* AI Branding Footer */}

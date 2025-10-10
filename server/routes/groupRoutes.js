@@ -2,64 +2,77 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
+
+// Import from ALL three controllers
 const { 
-    createGroup, 
-    getGroupMessages, 
-    getUserGroups, 
-    editGroup,
-    deleteGroup
+  createGroup, 
+  getGroupMessages, 
+  getUserGroups, 
+  getGroupDetails,
+  editGroup,
+  deleteGroup,
+  generateInvite
 } = require('../controllers/groupController');
+
 const { 
-    isGroupOwner, 
-    addMember, 
-    removeMember, 
-    isGroupMemberOrOwner,
-    getGroupMembers  // ✅ Import from groupMemberController
+  isGroupOwner, 
+  isGroupAdminOrOwner,
+  getGroupMembers,
+  addMember,
+  removeMember,
+  updateMemberRole,
+  leaveGroup,
+  isGroupMemberOrOwner
 } = require('../controllers/groupMemberController');
 
-
 const {
-    editGroupMessage,
-    deleteGroupMessage,
-    getGroupMessage
+  editGroupMessage,
+  deleteGroupMessage,
+  getGroupMessage,
+  addGroupMessageReaction
 } = require('../controllers/groupMessageController');
-
-
-
 
 // All routes are protected
 router.use(protect);
 
-// Routes for creating a group or getting all user groups
+// Group management
 router.route('/')
-    .post(createGroup)
-    .get(getUserGroups);
+  .post(createGroup)
+  .get(getUserGroups);
 
-// Routes for a specific group (edit, delete)
-// Only the owner can perform these actions
 router.route('/:groupId')
-    .put(isGroupOwner, editGroup)
-    .delete(isGroupOwner, deleteGroup);
+  .get(getGroupDetails)
+  .put(isGroupAdminOrOwner, editGroup)  // Admins can edit too
+  .delete(isGroupOwner, deleteGroup);   // Only owner can delete
 
-// Group message routes
+// Messages
 router.route('/:groupId/messages')
-    .get(getGroupMessages);
+  .get(getGroupMessages);
 
-
-// ✅ ADD THESE NEW ROUTES FOR GROUP MESSAGE ACTIONS
 router.route('/:groupId/messages/:messageId')
-    .get(getGroupMessage)        // Get specific message
-    .put(editGroupMessage)       // Edit group message
-    .delete(deleteGroupMessage); // Delete group message
-    
+  .get(getGroupMessage)
+  .put(editGroupMessage)
+  .delete(deleteGroupMessage);
 
-// Group member routes
+router.route('/:groupId/messages/:messageId/reaction')
+  .post(addGroupMessageReaction);
+
+// Members
 router.route('/:groupId/members')
-    .get(getGroupMembers)  // ✅ Now using the correct function
-    .post(isGroupOwner, addMember);
+  .get(getGroupMembers)
+  .post(isGroupAdminOrOwner, addMember);  // Admins can add members
 
-// Allow members to remove themselves, but only owners can remove others
 router.route('/:groupId/members/:memberId')
-    .delete(isGroupMemberOrOwner, removeMember);
+  .delete(isGroupMemberOrOwner, removeMember);
+
+router.route('/:groupId/members/:memberId/role')
+  .put(isGroupOwner, updateMemberRole);  // Only owner can change roles
+
+router.route('/:groupId/leave')
+  .post(leaveGroup);
+
+// Invites
+router.route('/:groupId/invite')
+  .post(isGroupAdminOrOwner, generateInvite);  // Admins can generate invites
 
 module.exports = router;

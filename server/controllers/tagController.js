@@ -1,18 +1,23 @@
 const db = require('../db');
 
-// Search users for tagging
+// Enhanced user search with better matching
+// In your backend tagController.js
 const searchUsers = async (req, res) => {
-  const { query } = req.query;
+  const { query, groupId } = req.query; // Make sure you're using req.query, not req.params
   
   if (!query || query.length < 2) {
-    return res.status(400).json({ message: 'Query must be at least 2 characters long' });
+    return res.status(400).json({ 
+      success: false,
+      message: 'Query must be at least 2 characters long' 
+    });
   }
 
   try {
+    // Your search logic here...
     const [users] = await db.query(
       `SELECT id, name, username, email 
        FROM users 
-       WHERE name LIKE ? OR username LIKE ? OR email LIKE ?
+       WHERE (name LIKE ? OR username LIKE ? OR email LIKE ?)
        AND id != ?
        LIMIT 10`,
       [`%${query}%`, `%${query}%`, `%${query}%`, req.user.id]
@@ -24,6 +29,39 @@ const searchUsers = async (req, res) => {
     });
   } catch (error) {
     console.error('Error searching users:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error' 
+    });
+  }
+};
+
+// Get user's frequent contacts for quick tagging
+const getFrequentContacts = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    // Get users you message most frequently
+    const [frequentContacts] = await db.query(
+      `SELECT u.id, u.name, u.username, COUNT(*) as message_count
+       FROM messages m
+       JOIN users u ON (
+         (m.sender_id = ? AND m.receiver_id = u.id) OR 
+         (m.receiver_id = ? AND m.sender_id = u.id)
+       )
+       WHERE u.id != ?
+       GROUP BY u.id
+       ORDER BY message_count DESC
+       LIMIT 10`,
+      [userId, userId, userId]
+    );
+
+    res.json({
+      success: true,
+      data: frequentContacts
+    });
+  } catch (error) {
+    console.error('Error fetching frequent contacts:', error);
     res.status(500).json({ 
       success: false,
       message: 'Server error' 
@@ -121,5 +159,6 @@ const getRecentConversations = async (req, res) => {
 module.exports = {
   searchUsers,
   getGroupMembersForTagging,
-  getRecentConversations
+  getRecentConversations,
+  getFrequentContacts
 };

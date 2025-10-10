@@ -6,33 +6,55 @@ const db = require('../db');
 // @access  Private (Only message sender can edit)
 const editGroupMessage = async (req, res) => {
     try {
-        // ✅ Safely parse params to integers
         const groupId = parseInt(req.params.groupId, 10);
         const messageId = parseInt(req.params.messageId, 10);
         const { message_content } = req.body;
         const userId = req.user.id;
 
         if (isNaN(groupId) || isNaN(messageId)) {
-            return res.status(400).json({ message: 'Invalid group or message ID.' });
+            return res.status(400).json({ 
+                success: false,
+                message: 'Invalid group or message ID.' 
+            });
         }
 
         if (!message_content || message_content.trim() === '') {
-            return res.status(400).json({ message: 'Message content is required.' });
+            return res.status(400).json({ 
+                success: false,
+                message: 'Message content is required.' 
+            });
         }
 
         // Find the message and verify the sender in one query
         const [messages] = await db.query(
-            'SELECT sender_id FROM group_messages WHERE id = ? AND group_id = ?',
+            'SELECT sender_id, timestamp FROM group_messages WHERE id = ? AND group_id = ?',
             [messageId, groupId]
         );
 
         if (messages.length === 0) {
-            return res.status(404).json({ message: 'Message not found in this group.' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'Message not found in this group.' 
+            });
         }
 
         // Check if the user is the sender of the message
         if (messages[0].sender_id !== userId) {
-            return res.status(403).json({ message: 'You can only edit your own messages.' });
+            return res.status(403).json({ 
+                success: false,
+                message: 'You can only edit your own messages.' 
+            });
+        }
+
+        // Optional: Check if message is too old to edit (e.g., 15 minutes)
+        const messageAge = Date.now() - new Date(messages[0].timestamp).getTime();
+        const fifteenMinutes = 15 * 60 * 1000;
+        
+        if (messageAge > fifteenMinutes) {
+            return res.status(400).json({
+                success: false,
+                message: "Message is too old to edit. You can only edit messages within 15 minutes."
+            });
         }
 
         // Update the message
@@ -58,7 +80,10 @@ const editGroupMessage = async (req, res) => {
 
     } catch (error) {
         console.error('Error editing group message:', error);
-        res.status(500).json({ message: 'Server error while editing message' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while editing message' 
+        });
     }
 };
 
@@ -71,12 +96,15 @@ const deleteGroupMessage = async (req, res) => {
         const userId = req.user.id;
 
         if (isNaN(groupId) || isNaN(messageId)) {
-            return res.status(400).json({ message: 'Invalid group or message ID.' });
+            return res.status(400).json({ 
+                success: false,
+                message: 'Invalid group or message ID.' 
+            });
         }
 
         // Fetch group owner and message sender details simultaneously
         const [messages] = await db.query(
-            `SELECT gm.sender_id, g.owner_id 
+            `SELECT gm.sender_id, g.owner_id, gm.is_system_message
              FROM group_messages gm 
              JOIN \`groups\` g ON gm.group_id = g.id
              WHERE gm.id = ? AND gm.group_id = ?`,
@@ -84,14 +112,36 @@ const deleteGroupMessage = async (req, res) => {
         );
 
         if (messages.length === 0) {
-            return res.status(404).json({ message: 'Message not found in this group.' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'Message not found in this group.' 
+            });
         }
 
-        const { sender_id, owner_id } = messages[0];
+        const { sender_id, owner_id, is_system_message } = messages[0];
 
-        // Check if user is the sender OR the group owner
+        // Prevent deletion of system messages
+        if (is_system_message) {
+            return res.status(403).json({
+                success: false,
+                message: 'System messages cannot be deleted.'
+            });
+        }
+
+        // Check if user is the sender OR the group owner/admin
         if (sender_id !== userId && owner_id !== userId) {
-            return res.status(403).json({ message: 'You do not have permission to delete this message.' });
+            // Check if user is admin
+            const [userRole] = await db.query(
+                'SELECT role FROM group_members WHERE group_id = ? AND user_id = ?',
+                [groupId, userId]
+            );
+            
+            if (userRole.length === 0 || userRole[0].role !== 'admin') {
+                return res.status(403).json({ 
+                    success: false,
+                    message: 'You do not have permission to delete this message.' 
+                });
+            }
         }
 
         // Delete the message
@@ -105,7 +155,10 @@ const deleteGroupMessage = async (req, res) => {
 
     } catch (error) {
         console.error('Error deleting group message:', error);
-        res.status(500).json({ message: 'Server error while deleting message.' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while deleting message.' 
+        });
     }
 };
 
@@ -114,8 +167,16 @@ const deleteGroupMessage = async (req, res) => {
 // @access  Private (Group members only)
 const getGroupMessage = async (req, res) => {
     try {
-        const { groupId, messageId } = req.params;
+        const groupId = parseInt(req.params.groupId, 10);
+        const messageId = parseInt(req.params.messageId, 10);
         const userId = req.user.id;
+
+        if (isNaN(groupId) || isNaN(messageId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid group or message ID.'
+            });
+        }
 
         // Check if user is member of the group
         const [membership] = await db.query(
@@ -160,8 +221,91 @@ const getGroupMessage = async (req, res) => {
     }
 };
 
+// @desc    Add reaction to group message
+// @route   POST /api/groups/:groupId/messages/:messageId/reaction
+const addGroupMessageReaction = async (req, res) => {
+    try {
+        const groupId = parseInt(req.params.groupId, 10);
+        const messageId = parseInt(req.params.messageId, 10);
+        const { reaction } = req.body;
+        const userId = req.user.id;
+
+        if (isNaN(groupId) || isNaN(messageId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid group or message ID.'
+            });
+        }
+
+        if (!reaction?.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Reaction is required.'
+            });
+        }
+
+        // Check if user is member of the group
+        const [membership] = await db.query(
+            'SELECT * FROM group_members WHERE group_id = ? AND user_id = ?',
+            [groupId, userId]
+        );
+
+        if (membership.length === 0) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not a member of this group'
+            });
+        }
+
+        // Check if message exists
+        const [message] = await db.query(
+            'SELECT id FROM group_messages WHERE id = ? AND group_id = ?',
+            [messageId, groupId]
+        );
+
+        if (message.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Message not found'
+            });
+        }
+
+        // Add or update reaction
+        await db.query(
+            `INSERT INTO group_message_reactions (message_id, user_id, reaction) 
+             VALUES (?, ?, ?) 
+             ON DUPLICATE KEY UPDATE reaction = VALUES(reaction), created_at = NOW()`,
+            [messageId, userId, reaction.trim()]
+        );
+
+        // Get updated reactions with user info
+        const [reactions] = await db.query(
+            `SELECT gmr.*, u.name as user_name, u.username
+             FROM group_message_reactions gmr
+             JOIN users u ON gmr.user_id = u.id
+             WHERE gmr.message_id = ? 
+             ORDER BY gmr.created_at ASC`,
+            [messageId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Reaction added successfully',
+            data: reactions
+        });
+
+    } catch (error) {
+        console.error('Error adding group message reaction:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while adding reaction'
+        });
+    }
+};
+
 module.exports = {
     editGroupMessage,
     deleteGroupMessage,
-    getGroupMessage
+    getGroupMessage,
+    addGroupMessageReaction
 };

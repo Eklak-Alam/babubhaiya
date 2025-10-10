@@ -1,6 +1,9 @@
+// AddMemberModal.js
+"use client";
 import { IoClose, IoSearch } from "react-icons/io5";
 import { FaUserFriends, FaUserPlus } from "react-icons/fa";
 import { STYLES } from "./styles";
+import { useState, useEffect, useRef } from "react";
 
 export default function AddMemberModal({
   isOpen,
@@ -13,6 +16,49 @@ export default function AddMemberModal({
   onSearchUsers,
   onAddMember,
 }) {
+  const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const searchTimeoutRef = useRef(null);
+
+  // Sync local state with prop
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery || "");
+  }, [searchQuery]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setLocalSearchQuery(value);
+    onSearchQueryChange(value);
+
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Only search if query is at least 2 characters long
+    if (value.trim().length >= 2) {
+      searchTimeoutRef.current = setTimeout(() => {
+        onSearchUsers(value.trim());
+      }, 500); // Increased debounce time
+    } else if (value.trim().length === 0) {
+      // Clear results if search is empty
+      onSearchUsers("");
+    }
+    // If length is 1, do nothing (wait for more input)
+  };
+
+  const handleAddMember = (user) => {
+    onAddMember(user);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -42,14 +88,23 @@ export default function AddMemberModal({
             />
             <input
               type="text"
-              placeholder="Search users..."
-              value={searchQuery}
-              onChange={(e) => {
-                onSearchQueryChange(e.target.value);
-                onSearchUsers(e.target.value);
-              }}
+              placeholder="Search users by name or username..."
+              value={localSearchQuery}
+              onChange={handleSearchChange}
               className={`w-full pl-10 pr-4 py-3 border border-gray-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 bg-gray-700/30 text-white placeholder-gray-400 backdrop-blur-sm`}
             />
+            {localSearchQuery && (
+              <button
+                onClick={() => {
+                  setLocalSearchQuery("");
+                  onSearchQueryChange("");
+                  onSearchUsers("");
+                }}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+              >
+                <IoClose size={16} />
+              </button>
+            )}
           </div>
 
           <div className="max-h-64 overflow-y-auto custom-scrollbar">
@@ -58,39 +113,63 @@ export default function AddMemberModal({
                 <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
                 <p>Searching users...</p>
               </div>
+            ) : searchUsers.length === 0 && localSearchQuery.length >= 2 ? (
+              <div className={`text-center py-8 text-gray-500`}>
+                <FaUserFriends className="mx-auto text-3xl mb-2 opacity-50" />
+                <p>No users found for "{localSearchQuery}"</p>
+                <p className="text-sm mt-1">
+                  Try a different name or username
+                </p>
+              </div>
+            ) : searchUsers.length === 0 && localSearchQuery.length === 1 ? (
+              <div className={`text-center py-8 text-gray-500`}>
+                <p>Type at least 2 characters to search</p>
+              </div>
             ) : searchUsers.length === 0 ? (
               <div className={`text-center py-8 text-gray-500`}>
                 <FaUserFriends className="mx-auto text-3xl mb-2 opacity-50" />
-                <p>No users found</p>
-                <p className="text-sm">
-                  Search for users to add to the group
+                <p>Search for users to add</p>
+                <p className="text-sm mt-1">
+                  Enter a name or username above
                 </p>
               </div>
             ) : (
               searchUsers.map((user) => (
                 <div
                   key={user.id}
-                  onClick={() => onAddMember(user)}
-                  className={`flex items-center justify-between p-3 hover:bg-gray-700/50 rounded-xl cursor-pointer transition-all duration-200 border-b border-gray-700/50 last:border-b-0 backdrop-blur-sm`}
+                  onClick={() => handleAddMember(user)}
+                  className={`flex items-center justify-between p-3 hover:bg-gray-700/50 rounded-xl cursor-pointer transition-all duration-200 border-b border-gray-700/50 last:border-b-0 backdrop-blur-sm group`}
                 >
                   <div className="flex items-center">
                     <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full mr-3 text-white text-sm font-semibold ring-1 ring-blue-500/30">
-                      {user.name.charAt(0).toUpperCase()}
+                      {user.name?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div>
                       <div className={`font-medium text-white`}>
-                        {user.name}
+                        {user.name || 'Unknown User'}
                       </div>
                       <div className={`text-xs text-gray-400`}>
                         @{user.username}
                       </div>
                     </div>
                   </div>
-                  <FaUserPlus className="text-green-400" size={14} />
+                  <FaUserPlus 
+                    className="text-green-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200" 
+                    size={14} 
+                  />
                 </div>
               ))
             )}
           </div>
+
+          {/* Search tips */}
+          {localSearchQuery.length === 1 && (
+            <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p className="text-xs text-blue-400 text-center">
+                💡 Type at least 2 characters to search for users
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

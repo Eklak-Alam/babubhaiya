@@ -1,7 +1,10 @@
-import { useRef, useEffect } from "react";
-import { FaCrown, FaCheck, FaReply } from "react-icons/fa";
+// MessageItem.js
+import { useRef, useEffect, useState } from "react";
+import { FaCrown, FaCheck, FaReply, FaRegSmile, FaRegThumbsUp } from "react-icons/fa";
 import { IoEllipsisVertical } from "react-icons/io5";
 import { formatTime, formatDate } from "./styles";
+import ReactionPicker from "./ReactionPicker";
+import ReactionsDisplay from "./ReactionsDisplay";
 
 export default function MessageItem({
   message,
@@ -16,14 +19,15 @@ export default function MessageItem({
   onEditMessageContent,
   onSaveEdit,
   onOpenMessageActions,
+  onAddReaction,
+  onRemoveReaction,
 }) {
   const isOwnMessage = message.sender_id === user.id;
   const showSenderInfo = isGroup && !isOwnMessage;
   const isConsecutive =
     index > 0 &&
     messages[index - 1].sender_id === message.sender_id &&
-    new Date(message.timestamp) - new Date(messages[index - 1].timestamp) <
-      300000;
+    new Date(message.timestamp) - new Date(messages[index - 1].timestamp) < 300000;
 
   const showDateSeparator =
     index === 0 ||
@@ -32,6 +36,85 @@ export default function MessageItem({
 
   const isEditingThisMessage = editingMessage === message.id;
   const editTextareaRef = useRef(null);
+  const messageRef = useRef(null);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [reactionPosition, setReactionPosition] = useState({ x: 0, y: 0 });
+
+  // Parse tags from message
+  const renderMessageWithMentions = (content) => {
+    if (!content) return content;
+    
+    // Enhanced mention highlighting with better regex
+    const mentionRegex = /(@\w+)/g;
+    const parts = content.split(mentionRegex);
+    
+    return parts.map((part, index) => {
+      if (part.startsWith('@')) {
+        // Check if it's a special mention
+        const mentionText = part.toLowerCase();
+        let bgColor = "bg-blue-500/20";
+        let textColor = "text-blue-400";
+        
+        if (mentionText === '@ai') {
+          bgColor = "bg-purple-500/20";
+          textColor = "text-purple-400";
+        } else if (mentionText === '@all' || mentionText === '@everyone') {
+          bgColor = "bg-green-500/20";
+          textColor = "text-green-400";
+        }
+        
+        return (
+          <span key={index} className={`${textColor} font-medium ${bgColor} px-1 rounded mx-0.5`}>
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  const handleReactionClick = (e) => {
+    e.stopPropagation();
+    
+    if (messageRef.current) {
+      const rect = messageRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      
+      // Position the reaction picker above the message, but ensure it stays in viewport
+      let top = rect.top - 10; // 10px above the message
+      const pickerHeight = 60; // Approximate height of reaction picker
+      
+      // If too close to top, position below the message
+      if (top < pickerHeight) {
+        top = rect.bottom + 10;
+      }
+      
+      setReactionPosition({
+        x: rect.left + rect.width / 2,
+        y: top
+      });
+      setShowReactionPicker(true);
+    }
+  };
+
+  const handleAddReaction = async (reaction) => {
+    if (onAddReaction) {
+      await onAddReaction(message.id, reaction, isGroup);
+    }
+    setShowReactionPicker(false);
+  };
+
+  // Close reaction picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showReactionPicker && !e.target.closest('.reaction-picker') && !e.target.closest('.message-reaction-trigger')) {
+        setShowReactionPicker(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showReactionPicker]);
 
   useEffect(() => {
     if (isEditingThisMessage && editTextareaRef.current) {
@@ -51,8 +134,18 @@ export default function MessageItem({
     }
   };
 
+  // Handle message double-click for quick reactions
+  const handleDoubleClick = (e) => {
+    if (!isEditingThisMessage) {
+      handleReactionClick(e);
+    }
+  };
+
+  // Check if user has reacted to this message
+  const userReaction = message.reactions?.find(r => r.user_id === user.id);
+
   return (
-    <div className="message-container">
+    <div className="message-container group" ref={messageRef}>
       {showDateSeparator && (
         <div className="flex justify-center my-6">
           <span
@@ -73,7 +166,8 @@ export default function MessageItem({
             isOwnMessage
               ? `bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md`
               : `bg-gray-800/50 text-white rounded-bl-md border border-gray-700/50`
-          } ${isConsecutive ? "mt-1" : "mt-2"}`}
+          } ${isConsecutive ? "mt-1" : "mt-2"} hover:bg-opacity-80 message-reaction-trigger`}
+          onDoubleClick={handleDoubleClick}
         >
           {/* Reply Context */}
           {message.reply_to && (
@@ -84,11 +178,11 @@ export default function MessageItem({
                   : "border-gray-500 bg-gray-700/30"
               }`}
             >
-              <div className="font-medium truncate">
-                <FaReply size={10} className="inline mr-1" />
-                Replying to {message.reply_to_sender_name || "a message"}
+              <div className="font-medium truncate flex items-center gap-1">
+                <FaReply size={10} className="flex-shrink-0" />
+                <span>Replying to {message.reply_to_sender_name || "a message"}</span>
               </div>
-              <div className="truncate text-gray-400">
+              <div className="truncate text-gray-400 mt-1">
                 {message.reply_to_content}
               </div>
             </div>
@@ -98,39 +192,45 @@ export default function MessageItem({
             <div
               className={`text-xs font-semibold text-gray-300 mb-1 flex items-center gap-1`}
             >
-              {message.sender_name}
+              <span className="truncate">{message.sender_name}</span>
               {message.sender_id === selectedUser.owner_id && (
-                <FaCrown size={10} className="text-yellow-400" />
+                <FaCrown size={10} className="text-yellow-400 flex-shrink-0" title="Group Owner" />
+              )}
+              {message.is_ai_response && (
+                <span className="text-xs bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded flex-shrink-0" title="AI Response">
+                  AI
+                </span>
               )}
             </div>
           )}
 
           {isEditingThisMessage ? (
             <div className="space-y-3">
-    <textarea
-      ref={editTextareaRef}
-      data-editing="true" // Add this line
-      value={editMessageContent}
-      onChange={(e) => onEditMessageContent(e.target.value)}
-      className="w-full p-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-      rows="3"
-      placeholder="Edit your message..."
-      onKeyDown={handleKeyDown}
-    />
-              <div className="flex gap-2 justify-end">
+              <textarea
+                ref={editTextareaRef}
+                data-editing="true"
+                value={editMessageContent}
+                onChange={(e) => onEditMessageContent(e.target.value)}
+                className="w-full p-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                rows="3"
+                placeholder="Edit your message..."
+                onKeyDown={handleKeyDown}
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end text-sm">
                 <button
                   onClick={() => {
                     onEditMessage(null);
                     onEditMessageContent("");
                   }}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-300 bg-gray-600/50 hover:bg-gray-600 rounded-lg text-sm transition-all duration-200"
+                  className="px-3 py-2 text-gray-300 bg-gray-600/50 hover:bg-gray-600 rounded-lg transition-all duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => onSaveEdit(message.id, editMessageContent)}
                   disabled={!editMessageContent.trim()}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-600 text-white rounded-lg text-sm transition-all duration-200 disabled:cursor-not-allowed"
+                  className="px-3 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-600 text-white rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
                 >
                   Save
                 </button>
@@ -138,9 +238,21 @@ export default function MessageItem({
             </div>
           ) : (
             <>
-              <div className="break-words leading-relaxed text-white/90">
-                {message.message_content}
+              <div className="break-words leading-relaxed text-white/90 whitespace-pre-wrap">
+                {renderMessageWithMentions(message.message_content)}
               </div>
+
+              {/* Reactions Display */}
+              {message.reactions && message.reactions.length > 0 && (
+                <ReactionsDisplay 
+                  reactions={message.reactions}
+                  onReactionClick={handleReactionClick}
+                  userReaction={userReaction}
+                  onRemoveReaction={onRemoveReaction && message.id ? 
+                    () => onRemoveReaction(message.id, isGroup) : undefined
+                  }
+                />
+              )}
 
               <div
                 className={`text-xs mt-2 flex items-center justify-between ${
@@ -150,37 +262,61 @@ export default function MessageItem({
                 <span>{formatTime(message.timestamp)}</span>
                 <div className="flex items-center gap-2">
                   {message.edited_at && (
-                    <span className="text-gray-400 italic text-xs">
+                    <span className="text-gray-400 italic" title={`Edited at ${formatTime(message.edited_at)}`}>
                       (edited)
                     </span>
                   )}
                   {isOwnMessage && (
-                    <span className="text-xs opacity-70 flex items-center gap-1">
+                    <span className="opacity-70 flex items-center gap-1" title="Read">
                       <FaCheck size={10} />
                       <FaCheck size={10} className="-ml-2" />
                     </span>
                   )}
-                  {isOwnMessage && (
+                  
+                  {/* Reaction & Actions Button */}
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={handleReactionClick}
+                      className={`p-1.5 rounded-lg transition-all duration-200 message-reaction-trigger ${
+                        isOwnMessage
+                          ? "bg-blue-500/20 text-blue-300 hover:bg-blue-500/30"
+                          : "bg-gray-600/20 text-gray-400 hover:bg-gray-600/30"
+                      } ${userReaction ? '!bg-yellow-500/20 !text-yellow-300' : ''}`}
+                      title="Add reaction"
+                    >
+                      <FaRegSmile size={12} />
+                    </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onOpenMessageActions(message);
                       }}
-                      className={`p-1 rounded-lg transition-all duration-200 ${
+                      className={`p-1.5 rounded-lg transition-all duration-200 ${
                         isOwnMessage
                           ? "bg-blue-500/20 text-blue-300 hover:bg-blue-500/30"
                           : "bg-gray-600/20 text-gray-400 hover:bg-gray-600/30"
                       }`}
+                      title="Message actions"
                     >
                       <IoEllipsisVertical size={12} />
                     </button>
-                  )}
+                  </div>
                 </div>
               </div>
             </>
           )}
         </div>
       </div>
+
+      {/* Reaction Picker */}
+      {showReactionPicker && (
+        <ReactionPicker
+          position={reactionPosition}
+          onSelectReaction={handleAddReaction}
+          onClose={() => setShowReactionPicker(false)}
+          currentReaction={userReaction?.reaction}
+        />
+      )}
     </div>
   );
 }

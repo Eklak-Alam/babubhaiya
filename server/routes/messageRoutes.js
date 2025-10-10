@@ -6,7 +6,10 @@ const {
     getChatHistory,
     clearConversation,
     editMessage,
-    deleteMessage
+    deleteMessage,
+    addReaction,
+    removeReaction,
+    markMessagesAsRead
 } = require('../controllers/messageController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -14,12 +17,19 @@ const { protect } = require('../middleware/authMiddleware');
 router.use(protect);
 
 router.route('/conversations').get(getConversations);
+router.route('/mark-read').post(markMessagesAsRead);
+
 router.route('/:messageId')
     .put(editMessage)
     .delete(deleteMessage);
 
-router.route('/conversation/:otherUserId').delete(clearConversation);
-router.route('/:otherUserId').get(getChatHistory);
+router.route('/:messageId/reaction')
+    .post(addReaction)
+    .delete(removeReaction);
 
+router.route('/conversation/:otherUserId')
+    .delete(clearConversation);
+    
+router.route('/:otherUserId').get(getChatHistory);
 
 module.exports = router;

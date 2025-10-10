@@ -34,55 +34,76 @@ const initializeSocket = (io) => {
       }
     });
 
-// In socketManager.js - FIX THE DESTRUCTURING
 
-// 2. Handle private messages with tagging - FIX THIS
+// Enhanced message sending with notifications
 socket.on('privateMessage', async (data) => {
   const senderId = socket.userId;
   if (!senderId) return;
 
-  // Debug log to see what's actually being received
-  console.log('📩 Received privateMessage data:', data);
-
   try {
-    // Use the correct property name - messageContent (capital C)
     const { receiverId, messageContent } = data;
     
-    if (!messageContent) {
-      console.error('❌ messageContent is null or undefined');
-      return;
+    if (!messageContent?.trim()) {
+      return socket.emit('messageError', { error: 'Message cannot be empty' });
     }
 
-    // Process tags in message
-    const { processedMessage, tags } = await processMessageTags(messageContent);
+    // Process tags
+    const { processedMessage, tags } = await processMessageTags(
+      messageContent, senderId, 'private', receiverId
+    );
     
-    await db.query(
+    // Insert message
+    const [result] = await db.query(
       'INSERT INTO messages (sender_id, receiver_id, message_content, tags) VALUES (?, ?, ?, ?)', 
       [senderId, receiverId, processedMessage, JSON.stringify(tags)]
     );
 
+    // Get sender info for the response
+    const [senderInfo] = await db.query(
+      'SELECT name, username FROM users WHERE id = ?', 
+      [senderId]
+    );
+
     const message = { 
+      id: result.insertId,
       sender_id: senderId, 
       receiver_id: receiverId, 
       message_content: processedMessage,
       tags: tags,
-      timestamp: new Date() 
+      timestamp: new Date(),
+      sender_name: senderInfo[0].name,
+      sender_username: senderInfo[0].username
     };
 
+    // Send to receiver
     const receiverSocketId = onlineUsers.get(receiverId);
-    if (receiverSocketId) io.to(receiverSocketId).emit('newMessage', message);
-    socket.emit('newMessage', message);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('newMessage', message);
+      
+      // Send notification for mentions
+      if (tags.mentions.some(mention => mention.userId === parseInt(receiverId))) {
+        io.to(receiverSocketId).emit('notification', {
+          type: 'mention',
+          message: `${senderInfo[0].name} mentioned you in a message`,
+          from: senderId,
+          messageId: result.insertId
+        });
+      }
+    }
+    
+    // Send back to sender
+    socket.emit('messageSent', message);
 
-    // Handle AI tagging in private messages
-    if (tags.includes('ai')) {
+    // Handle AI tagging
+    if (tags.special.some(tag => tag.type === 'ai_request')) {
       handleAITagging(senderId, receiverId, processedMessage, 'private', io);
     }
 
   } catch (error) { 
-    console.error('Error handling private message:', error); 
+    console.error('Error handling private message:', error);
+    socket.emit('messageError', { error: 'Failed to send message' });
   }
 });
-
 // 3. Handle group messages with tagging - FIX THIS TOO
 socket.on('groupMessage', async (data) => {
     const senderId = socket.userId;
@@ -210,44 +231,65 @@ socket.on('groupMessage', async (data) => {
   });
 };
 
-// Helper function to process tags in messages
-async function processMessageTags(messageContent) {
-    const mentionRegex = /@(\w+)/g;
-    const tags = [];
-    const mentions = [];
-    
-    // Find all potential mentions (e.g., @john, @ai)
-    const potentialUsernames = (messageContent.match(mentionRegex) || [])
-        .map(mention => mention.substring(1)); // remove '@'
+// Enhanced processMessageTags function
+async function processMessageTags(messageContent, senderId, chatType, chatId) {
+  const mentionRegex = /@(\w+)/g;
+  const userMentions = [];
+  const specialTags = [];
+  
+  const potentialMentions = (messageContent.match(mentionRegex) || [])
+    .map(mention => mention.substring(1));
 
-    if (potentialUsernames.length > 0) {
-        // Find which of these are actual users in the database
-        const [users] = await db.query(
-            'SELECT id, username FROM users WHERE username IN (?)',
-            [potentialUsernames]
-        );
-
-        const userMap = new Map(users.map(user => [user.username, user.id]));
-
-        for (const username of potentialUsernames) {
-            const lowerUser = username.toLowerCase();
-            if (lowerUser === 'ai') {
-                tags.push({ type: 'ai_request' });
-            } else if (userMap.has(username)) {
-                mentions.push({
-                    type: 'user_mention',
-                    userId: userMap.get(username),
-                    username: username
-                });
-            }
+  if (potentialMentions.length > 0) {
+    // Check for special tags first
+    for (const mention of potentialMentions) {
+      const lowerMention = mention.toLowerCase();
+      
+      // Special tags
+      if (lowerMention === 'ai' || lowerMention === 'bot') {
+        specialTags.push({ type: 'ai_request', tag: lowerMention });
+        continue;
+      }
+      if (lowerMention === 'all' || lowerMention === 'everyone') {
+        if (chatType === 'group') {
+          specialTags.push({ type: 'group_mention', tag: lowerMention });
         }
-    }
+        continue;
+      }
+      
+      // User mentions
+      const [users] = await db.query(
+        'SELECT id, username FROM users WHERE username = ? OR id = ?',
+        [mention, parseInt(mention)]
+      );
 
-    return {
-        processedMessage: messageContent, // Frontend can handle rendering mentions
-        tags: { mentions, tags } // Store structured data
-    };
+      if (users.length > 0) {
+        userMentions.push({
+          type: 'user_mention',
+          userId: users[0].id,
+          username: users[0].username,
+          mentionedAt: new Date()
+        });
+      }
+    }
+  }
+
+  // Check for hashtags
+  const hashtagRegex = /#(\w+)/g;
+  const hashtags = (messageContent.match(hashtagRegex) || [])
+    .map(tag => tag.substring(1))
+    .map(tag => ({ type: 'hashtag', tag }));
+
+  return {
+    processedMessage: messageContent,
+    tags: {
+      mentions: userMentions,
+      special: specialTags,
+      hashtags: hashtags
+    }
+  };
 }
+
 
 // Handle AI tagging and responses
 async function handleAITagging(senderId, chatId, messageContent, chatType, io) {

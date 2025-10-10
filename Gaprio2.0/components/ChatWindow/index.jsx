@@ -22,6 +22,7 @@ export default function ChatWindow({
   onMessageUpdate,
   onMessageDelete,
   onClearConversation,
+  onNewMessage,
 }) {
   const { user, API } = useAuth();
   const [newMessage, setNewMessage] = useState("");
@@ -78,6 +79,53 @@ export default function ChatWindow({
     setTimeout(scrollToBottom, 100);
   }, [selectedUser, isGroup]);
 
+  // Socket event listeners for real-time updates
+  useEffect(() => {
+    if (!socket) return;
+
+    // Handle new messages
+    const handleNewMessage = (message) => {
+      console.log("New message received:", message);
+      if (onNewMessage) {
+        onNewMessage(message);
+      }
+    };
+
+    // Handle new group messages
+    const handleNewGroupMessage = (message) => {
+      console.log("New group message received:", message);
+      if (onNewMessage && isGroup && selectedUser?.id === message.group_id) {
+        onNewMessage(message);
+      }
+    };
+
+    // Handle message reactions
+    const handleMessageReaction = (data) => {
+      console.log("Reaction update received:", data);
+      // This will be handled by the parent component
+    };
+
+    // Handle AI responses
+    const handleAIResponse = (data) => {
+      console.log("AI response received:", data);
+      if (onNewMessage) {
+        onNewMessage(data);
+      }
+    };
+
+    socket.on("newMessage", handleNewMessage);
+    socket.on("newGroupMessage", handleNewGroupMessage);
+    socket.on("messageReactionUpdate", handleMessageReaction);
+    socket.on("aiResponse", handleAIResponse);
+
+    return () => {
+      socket.off("newMessage", handleNewMessage);
+      socket.off("newGroupMessage", handleNewGroupMessage);
+      socket.off("messageReactionUpdate", handleMessageReaction);
+      socket.off("aiResponse", handleAIResponse);
+    };
+  }, [socket, isGroup, selectedUser, onNewMessage]);
+
   const fetchGroupMembers = useCallback(async () => {
     if (!isGroup || !selectedUser?.id) return;
 
@@ -116,47 +164,52 @@ export default function ChatWindow({
     }
   }, [isGroup, selectedUser, user, API]);
 
-const handleSendMessage = async (e) => {
-  e.preventDefault();
-  if (!newMessage.trim() || !selectedUser || !socket || isLoading) return;
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedUser || !socket || isLoading) return;
 
-  setIsLoading(true);
-  try {
-    const messageData = {
-      messageContent: newMessage.trim(), // This should match backend expectation
-      replyTo: replyingTo?.id || null,
-    };
+    setIsLoading(true);
+    try {
+      const messageData = {
+        messageContent: newMessage.trim(),
+        replyTo: replyingTo?.id || null,
+      };
 
+      console.log("Sending message:", messageData);
 
-    if (isGroup) {
-      socket.emit("groupMessage", {
-        groupId: selectedUser.id,
-        ...messageData,
-      });
-    } else {
-      socket.emit("privateMessage", {
-        receiverId: selectedUser.id,
-        ...messageData,
-      });
+      if (isGroup) {
+        socket.emit("groupMessage", {
+          groupId: selectedUser.id,
+          ...messageData,
+        });
+      } else {
+        socket.emit("privateMessage", {
+          receiverId: selectedUser.id,
+          ...messageData,
+        });
+      }
+
+      setNewMessage("");
+      setReplyingTo(null);
+      setTimeout(scrollToBottom, 100);
+    } catch (error) {
+      console.error("❌ Error sending message:", error);
+    } finally {
+      setIsLoading(false);
     }
-  
-    setNewMessage("");
-    setReplyingTo(null);
-    setTimeout(scrollToBottom, 100);
-  } catch (error) {
-    console.error("❌ Error sending message:", error);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
+
   // Function to handle clearing private conversations
   const handleClearConversation = async () => {
     if (isGroup || !selectedUser) return;
 
-    if (window.confirm("Are you sure you want to delete all messages in this conversation?")) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete all messages in this conversation?"
+      )
+    ) {
       try {
         await API.delete(`/messages/conversation/${selectedUser.id}`);
-        // Call the parent handler to update the global state
         if (onClearConversation) {
           onClearConversation(selectedUser.id);
         }
@@ -173,16 +226,14 @@ const handleSendMessage = async (e) => {
     if (!trimmedContent) return;
 
     try {
-
       const url = isGroup
         ? `/groups/${selectedUser.id}/messages/${messageId}`
         : `/messages/${messageId}`;
 
       const response = await API.put(url, { message_content: trimmedContent });
-      
-      // Use the updated message from the API response to update state
+
       if (response.data?.success && onMessageUpdate) {
-        onMessageUpdate(response.data.data); // Pass the full updated message object
+        onMessageUpdate(response.data.data);
       }
       setEditingMessage(null);
       setEditMessageContent("");
@@ -191,14 +242,14 @@ const handleSendMessage = async (e) => {
       alert(error.response?.data?.message || "Failed to update message");
     }
   };
-  
+
   // Consolidated function to delete a message
   const handleDeleteMessage = async (messageId) => {
     try {
       const url = isGroup
         ? `/groups/${selectedUser.id}/messages/${messageId}`
         : `/messages/${messageId}`;
-        
+
       await API.delete(url);
 
       if (onMessageDelete) {
@@ -208,7 +259,77 @@ const handleSendMessage = async (e) => {
       setSelectedMessage(null);
     } catch (error) {
       console.error("Error deleting message:", error);
-      throw new Error(error.response?.data?.message || "Failed to delete message");
+      throw new Error(
+        error.response?.data?.message || "Failed to delete message"
+      );
+    }
+  };
+
+  // New function to handle message reactions
+  const handleAddReaction = async (messageId, reaction, isGroupMessage) => {
+    try {
+      console.log("Adding reaction:", { messageId, reaction, isGroupMessage });
+
+      const endpoint = isGroupMessage
+        ? `/groups/${selectedUser.id}/messages/${messageId}/reaction`
+        : `/messages/${messageId}/reaction`;
+
+      const response = await API.post(endpoint, {
+        reaction,
+        isGroupMessage,
+      });
+
+      console.log("Reaction response:", response.data);
+
+      if (response.data?.success) {
+        // Emit socket event for real-time updates
+        if (socket) {
+          socket.emit("messageReaction", {
+            messageId,
+            reaction,
+            isGroupMessage,
+            userId: user.id,
+          });
+        }
+
+        // Refresh messages to get updated reactions
+        // This should trigger a re-fetch in the parent component
+        if (onNewMessage) {
+          // Trigger a re-fetch by sending a dummy event
+          onNewMessage({ type: "reaction_update", messageId });
+        }
+      }
+    } catch (error) {
+      console.error("Error adding reaction:", error);
+      alert(error.response?.data?.message || "Failed to add reaction");
+    }
+  };
+
+  // Function to remove reaction
+  const handleRemoveReaction = async (messageId, isGroupMessage) => {
+    try {
+      const endpoint = isGroupMessage
+        ? `/groups/${selectedUser.id}/messages/${messageId}/reaction`
+        : `/messages/${messageId}/reaction`;
+
+      await API.delete(endpoint);
+
+      // Emit socket event
+      if (socket) {
+        socket.emit("removeReaction", {
+          messageId,
+          isGroupMessage,
+          userId: user.id,
+        });
+      }
+
+      // Refresh messages
+      if (onNewMessage) {
+        onNewMessage({ type: "reaction_remove", messageId });
+      }
+    } catch (error) {
+      console.error("Error removing reaction:", error);
+      alert(error.response?.data?.message || "Failed to remove reaction");
     }
   };
 
@@ -221,10 +342,14 @@ const handleSendMessage = async (e) => {
     setShowMessageActionsModal(true);
   };
 
+  // Enhanced messages with reactions
+  const messagesWithReactions = safeMessages.map((msg) => ({
+    ...msg,
+    reactions: msg.reactions || [], // Use reactions from the message data
+  }));
+
   if (!selectedUser) {
-    return (
-      <EmptyState />
-    );
+    return <EmptyState />;
   }
 
   return (
@@ -239,14 +364,39 @@ const handleSendMessage = async (e) => {
         groupMembers={groupMembers}
         onShowGroupInfo={() => setShowGroupInfo(true)}
         onClearConversation={handleClearConversation}
-        onStartVoiceCall={() => alert("Voice call feature would be implemented here")}
-        onStartVideoCall={() => alert("Video call feature would be implemented here")}
+        onStartVoiceCall={() =>
+          alert("Voice call feature would be implemented here")
+        }
+        onStartVideoCall={() =>
+          alert("Video call feature would be implemented here")
+        }
+        onAnalyzeChat={async () => {
+          if (!socket) return;
+
+          try {
+            const chatId = selectedUser.id;
+            const chatType = isGroup ? "group" : "private";
+
+            socket.emit("analyzeChat", { chatId, chatType });
+
+            socket.once("analysisComplete", (data) => {
+              alert(`Chat Analysis:\n\n${data.analysis}`);
+            });
+
+            socket.once("analysisError", (data) => {
+              alert(`Analysis failed: ${data.error}`);
+            });
+          } catch (error) {
+            console.error("Error analyzing chat:", error);
+            alert("Failed to analyze chat");
+          }
+        }}
       />
 
       {/* Messages Area */}
       <MessageList
         ref={messagesContainerRef}
-        messages={safeMessages}
+        messages={messagesWithReactions}
         user={user}
         selectedUser={selectedUser}
         isGroup={isGroup}
@@ -260,6 +410,8 @@ const handleSendMessage = async (e) => {
           setEditMessageContent("");
         }}
         onOpenMessageActions={openMessageActions}
+        onAddReaction={handleAddReaction}
+        onRemoveReaction={handleRemoveReaction}
       />
 
       {/* Reply Preview */}
@@ -267,7 +419,7 @@ const handleSendMessage = async (e) => {
         <ReplyPreview replyingTo={replyingTo} onCancelReply={cancelReply} />
       )}
 
-      {/* Message Input */}
+      {/* Enhanced Message Input with Tagging */}
       <MessageInput
         newMessage={newMessage}
         isLoading={isLoading}
@@ -275,10 +427,13 @@ const handleSendMessage = async (e) => {
         isGroup={isGroup}
         onNewMessageChange={setNewMessage}
         onSendMessage={handleSendMessage}
+        API={API}
+        user={user}
+        onReplyCancel={cancelReply}
+        replyingTo={replyingTo}
       />
 
       {/* Modals */}
-
       <MessageActionsModal
         isOpen={showMessageActionsModal}
         selectedMessage={selectedMessage}
@@ -292,16 +447,17 @@ const handleSendMessage = async (e) => {
           setEditMessageContent(message.message_content);
           setShowMessageActionsModal(false);
           setSelectedMessage(null);
-          
-          // Focus and scroll to textarea after a small delay
+
           setTimeout(() => {
-            const textarea = document.querySelector('textarea[data-editing="true"]');
+            const textarea = document.querySelector(
+              'textarea[data-editing="true"]'
+            );
             if (textarea) {
               textarea.focus();
-              textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              textarea.scrollIntoView({ behavior: "smooth", block: "center" });
             }
           }, 100);
-          
+
           return Promise.resolve();
         }}
         onDeleteMessage={handleDeleteMessage}
@@ -315,88 +471,118 @@ const handleSendMessage = async (e) => {
           setSelectedMessage(null);
           return Promise.resolve();
         }}
+        onAddReaction={async (messageId, reaction) => {
+          await handleAddReaction(messageId, reaction, isGroup);
+          setShowMessageActionsModal(false);
+          setSelectedMessage(null);
+          return Promise.resolve();
+        }}
       />
 
-<GroupInfoSidebar
-  isOpen={showGroupInfo}
-  selectedUser={selectedUser}
-  isGroup={isGroup}
-  isOwner={isOwner}
-  groupMembers={groupMembers}
-  user={user}
-  onClose={() => setShowGroupInfo(false)}
-  onShowAddMember={() => setShowAddMemberModal(true)}
-  onShowEditGroup={() => setShowEditGroupModal(true)}
-  onRemoveMember={async (memberId, memberName) => {
-    try {
-      const response = await API.delete(
-        `/groups/${selectedUser.id}/members/${memberId}`
-      );
-      if (response.data?.success) {
-        setGroupMembers(prev => prev.filter(member => member.id !== memberId));
-        return Promise.resolve();
-      } else {
-        throw new Error(response.data?.message || "Failed to remove member");
-      }
-    } catch (error) {
-      console.error("Error removing member:", error);
-      alert(error.response?.data?.message || "Failed to remove member");
-      return Promise.reject(error);
-    }
-  }}
-  onDeleteGroup={async () => {
-    try {
-      const response = await API.delete(`/groups/${selectedUser.id}`);
-      
-      console.log("Delete group response:", response); // Debug log
-      
-      // FIX: Handle different response structures
-      if (response.data?.success || response.status === 200) {
-        if (onGroupDelete) {
-          onGroupDelete(selectedUser.id);
-        }
-        return Promise.resolve();
-      } else {
-        // If the backend returns success but frontend throws error, check the actual response
-        const errorMsg = response.data?.message || "Failed to delete group";
-        throw new Error(errorMsg);
-      }
-    } catch (error) {
-      console.error("Error deleting group:", error);
-      // Check if this is actually a success case
-      if (error.response?.status === 200 || error.response?.data?.success) {
-        // This is actually a success - the group was deleted
-        if (onGroupDelete) {
-          onGroupDelete(selectedUser.id);
-        }
-        return Promise.resolve();
-      }
-      throw new Error(error.response?.data?.message || "Failed to delete group");
-    }
-  }}
-  onLeaveGroup={async () => {
-    try {
-      const response = await API.delete(
-        `/groups/${selectedUser.id}/members/${user.id}`
-      );
-      if (response.data?.success && onGroupDelete) {
-        onGroupDelete(selectedUser.id);
-        return Promise.resolve();
-      } else {
-        throw new Error(response.data?.message || "Failed to leave group");
-      }
-    } catch (error) {
-      console.error("Error leaving group:", error);
-      alert(error.response?.data?.message || "Failed to leave group");
-      return Promise.reject(error);
-    }
-  }}
-  onGroupUpdate={(updatedGroup) => {
-    if (onGroupUpdate) {
-      onGroupUpdate(updatedGroup);
-    }
-  }}
-/>
+      <GroupInfoSidebar
+        isOpen={showGroupInfo}
+        selectedUser={selectedUser}
+        isGroup={isGroup}
+        isOwner={isOwner}
+        groupMembers={groupMembers}
+        user={user}
+        onClose={() => setShowGroupInfo(false)}
+        onShowAddMember={() => setShowAddMemberModal(true)}
+        onShowEditGroup={() => setShowEditGroupModal(true)}
+        onRemoveMember={async (memberId, memberName) => {
+          try {
+            const response = await API.delete(
+              `/groups/${selectedUser.id}/members/${memberId}`
+            );
+            if (response.data?.success) {
+              setGroupMembers((prev) =>
+                prev.filter((member) => member.id !== memberId)
+              );
+              return Promise.resolve();
+            } else {
+              throw new Error(
+                response.data?.message || "Failed to remove member"
+              );
+            }
+          } catch (error) {
+            console.error("Error removing member:", error);
+            alert(error.response?.data?.message || "Failed to remove member");
+            return Promise.reject(error);
+          }
+        }}
+        onDeleteGroup={async () => {
+          try {
+            const response = await API.delete(`/groups/${selectedUser.id}`);
+
+            if (response.data?.success || response.status === 200) {
+              if (onGroupDelete) {
+                onGroupDelete(selectedUser.id);
+              }
+              return Promise.resolve();
+            } else {
+              const errorMsg =
+                response.data?.message || "Failed to delete group";
+              throw new Error(errorMsg);
+            }
+          } catch (error) {
+            console.error("Error deleting group:", error);
+            if (
+              error.response?.status === 200 ||
+              error.response?.data?.success
+            ) {
+              if (onGroupDelete) {
+                onGroupDelete(selectedUser.id);
+              }
+              return Promise.resolve();
+            }
+            throw new Error(
+              error.response?.data?.message || "Failed to delete group"
+            );
+          }
+        }}
+        onLeaveGroup={async () => {
+          try {
+            const response = await API.delete(
+              `/groups/${selectedUser.id}/members/${user.id}`
+            );
+            if (response.data?.success && onGroupDelete) {
+              onGroupDelete(selectedUser.id);
+              return Promise.resolve();
+            } else {
+              throw new Error(
+                response.data?.message || "Failed to leave group"
+              );
+            }
+          } catch (error) {
+            console.error("Error leaving group:", error);
+            alert(error.response?.data?.message || "Failed to leave group");
+            return Promise.reject(error);
+          }
+        }}
+        onGroupUpdate={(updatedGroup) => {
+          if (onGroupUpdate) {
+            onGroupUpdate(updatedGroup);
+          }
+        }}
+        onGenerateInvite={async () => {
+          try {
+            const response = await API.post(
+              `/groups/${selectedUser.id}/invite`
+            );
+            if (response.data?.success) {
+              const inviteLink = response.data.data.invite_link;
+              await navigator.clipboard.writeText(inviteLink);
+              alert("Invite link copied to clipboard!");
+              return Promise.resolve();
+            }
+          } catch (error) {
+            console.error("Error generating invite:", error);
+            alert(error.response?.data?.message || "Failed to generate invite");
+            return Promise.reject(error);
+          }
+        }}
+      />
+
       <AddMemberModal
         isOpen={showAddMemberModal}
         searchQuery={searchQuery}
@@ -410,33 +596,70 @@ const handleSendMessage = async (e) => {
         }}
         onSearchQueryChange={setSearchQuery}
         onSearchUsers={async (query) => {
-          if (!query.trim()) {
+          console.log("Searching for:", query);
+
+          if (!query || query.trim().length < 2) {
             setSearchUsers([]);
             return;
           }
+
           setIsSearching(true);
           try {
-            const response = await API.get(`/users/search?q=${query}`);
-            const usersData = response.data || [];
+            // Use proper API call with error handling
+            const response = await API.get(`/tags/search-users`, {
+              params: {
+                query: query.trim(),
+              },
+            });
+
+            console.log("Search response:", response.data);
+
+            // Handle different response structures
+            let usersData = [];
+            if (response.data?.success) {
+              usersData = response.data.data || [];
+            } else if (Array.isArray(response.data)) {
+              usersData = response.data;
+            } else {
+              usersData = response.data?.users || response.data || [];
+            }
+
+            // Filter out users already in the group
             const filteredUsers = usersData.filter(
-              userResult => !groupMembers.some(member => member.id === userResult.id)
+              (userResult) =>
+                !groupMembers.some((member) => member.id === userResult.id)
             );
+
             setSearchUsers(filteredUsers);
           } catch (error) {
             console.error("Error searching users:", error);
+            console.error("Error details:", error.response?.data);
             setSearchUsers([]);
+
+            // Show user-friendly error
+            if (error.response?.status === 400) {
+              console.log("Bad request - likely query too short or malformed");
+            }
           } finally {
             setIsSearching(false);
           }
         }}
         onAddMember={async (userToAdd) => {
           try {
-            const response = await API.post(`/groups/${selectedUser.id}/members`, {
-              userIdToAdd: userToAdd.id,
-            });
+            const response = await API.post(
+              `/groups/${selectedUser.id}/members`,
+              {
+                userIdToAdd: userToAdd.id,
+              }
+            );
             if (response.data?.success) {
-              setGroupMembers(prev => [...prev, { ...userToAdd, is_owner: 0 }]);
-              setSearchUsers(prev => prev.filter(u => u.id !== userToAdd.id));
+              setGroupMembers((prev) => [
+                ...prev,
+                { ...userToAdd, is_owner: 0 },
+              ]);
+              setSearchUsers((prev) =>
+                prev.filter((u) => u.id !== userToAdd.id)
+              );
               setShowAddMemberModal(false);
               setSearchQuery("");
             }
@@ -464,12 +687,14 @@ const handleSendMessage = async (e) => {
               description: editForm.description,
             });
             if (response.data?.success && onGroupUpdate) {
-              onGroupUpdate(response.data.group || {
-                id: selectedUser.id,
-                name: editForm.name,
-                description: editForm.description,
-                ...response.data,
-              });
+              onGroupUpdate(
+                response.data.group || {
+                  id: selectedUser.id,
+                  name: editForm.name,
+                  description: editForm.description,
+                  ...response.data,
+                }
+              );
               setShowEditGroupModal(false);
             }
           } catch (error) {
