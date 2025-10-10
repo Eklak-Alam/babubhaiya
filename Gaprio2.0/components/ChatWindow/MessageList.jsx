@@ -14,6 +14,8 @@ const MessageList = forwardRef(function MessageList({
   onEditMessageContent,
   onSaveEdit,
   onOpenMessageActions,
+  onAddReaction,
+  onRemoveReaction,
 }, ref) {
   if (messages.length === 0) {
     return (
@@ -59,6 +61,8 @@ const MessageList = forwardRef(function MessageList({
             onEditMessageContent={onEditMessageContent}
             onSaveEdit={onSaveEdit}
             onOpenMessageActions={onOpenMessageActions}
+            onAddReaction={onAddReaction}
+            onRemoveReaction={onRemoveReaction}
           />
         ))}
       </div>

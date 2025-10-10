@@ -1,4 +1,3 @@
-// MessageInput.js
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { FaRegSmileBeam, FaAt, FaHashtag, FaTimes } from "react-icons/fa";
@@ -79,16 +78,30 @@ export default function MessageInput({
     }
   };
 
-  const handleSelectAI = () => {
+  const handleSelectAI = (prompt = "") => {
     if (inputRef.current) {
       const beforeTag = newMessage.slice(0, taggingPosition);
       const afterTag = newMessage.slice(taggingPosition + 1 + taggingQuery.length);
-      const newMessageText = `${beforeTag}@ai ${afterTag}`;
+      
+      // If a specific prompt is provided, use it
+      const aiText = prompt ? `@ai ${prompt}` : "@ai ";
+      
+      const newMessageText = `${beforeTag}${aiText}${afterTag}`;
       
       onNewMessageChange(newMessageText);
       setShowTaggingDropdown(false);
       setTaggingQuery("");
       inputRef.current.focus();
+      
+      // If it's a quick prompt, auto-focus and put cursor at end for user to complete
+      if (prompt) {
+        setTimeout(() => {
+          inputRef.current.setSelectionRange(
+            newMessageText.length,
+            newMessageText.length
+          );
+        }, 0);
+      }
     }
   };
 

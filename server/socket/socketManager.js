@@ -1,6 +1,7 @@
 // socket/socketManager.js
 const jwt = require('jsonwebtoken');
 const db = require('../db');
+const fetch = require('node-fetch');
 
 const onlineUsers = new Map();
 
@@ -34,99 +35,98 @@ const initializeSocket = (io) => {
       }
     });
 
+    // Enhanced message sending with notifications
+    socket.on('privateMessage', async (data) => {
+      const senderId = socket.userId;
+      if (!senderId) return;
 
-// Enhanced message sending with notifications
-socket.on('privateMessage', async (data) => {
-  const senderId = socket.userId;
-  if (!senderId) return;
-
-  try {
-    const { receiverId, messageContent } = data;
-    
-    if (!messageContent?.trim()) {
-      return socket.emit('messageError', { error: 'Message cannot be empty' });
-    }
-
-    // Process tags
-    const { processedMessage, tags } = await processMessageTags(
-      messageContent, senderId, 'private', receiverId
-    );
-    
-    // Insert message
-    const [result] = await db.query(
-      'INSERT INTO messages (sender_id, receiver_id, message_content, tags) VALUES (?, ?, ?, ?)', 
-      [senderId, receiverId, processedMessage, JSON.stringify(tags)]
-    );
-
-    // Get sender info for the response
-    const [senderInfo] = await db.query(
-      'SELECT name, username FROM users WHERE id = ?', 
-      [senderId]
-    );
-
-    const message = { 
-      id: result.insertId,
-      sender_id: senderId, 
-      receiver_id: receiverId, 
-      message_content: processedMessage,
-      tags: tags,
-      timestamp: new Date(),
-      sender_name: senderInfo[0].name,
-      sender_username: senderInfo[0].username
-    };
-
-    // Send to receiver
-    const receiverSocketId = onlineUsers.get(receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit('newMessage', message);
-      
-      // Send notification for mentions
-      if (tags.mentions.some(mention => mention.userId === parseInt(receiverId))) {
-        io.to(receiverSocketId).emit('notification', {
-          type: 'mention',
-          message: `${senderInfo[0].name} mentioned you in a message`,
-          from: senderId,
-          messageId: result.insertId
-        });
-      }
-    }
-    
-    // Send back to sender
-    socket.emit('messageSent', message);
-
-    // Handle AI tagging
-    if (tags.special.some(tag => tag.type === 'ai_request')) {
-      handleAITagging(senderId, receiverId, processedMessage, 'private', io);
-    }
-
-  } catch (error) { 
-    console.error('Error handling private message:', error);
-    socket.emit('messageError', { error: 'Failed to send message' });
-  }
-});
-// 3. Handle group messages with tagging - FIX THIS TOO
-socket.on('groupMessage', async (data) => {
-    const senderId = socket.userId;
-    if (!senderId) return console.log('Cannot send group message: sender not authenticated.');
-
-    // Debug log
-    console.log('📩 Received groupMessage data:', data);
-
-    try {
-        // Use the correct property name - messageContent (capital C)
-        const { groupId, messageContent } = data;
+      try {
+        const { receiverId, messageContent } = data;
         
-        if (!messageContent) {
-          console.error('❌ messageContent is null or undefined in group message');
-          return;
+        if (!messageContent?.trim()) {
+          return socket.emit('messageError', { error: 'Message cannot be empty' });
         }
 
-        // Process tags in message
-        const { processedMessage, tags } = await processMessageTags(messageContent);
+        // Process tags
+        const { processedMessage, tags } = await processMessageTags(
+          messageContent, senderId, 'private', receiverId
+        );
         
+        // Insert message
         const [result] = await db.query(
-            'INSERT INTO group_messages (group_id, sender_id, message_content, tags) VALUES (?, ?, ?, ?)',
-            [groupId, senderId, processedMessage, JSON.stringify(tags)]
+          'INSERT INTO messages (sender_id, receiver_id, message_content, tags) VALUES (?, ?, ?, ?)', 
+          [senderId, receiverId, processedMessage, JSON.stringify(tags)]
+        );
+
+        // Get sender info for the response
+        const [senderInfo] = await db.query(
+          'SELECT name, username FROM users WHERE id = ?', 
+          [senderId]
+        );
+
+        const message = { 
+          id: result.insertId,
+          sender_id: senderId, 
+          receiver_id: receiverId, 
+          message_content: processedMessage,
+          tags: tags,
+          timestamp: new Date(),
+          sender_name: senderInfo[0].name,
+          sender_username: senderInfo[0].username
+        };
+
+        // Send to receiver
+        const receiverSocketId = onlineUsers.get(receiverId);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit('newMessage', message);
+          
+          // Send notification for mentions
+          if (tags.mentions.some(mention => mention.userId === parseInt(receiverId))) {
+            io.to(receiverSocketId).emit('notification', {
+              type: 'mention',
+              message: `${senderInfo[0].name} mentioned you in a message`,
+              from: senderId,
+              messageId: result.insertId
+            });
+          }
+        }
+        
+        // Send back to sender
+        socket.emit('messageSent', message);
+
+        // Handle AI tagging - FIXED: Check for ai_request type
+        const hasAITag = tags.special.some(tag => tag.type === 'ai_request');
+        if (hasAITag) {
+          handleAITagging(senderId, receiverId, processedMessage, 'private', io);
+        }
+
+      } catch (error) { 
+        console.error('Error handling private message:', error);
+        socket.emit('messageError', { error: 'Failed to send message' });
+      }
+    });
+
+    // Fixed group message handler
+    socket.on('groupMessage', async (data) => {
+      const senderId = socket.userId;
+      if (!senderId) return console.log('Cannot send group message: sender not authenticated.');
+
+      try {
+        const { groupId, messageContent } = data;
+        
+        if (!messageContent?.trim()) {
+          return socket.emit('messageError', { error: 'Message cannot be empty' });
+        }
+
+        // Process tags with all parameters
+        const { processedMessage, tags } = await processMessageTags(
+          messageContent, senderId, 'group', groupId
+        );
+        
+        // Insert message
+        const [result] = await db.query(
+          'INSERT INTO group_messages (group_id, sender_id, message_content, tags) VALUES (?, ?, ?, ?)',
+          [groupId, senderId, processedMessage, JSON.stringify(tags)]
         );
 
         // Get sender info
@@ -134,31 +134,33 @@ socket.on('groupMessage', async (data) => {
         const senderInfo = users[0];
 
         const message = {
-            id: result.insertId,
-            group_id: groupId,
-            sender_id: senderId,
-            message_content: processedMessage,
-            tags: tags,
-            timestamp: new Date(),
-            sender_name: senderInfo.name,
-            sender_username: senderInfo.username
+          id: result.insertId,
+          group_id: groupId,
+          sender_id: senderId,
+          message_content: processedMessage,
+          tags: tags,
+          timestamp: new Date(),
+          sender_name: senderInfo.name,
+          sender_username: senderInfo.username
         };
         
         // Broadcast to group room
         const roomName = `group-${groupId}`;
         io.to(roomName).emit('newGroupMessage', message);
 
-        // Handle AI tagging in group messages
-        if (tags.includes('ai')) {
+        // Handle AI tagging in group messages - FIXED: Check for ai_request type
+        const hasAITag = tags.special.some(tag => tag.type === 'ai_request');
+        if (hasAITag) {
           handleAITagging(senderId, groupId, processedMessage, 'group', io);
         }
 
-    } catch (error) {
+      } catch (error) {
         console.error('Error handling group message:', error);
-    }
-});
+        socket.emit('messageError', { error: 'Failed to send group message' });
+      }
+    });
 
-    // 4. NEW: Handle chat analysis request
+    // Enhanced chat analysis request
     socket.on('analyzeChat', async ({ chatId, chatType }) => {
       const userId = socket.userId;
       if (!userId) return;
@@ -167,6 +169,16 @@ socket.on('groupMessage', async (data) => {
         let chatHistory = '';
         
         if (chatType === 'private') {
+          // Verify user has access to this conversation
+          const [access] = await db.query(
+            'SELECT * FROM messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) LIMIT 1',
+            [userId, chatId, chatId, userId]
+          );
+          
+          if (access.length === 0) {
+            return socket.emit('analysisError', { error: 'Access denied to this conversation' });
+          }
+
           // Get private chat history
           const [messages] = await db.query(
             `SELECT m.*, u.name as sender_name 
@@ -180,6 +192,16 @@ socket.on('groupMessage', async (data) => {
           );
           chatHistory = messages.map(msg => `${msg.sender_name}: ${msg.message_content}`).join('\n');
         } else if (chatType === 'group') {
+          // Verify user is member of group
+          const [membership] = await db.query(
+            'SELECT * FROM group_members WHERE group_id = ? AND user_id = ?',
+            [chatId, userId]
+          );
+          
+          if (membership.length === 0) {
+            return socket.emit('analysisError', { error: 'You are not a member of this group' });
+          }
+
           // Get group chat history
           const [messages] = await db.query(
             `SELECT gm.*, u.name as sender_name 
@@ -290,12 +312,17 @@ async function processMessageTags(messageContent, senderId, chatType, chatId) {
   };
 }
 
-
-// Handle AI tagging and responses
+// Enhanced AI tagging and responses with better error handling
 async function handleAITagging(senderId, chatId, messageContent, chatType, io) {
   try {
     // Extract the actual question (remove the @ai tag)
-    const question = messageContent.replace(/@ai\s*/i, '').trim();
+    const question = messageContent.replace(/@ai\s*/gi, '').replace(/@bot\s*/gi, '').trim();
+    
+    // If question is empty after removing tags, use a default
+    if (!question) {
+      const defaultQuestion = "How can I help you with this conversation?";
+      return sendAIResponse(senderId, chatId, defaultQuestion, chatType, io, true);
+    }
     
     let chatHistory = '';
     
@@ -326,64 +353,282 @@ async function handleAITagging(senderId, chatId, messageContent, chatType, io) {
       chatHistory = messages.map(msg => `${msg.sender_name}: ${msg.message_content}`).join('\n');
     }
 
-    // Send to AI service
-    const aiResponse = await fetch('http://localhost:5002/ask', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        history: chatHistory, 
-        question: question, 
-        analysis_mode: false 
-      }),
-    });
+    console.log(`🤖 AI Request from user ${senderId}: ${question}`);
+    console.log(`📜 Chat History Length: ${chatHistory.length} characters`);
 
-    if (aiResponse.ok) {
-      const aiData = await aiResponse.json();
-      const aiMessage = aiData.answer || "I'm sorry, I couldn't process your request.";
+    // Enhanced AI service call with timeout and better error handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
 
-      // Save and broadcast AI response
-      if (chatType === 'private') {
-        await db.query(
-          'INSERT INTO messages (sender_id, receiver_id, message_content, is_ai_response) VALUES (?, ?, ?, ?)',
-          ['ai_bot', senderId, aiMessage, true]
+    try {
+      const aiResponse = await fetch('http://localhost:5002/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          history: chatHistory, 
+          question: question, 
+          analysis_mode: false 
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (aiResponse.ok) {
+        const aiData = await aiResponse.json();
+        const aiMessage = aiData.answer || "I'm sorry, I couldn't process your request at the moment.";
+
+        console.log(`🤖 AI Response (${aiMessage.length} chars): ${aiMessage.substring(0, 100)}...`);
+
+        // Save and broadcast AI response
+        await sendAIResponse(senderId, chatId, aiMessage, chatType, io, false);
+        
+      } else {
+        console.error(`❌ AI service error: ${aiResponse.status} ${aiResponse.statusText}`);
+        throw new Error(`AI service responded with ${aiResponse.status}`);
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError.name === 'AbortError') {
+        console.error('⏰ AI request timeout');
+        await sendAIResponse(senderId, chatId, 
+          "I'm taking longer than usual to respond. Please try again in a moment.", 
+          chatType, io, true
         );
-        
-        const aiMessageObj = {
-          sender_id: 'ai_bot',
-          receiver_id: senderId,
-          message_content: aiMessage,
-          is_ai_response: true,
-          timestamp: new Date()
-        };
-        
-        const userSocketId = onlineUsers.get(senderId);
-        if (userSocketId) io.to(userSocketId).emit('newMessage', aiMessageObj);
-        
-      } else if (chatType === 'group') {
-        await db.query(
-          'INSERT INTO group_messages (group_id, sender_id, message_content, is_ai_response) VALUES (?, ?, ?, ?)',
-          [chatId, 'ai_bot', aiMessage, true]
-        );
-        
-        const [users] = await db.query('SELECT name FROM users WHERE id = ?', [senderId]);
-        const senderInfo = users[0];
-        
-        const aiMessageObj = {
-          group_id: chatId,
-          sender_id: 'ai_bot',
-          message_content: aiMessage,
-          is_ai_response: true,
-          timestamp: new Date(),
-          sender_name: 'Accord AI',
-          sender_username: 'accord_ai'
-        };
-        
-        const roomName = `group-${chatId}`;
-        io.to(roomName).emit('newGroupMessage', aiMessageObj);
+      } else {
+        throw fetchError;
       }
     }
+
   } catch (error) {
-    console.error('Error handling AI tagging:', error);
+    console.error('❌ Error handling AI tagging:', error);
+    
+    // Enhanced error messages based on error type
+    let errorMessage = "Sorry, I encountered an error while processing your request. ";
+    
+    if (error.message.includes('ECONNREFUSED') || error.message.includes('fetch failed')) {
+      errorMessage += "The AI service appears to be offline. Please make sure Ollama and the AI service are running.";
+    } else if (error.message.includes('timeout') || error.message.includes('AbortError')) {
+      errorMessage += "The request timed out. Please try again.";
+    } else {
+      errorMessage += "Please try again later.";
+    }
+    
+    // Send error notification
+    await sendAIError(senderId, chatId, errorMessage, chatType, io);
+  }
+}
+
+// Helper function to send AI responses
+async function sendAIResponse(senderId, chatId, aiMessage, chatType, io, isError = false) {
+  try {
+    if (chatType === 'private') {
+      const [result] = await db.query(
+        'INSERT INTO messages (sender_id, receiver_id, message_content, is_ai_response) VALUES (?, ?, ?, ?)',
+        [5, senderId, aiMessage, true] // Using user_id 5 for Accord AI
+      );
+      
+      const aiMessageObj = {
+        id: result.insertId,
+        sender_id: 5,
+        receiver_id: senderId,
+        message_content: aiMessage,
+        is_ai_response: true,
+        timestamp: new Date(),
+        sender_name: 'Accord AI',
+        sender_username: 'accord_ai',
+        is_error: isError
+      };
+      
+      // Send to both users in private chat
+      const userSocketId = onlineUsers.get(senderId);
+      const receiverSocketId = onlineUsers.get(chatId);
+      
+      if (userSocketId) io.to(userSocketId).emit('newMessage', aiMessageObj);
+      if (receiverSocketId) io.to(receiverSocketId).emit('newMessage', aiMessageObj);
+      
+    } else if (chatType === 'group') {
+      const [result] = await db.query(
+        'INSERT INTO group_messages (group_id, sender_id, message_content, is_ai_response) VALUES (?, ?, ?, ?)',
+        [chatId, 5, aiMessage, true] // Using user_id 5 for Accord AI
+      );
+      
+      const aiMessageObj = {
+        id: result.insertId,
+        group_id: chatId,
+        sender_id: 5,
+        message_content: aiMessage,
+        is_ai_response: true,
+        timestamp: new Date(),
+        sender_name: 'Accord AI',
+        sender_username: 'accord_ai',
+        is_error: isError
+      };
+      
+      // Broadcast to entire group
+      const roomName = `group-${chatId}`;
+      io.to(roomName).emit('newGroupMessage', aiMessageObj);
+    }
+    
+    console.log(`✅ AI response sent successfully to ${chatType} chat`);
+  } catch (dbError) {
+    console.error('❌ Database error saving AI response:', dbError);
+    // Fallback: Send via socket without saving to DB
+    sendAIFallback(senderId, chatId, aiMessage, chatType, io, isError);
+  }
+}
+
+// Helper function for AI errors
+async function sendAIError(senderId, chatId, errorMessage, chatType, io) {
+  const errorResponse = `🤖 Accord AI: ${errorMessage}`;
+  await sendAIResponse(senderId, chatId, errorResponse, chatType, io, true);
+}
+
+// Fallback function if database is unavailable
+function sendAIFallback(senderId, chatId, message, chatType, io, isError = false) {
+  const aiMessageObj = {
+    id: Date.now(), // Temporary ID
+    sender_id: 5,
+    message_content: message,
+    is_ai_response: true,
+    timestamp: new Date(),
+    sender_name: 'Accord AI',
+    sender_username: 'accord_ai',
+    is_error: isError
+  };
+
+  if (chatType === 'private') {
+    aiMessageObj.receiver_id = senderId;
+    const userSocketId = onlineUsers.get(senderId);
+    const receiverSocketId = onlineUsers.get(chatId);
+    
+    if (userSocketId) io.to(userSocketId).emit('newMessage', aiMessageObj);
+    if (receiverSocketId) io.to(receiverSocketId).emit('newMessage', aiMessageObj);
+  } else {
+    aiMessageObj.group_id = chatId;
+    const roomName = `group-${chatId}`;
+    io.to(roomName).emit('newGroupMessage', aiMessageObj);
+  }
+  
+  console.log('📤 AI response sent via fallback method');
+}
+
+// Enhanced chat analysis with better error handling
+async function handleChatAnalysis(userId, chatId, chatType, socket) {
+  try {
+    console.log(`🔍 Starting AI analysis for ${chatType} chat ${chatId} by user ${userId}`);
+    
+    let chatHistory = '';
+    
+    if (chatType === 'private') {
+      // Verify user has access to this conversation
+      const [access] = await db.query(
+        'SELECT * FROM messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) LIMIT 1',
+        [userId, chatId, chatId, userId]
+      );
+      
+      if (access.length === 0) {
+        socket.emit('analysisError', { error: 'Access denied to this conversation' });
+        return;
+      }
+
+      // Get private chat history
+      const [messages] = await db.query(
+        `SELECT m.*, u.name as sender_name 
+         FROM messages m 
+         JOIN users u ON m.sender_id = u.id 
+         WHERE (m.sender_id = ? AND m.receiver_id = ?) 
+         OR (m.sender_id = ? AND m.receiver_id = ?) 
+         ORDER BY m.timestamp ASC 
+         LIMIT 100`,
+        [userId, chatId, chatId, userId]
+      );
+      chatHistory = messages.map(msg => `${msg.sender_name}: ${msg.message_content}`).join('\n');
+    } else if (chatType === 'group') {
+      // Verify user is member of group
+      const [membership] = await db.query(
+        'SELECT * FROM group_members WHERE group_id = ? AND user_id = ?',
+        [chatId, userId]
+      );
+      
+      if (membership.length === 0) {
+        socket.emit('analysisError', { error: 'You are not a member of this group' });
+        return;
+      }
+
+      // Get group chat history
+      const [messages] = await db.query(
+        `SELECT gm.*, u.name as sender_name 
+         FROM group_messages gm 
+         JOIN users u ON gm.sender_id = u.id 
+         WHERE gm.group_id = ? 
+         ORDER BY gm.timestamp ASC 
+         LIMIT 100`,
+        [chatId]
+      );
+      chatHistory = messages.map(msg => `${msg.sender_name}: ${msg.message_content}`).join('\n');
+    }
+
+    if (!chatHistory.trim()) {
+      socket.emit('analysisError', { error: 'No conversation history found to analyze' });
+      return;
+    }
+
+    console.log(`📊 Analysis history length: ${chatHistory.length} characters`);
+
+    // Enhanced analysis request with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 35000); // 35 seconds for analysis
+
+    try {
+      const aiResponse = await fetch('http://localhost:5002/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          history: chatHistory, 
+          question: '', 
+          analysis_mode: true 
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (aiResponse.ok) {
+        const aiData = await aiResponse.json();
+        const analysis = aiData.answer || "I couldn't generate an analysis at this time.";
+
+        console.log(`✅ Analysis completed (${analysis.length} chars)`);
+        socket.emit('analysisComplete', { 
+          chatId, 
+          chatType,
+          analysis: analysis 
+        });
+      } else {
+        console.error(`❌ Analysis service error: ${aiResponse.status}`);
+        socket.emit('analysisError', { error: 'AI analysis service unavailable' });
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError.name === 'AbortError') {
+        console.error('⏰ Analysis request timeout');
+        socket.emit('analysisError', { error: 'Analysis timed out. Please try again.' });
+      } else {
+        throw fetchError;
+      }
+    }
+
+  } catch (error) {
+    console.error('❌ Error analyzing chat:', error);
+    
+    let errorMessage = 'Analysis failed';
+    if (error.message.includes('ECONNREFUSED')) {
+      errorMessage = 'AI service is offline. Please ensure Ollama and the AI service are running.';
+    }
+    
+    socket.emit('analysisError', { error: errorMessage });
   }
 }
 

@@ -1,4 +1,3 @@
-// ChatWindow.js
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import ChatHeader from "./ChatHeader";
@@ -41,6 +40,7 @@ export default function ChatWindow({
   const [replyingTo, setReplyingTo] = useState(null);
   const [showMessageActionsModal, setShowMessageActionsModal] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -199,6 +199,54 @@ export default function ChatWindow({
     }
   };
 
+  // Enhanced AI Chat Analysis
+const handleAnalyzeChat = async () => {
+  if (!socket || isAnalyzing) return;
+
+  try {
+    setIsAnalyzing(true);
+    const chatId = selectedUser.id;
+    const chatType = isGroup ? "group" : "private";
+
+    console.log(`🔍 Starting analysis for ${chatType} chat ${chatId}`);
+
+    socket.emit("analyzeChat", { chatId, chatType });
+
+    // Set timeout for analysis
+    const timeout = setTimeout(() => {
+      setIsAnalyzing(false);
+      alert("🕒 Analysis is taking longer than expected. This might be because:\n\n• The AI service is starting up\n• The conversation history is large\n• The AI model is processing\n\nPlease try again in a moment.");
+    }, 35000);
+
+    socket.once("analysisComplete", (data) => {
+      clearTimeout(timeout);
+      setIsAnalyzing(false);
+      console.log("✅ Analysis received");
+      
+      // Show analysis in a nice modal or alert
+      alert(`🤖 Chat Analysis:\n\n${data.analysis}`);
+    });
+
+    socket.once("analysisError", (data) => {
+      clearTimeout(timeout);
+      setIsAnalyzing(false);
+      console.error("❌ Analysis error:", data.error);
+      
+      let userMessage = data.error;
+      if (data.error.includes('offline') || data.error.includes('ECONNREFUSED')) {
+        userMessage = `🔌 AI Service Offline\n\nPlease ensure:\n\n1. Ollama is running: 'ollama serve'\n2. AI service is running: 'uvicorn app:app --port 5002'\n3. Model is downloaded: 'ollama pull llama3:instruct'`;
+      }
+      
+      alert(`❌ Analysis Failed:\n\n${userMessage}`);
+    });
+
+  } catch (error) {
+    console.error("Error analyzing chat:", error);
+    setIsAnalyzing(false);
+    alert("❌ Failed to start analysis. Please check your connection.");
+  }
+};
+
   // Function to handle clearing private conversations
   const handleClearConversation = async () => {
     if (isGroup || !selectedUser) return;
@@ -293,9 +341,7 @@ export default function ChatWindow({
         }
 
         // Refresh messages to get updated reactions
-        // This should trigger a re-fetch in the parent component
         if (onNewMessage) {
-          // Trigger a re-fetch by sending a dummy event
           onNewMessage({ type: "reaction_update", messageId });
         }
       }
@@ -345,7 +391,7 @@ export default function ChatWindow({
   // Enhanced messages with reactions
   const messagesWithReactions = safeMessages.map((msg) => ({
     ...msg,
-    reactions: msg.reactions || [], // Use reactions from the message data
+    reactions: msg.reactions || [],
   }));
 
   if (!selectedUser) {
@@ -370,27 +416,8 @@ export default function ChatWindow({
         onStartVideoCall={() =>
           alert("Video call feature would be implemented here")
         }
-        onAnalyzeChat={async () => {
-          if (!socket) return;
-
-          try {
-            const chatId = selectedUser.id;
-            const chatType = isGroup ? "group" : "private";
-
-            socket.emit("analyzeChat", { chatId, chatType });
-
-            socket.once("analysisComplete", (data) => {
-              alert(`Chat Analysis:\n\n${data.analysis}`);
-            });
-
-            socket.once("analysisError", (data) => {
-              alert(`Analysis failed: ${data.error}`);
-            });
-          } catch (error) {
-            console.error("Error analyzing chat:", error);
-            alert("Failed to analyze chat");
-          }
-        }}
+        onAnalyzeChat={handleAnalyzeChat}
+        isAnalyzing={isAnalyzing}
       />
 
       {/* Messages Area */}
@@ -405,10 +432,6 @@ export default function ChatWindow({
         onEditMessage={setEditingMessage}
         onEditMessageContent={setEditMessageContent}
         onSaveEdit={handleSaveEdit}
-        onCancelEdit={() => {
-          setEditingMessage(null);
-          setEditMessageContent("");
-        }}
         onOpenMessageActions={openMessageActions}
         onAddReaction={handleAddReaction}
         onRemoveReaction={handleRemoveReaction}
@@ -605,7 +628,6 @@ export default function ChatWindow({
 
           setIsSearching(true);
           try {
-            // Use proper API call with error handling
             const response = await API.get(`/tags/search-users`, {
               params: {
                 query: query.trim(),
@@ -614,7 +636,6 @@ export default function ChatWindow({
 
             console.log("Search response:", response.data);
 
-            // Handle different response structures
             let usersData = [];
             if (response.data?.success) {
               usersData = response.data.data || [];
@@ -624,7 +645,6 @@ export default function ChatWindow({
               usersData = response.data?.users || response.data || [];
             }
 
-            // Filter out users already in the group
             const filteredUsers = usersData.filter(
               (userResult) =>
                 !groupMembers.some((member) => member.id === userResult.id)
@@ -635,11 +655,6 @@ export default function ChatWindow({
             console.error("Error searching users:", error);
             console.error("Error details:", error.response?.data);
             setSearchUsers([]);
-
-            // Show user-friendly error
-            if (error.response?.status === 400) {
-              console.log("Bad request - likely query too short or malformed");
-            }
           } finally {
             setIsSearching(false);
           }

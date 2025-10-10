@@ -1,7 +1,6 @@
-// TaggingDropdown.js (Simplified)
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { FaUser, FaRobot, FaSearch, FaUsers, FaExclamationTriangle } from "react-icons/fa";
+import { FaUser, FaRobot, FaSearch, FaUsers, FaExclamationTriangle, FaMagic } from "react-icons/fa";
 import { useAuth } from "@/context/ApiContext";
 
 export default function TaggingDropdown({
@@ -20,6 +19,14 @@ export default function TaggingDropdown({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [error, setError] = useState(null);
   const dropdownRef = useRef(null);
+
+  // AI prompt suggestions for quick access
+  const aiQuickPrompts = [
+    { id: "summarize", type: "ai_prompt", name: "Summarize conversation", description: "Get a summary of this chat", prompt: "summarize this conversation" },
+    { id: "analyze", type: "ai_prompt", name: "Analyze mood", description: "Analyze the emotional tone", prompt: "analyze the mood and tone of this conversation" },
+    { id: "suggest", type: "ai_prompt", name: "Suggest next steps", description: "What should we do next?", prompt: "suggest what we should do next" },
+    { id: "clarify", type: "ai_prompt", name: "Clarify points", description: "Help clarify main points", prompt: "help clarify the main points discussed" },
+  ];
 
   // Create safe versions of the callback functions
   const safeOnSelectAI = onSelectAI || (() => console.log("AI selected"));
@@ -152,6 +159,9 @@ export default function TaggingDropdown({
       case "ai":
         safeOnSelectAI();
         break;
+      case "ai_prompt":
+        safeOnSelectAI(item.prompt);
+        break;
       case "all":
         safeOnSelectEveryone();
         break;
@@ -166,6 +176,7 @@ export default function TaggingDropdown({
   const getIcon = (type) => {
     switch (type) {
       case "ai":
+      case "ai_prompt":
         return <FaRobot className="text-purple-400" size={14} />;
       case "all":
         return <FaUsers className="text-green-400" size={14} />;
@@ -191,15 +202,37 @@ export default function TaggingDropdown({
   return (
     <div 
       ref={dropdownRef}
-      className="absolute bottom-full mb-2 left-0 right-0 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto z-50"
+      className="absolute bottom-full mb-2 left-0 right-0 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-h-80 overflow-y-auto z-50"
       tabIndex={-1}
     >
       <div className="p-2 border-b border-gray-700">
         <div className="text-xs text-gray-400 font-medium flex items-center gap-2">
           <FaSearch size={10} />
-          Mention someone
+          Mention someone or ask AI
         </div>
       </div>
+
+      {/* Quick AI Prompts Section */}
+      {(!query || query.trim().length === 0) && (
+        <div className="p-2 border-b border-gray-700">
+          <div className="text-xs text-purple-400 font-medium flex items-center gap-2 mb-2">
+            <FaMagic size={10} />
+            Quick AI Prompts
+          </div>
+          <div className="grid grid-cols-2 gap-1">
+            {aiQuickPrompts.map((prompt) => (
+              <button
+                key={prompt.id}
+                onClick={() => handleSelect(prompt)}
+                className="text-xs p-2 text-left bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 rounded transition-colors truncate"
+                title={prompt.description}
+              >
+                {prompt.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {isLoading && (
         <div className="p-3 text-gray-400 text-sm flex items-center gap-2">
@@ -266,7 +299,7 @@ export default function TaggingDropdown({
             <FaRobot className="text-purple-400" size={14} />
             <div className="flex-1 min-w-0">
               <div className="text-white font-medium text-sm">AI Assistant</div>
-              <div className="text-gray-400 text-xs">Ask AI anything</div>
+              <div className="text-gray-400 text-xs">Ask AI anything - summarize, analyze, help</div>
             </div>
             <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">
               AI

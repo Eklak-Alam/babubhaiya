@@ -1,4 +1,4 @@
-import { FaUsers, FaInfoCircle, FaPhone, FaVideo, FaTrash, FaCrown } from "react-icons/fa";
+import { FaUsers, FaInfoCircle, FaPhone, FaVideo, FaTrash, FaCrown, FaRobot } from "react-icons/fa";
 import { STYLES } from "./styles";
 
 export default function ChatHeader({
@@ -10,6 +10,8 @@ export default function ChatHeader({
   onClearConversation,
   onStartVoiceCall,
   onStartVideoCall,
+  onAnalyzeChat,
+  isAnalyzing = false,
 }) {
   const safeGroupMembers = Array.isArray(groupMembers) ? groupMembers : [];
 
@@ -62,6 +64,23 @@ export default function ChatHeader({
       </div>
 
       <div className="flex items-center gap-2 flex-shrink-0">
+        {/* AI Analysis Button */}
+        <button
+          onClick={onAnalyzeChat}
+          disabled={isAnalyzing}
+          className="p-3 text-purple-400 hover:text-purple-300 hover:bg-purple-500/20 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          title="Analyze conversation with AI"
+        >
+          {isAnalyzing ? (
+            <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <FaRobot size={16} />
+          )}
+          <span className="text-sm hidden sm:inline">
+            {isAnalyzing ? "Analyzing..." : "AI Analysis"}
+          </span>
+        </button>
+
         {!isGroup && (
           <>
             <button

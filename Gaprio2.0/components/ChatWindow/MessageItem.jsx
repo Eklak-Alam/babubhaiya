@@ -1,6 +1,5 @@
-// MessageItem.js
 import { useRef, useEffect, useState } from "react";
-import { FaCrown, FaCheck, FaReply, FaRegSmile, FaRegThumbsUp } from "react-icons/fa";
+import { FaCrown, FaCheck, FaReply, FaRegSmile, FaRegThumbsUp, FaRobot } from "react-icons/fa";
 import { IoEllipsisVertical } from "react-icons/io5";
 import { formatTime, formatDate } from "./styles";
 import ReactionPicker from "./ReactionPicker";
@@ -23,6 +22,7 @@ export default function MessageItem({
   onRemoveReaction,
 }) {
   const isOwnMessage = message.sender_id === user.id;
+  const isAIMessage = message.is_ai_response || message.sender_id === 5;
   const showSenderInfo = isGroup && !isOwnMessage;
   const isConsecutive =
     index > 0 &&
@@ -55,7 +55,7 @@ export default function MessageItem({
         let bgColor = "bg-blue-500/20";
         let textColor = "text-blue-400";
         
-        if (mentionText === '@ai') {
+        if (mentionText === '@ai' || mentionText === '@bot') {
           bgColor = "bg-purple-500/20";
           textColor = "text-purple-400";
         } else if (mentionText === '@all' || mentionText === '@everyone') {
@@ -165,17 +165,31 @@ export default function MessageItem({
           className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-lg transition-all duration-200 backdrop-blur-sm relative ${
             isOwnMessage
               ? `bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md`
-              : `bg-gray-800/50 text-white rounded-bl-md border border-gray-700/50`
+              : isAIMessage
+                ? `bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-bl-md`
+                : `bg-gray-800/50 text-white rounded-bl-md border border-gray-700/50`
           } ${isConsecutive ? "mt-1" : "mt-2"} hover:bg-opacity-80 message-reaction-trigger`}
           onDoubleClick={handleDoubleClick}
         >
+          {/* AI Badge - Show for AI messages */}
+          {isAIMessage && !isConsecutive && (
+            <div className="flex items-center gap-1 mb-1">
+              <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full flex items-center gap-1">
+                <FaRobot size={10} />
+                Accord AI
+              </span>
+            </div>
+          )}
+
           {/* Reply Context */}
           {message.reply_to && (
             <div
               className={`text-xs mb-2 p-2 rounded-lg border-l-2 ${
                 isOwnMessage
                   ? "border-blue-300 bg-blue-400/20"
-                  : "border-gray-500 bg-gray-700/30"
+                  : isAIMessage
+                    ? "border-purple-300 bg-purple-400/20"
+                    : "border-gray-500 bg-gray-700/30"
               }`}
             >
               <div className="font-medium truncate flex items-center gap-1">
@@ -188,18 +202,13 @@ export default function MessageItem({
             </div>
           )}
 
-          {showSenderInfo && !isConsecutive && (
+          {showSenderInfo && !isConsecutive && !isAIMessage && (
             <div
               className={`text-xs font-semibold text-gray-300 mb-1 flex items-center gap-1`}
             >
               <span className="truncate">{message.sender_name}</span>
               {message.sender_id === selectedUser.owner_id && (
                 <FaCrown size={10} className="text-yellow-400 flex-shrink-0" title="Group Owner" />
-              )}
-              {message.is_ai_response && (
-                <span className="text-xs bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded flex-shrink-0" title="AI Response">
-                  AI
-                </span>
               )}
             </div>
           )}
@@ -256,7 +265,7 @@ export default function MessageItem({
 
               <div
                 className={`text-xs mt-2 flex items-center justify-between ${
-                  isOwnMessage ? "text-blue-100/70" : "text-gray-400"
+                  isOwnMessage ? "text-blue-100/70" : isAIMessage ? "text-purple-100/70" : "text-gray-400"
                 }`}
               >
                 <span>{formatTime(message.timestamp)}</span>
@@ -280,7 +289,9 @@ export default function MessageItem({
                       className={`p-1.5 rounded-lg transition-all duration-200 message-reaction-trigger ${
                         isOwnMessage
                           ? "bg-blue-500/20 text-blue-300 hover:bg-blue-500/30"
-                          : "bg-gray-600/20 text-gray-400 hover:bg-gray-600/30"
+                          : isAIMessage
+                            ? "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
+                            : "bg-gray-600/20 text-gray-400 hover:bg-gray-600/30"
                       } ${userReaction ? '!bg-yellow-500/20 !text-yellow-300' : ''}`}
                       title="Add reaction"
                     >
@@ -294,7 +305,9 @@ export default function MessageItem({
                       className={`p-1.5 rounded-lg transition-all duration-200 ${
                         isOwnMessage
                           ? "bg-blue-500/20 text-blue-300 hover:bg-blue-500/30"
-                          : "bg-gray-600/20 text-gray-400 hover:bg-gray-600/30"
+                          : isAIMessage
+                            ? "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
+                            : "bg-gray-600/20 text-gray-400 hover:bg-gray-600/30"
                       }`}
                       title="Message actions"
                     >
