@@ -61,7 +61,7 @@ export default function ChatCTA() {
           <motion.a
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            href="/chat/start-chat"
+            href="/chat/login"
             className="relative group bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center"
           >
             <span className="relative z-10 flex items-center">

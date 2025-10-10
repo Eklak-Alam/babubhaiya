@@ -1,10 +1,18 @@
-'use client'
-import { motion } from 'framer-motion'
-import { 
-  FileText, MessageSquare, Users, 
-  DollarSign, Mic, ArrowRight,
-  Brain, Handshake, GitMerge 
-} from 'lucide-react'
+"use client";
+import { motion } from "framer-motion";
+import {
+  FileText,
+  MessageSquare,
+  Users,
+  DollarSign,
+  Mic,
+  ArrowRight,
+  Brain,
+  Handshake,
+  GitMerge,
+} from "lucide-react";
+import Link from "next/link";
+import { FiArrowRight } from "react-icons/fi";
 
 export default function AboutPage() {
   return (
@@ -17,60 +25,83 @@ export default function AboutPage() {
       </div>
 
       {/* Hero Section */}
-        <section className="relative py-24 md:py-32 overflow-hidden bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
+      <section className="relative py-24 md:py-32 overflow-hidden bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
         {/* Animated Gradient Background Blur */}
         <div className="absolute inset-0 -z-10">
-            <div className="absolute w-72 h-72 bg-purple-500 rounded-full blur-3xl opacity-20 animate-pulse top-10 left-10"></div>
-            <div className="absolute w-72 h-72 bg-indigo-500 rounded-full blur-3xl opacity-20 animate-pulse bottom-10 right-10"></div>
+          <div className="absolute w-72 h-72 bg-purple-500 rounded-full blur-3xl opacity-20 animate-pulse top-10 left-10"></div>
+          <div className="absolute w-72 h-72 bg-indigo-500 rounded-full blur-3xl opacity-20 animate-pulse bottom-10 right-10"></div>
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
-            <motion.div
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="text-center max-w-3xl mx-auto"
-            >
+          >
             {/* Animated Gradient Heading */}
             <h1 className="text-4xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
-                AI-Powered Mediator
+              AI-Powered Mediator
             </h1>
 
             {/* Subtitle */}
             <p className="text-lg md:text-xl text-gray-300 mb-8 leading-relaxed">
-                Bridging human communication gaps with <span className="text-indigo-400 font-medium">intelligent AI</span> solutions
+              Bridging human communication gaps with{" "}
+              <span className="text-indigo-400 font-medium">
+                intelligent AI
+              </span>{" "}
+              solutions
             </p>
 
             {/* Call to Action Button */}
-            <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-6 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-lg transition duration-300"
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              viewport={{ once: true }}
+              className="solution-cta mt-16 md:mt-20 text-center"
             >
-                Get Started
-            </motion.button>
+              <Link href="/services" passHref>
+                <motion.div
+                  className="group relative px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden inline-block cursor-pointer"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span className="relative z-10 flex items-center justify-center">
+                    Explore All Solutions
+                    <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </motion.div>
+              </Link>
             </motion.div>
+          </motion.div>
         </div>
 
         {/* Gradient animation keyframes */}
         <style jsx>{`
-            @keyframes gradientMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+          @keyframes gradientMove {
+            0% {
+              background-position: 0% 50%;
             }
-            .animate-gradient {
+            50% {
+              background-position: 100% 50%;
+            }
+            100% {
+              background-position: 0% 50%;
+            }
+          }
+          .animate-gradient {
             background-size: 200% 200%;
             animation: gradientMove 5s ease infinite;
-            }
+          }
         `}</style>
-        </section>
-
+      </section>
 
       {/* Problem Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -80,16 +111,30 @@ export default function AboutPage() {
               <div className="h-px w-12 bg-gradient-to-r from-transparent to-indigo-500" />
               <h2 className="text-xl text-indigo-400">The Problem</h2>
             </div>
-            
+
             <h3 className="text-3xl md:text-4xl font-bold mb-8">
-              Communication barriers cost businesses <span className="text-indigo-400">time</span>, money, and relationships
+              Communication barriers cost businesses{" "}
+              <span className="text-indigo-400">time</span>, money, and
+              relationships
             </h3>
 
             <div className="grid md:grid-cols-3 gap-6">
               {[
-                { icon: DollarSign, title: "Costly Negotiations", desc: "Manual contract discussions waste time and resources" },
-                { icon: MessageSquare, title: "Miscommunication", desc: "Teams lose productivity due to unclear discussions" },
-                { icon: Users, title: "No Multi-User AI", desc: "Existing tools don't handle group dynamics well" }
+                {
+                  icon: DollarSign,
+                  title: "Costly Negotiations",
+                  desc: "Manual contract discussions waste time and resources",
+                },
+                {
+                  icon: MessageSquare,
+                  title: "Miscommunication",
+                  desc: "Teams lose productivity due to unclear discussions",
+                },
+                {
+                  icon: Users,
+                  title: "No Multi-User AI",
+                  desc: "Existing tools don't handle group dynamics well",
+                },
               ].map((item, i) => (
                 <motion.div
                   key={i}
@@ -124,16 +169,34 @@ export default function AboutPage() {
               <div className="h-px w-12 bg-gradient-to-r from-transparent to-indigo-500" />
               <h2 className="text-xl text-indigo-400">Our Solution</h2>
             </div>
-            
+
             <h3 className="text-3xl md:text-4xl font-bold mb-8">
               AI-powered tools for smarter communication
             </h3>
 
             <div className="grid md:grid-cols-3 gap-6">
               {[
-                { icon: Mic, title: "Clause", subtitle: "Contract Harmony", desc: "Listens to negotiations and drafts legally sound contracts", principle: "Clarity > Complexity" },
-                { icon: GitMerge, title: "Accord", subtitle: "Team Productivity", desc: "Multi-user AI chatbot for complex group projects", principle: "Directness > Diplomacy" },
-                { icon: Handshake, title: "Harmony", subtitle: "Conflict Mediation", desc: "Bridges perspectives using evidence-based psychology", principle: "Understanding > Arguing" }
+                {
+                  icon: Mic,
+                  title: "Clause",
+                  subtitle: "Contract Harmony",
+                  desc: "Listens to negotiations and drafts legally sound contracts",
+                  principle: "Clarity > Complexity",
+                },
+                {
+                  icon: GitMerge,
+                  title: "Accord",
+                  subtitle: "Team Productivity",
+                  desc: "Multi-user AI chatbot for complex group projects",
+                  principle: "Directness > Diplomacy",
+                },
+                {
+                  icon: Handshake,
+                  title: "Harmony",
+                  subtitle: "Conflict Mediation",
+                  desc: "Bridges perspectives using evidence-based psychology",
+                  principle: "Understanding > Arguing",
+                },
               ].map((item, i) => (
                 <motion.div
                   key={i}
@@ -151,7 +214,9 @@ export default function AboutPage() {
                     </div>
                   </div>
                   <p className="text-gray-300 mb-4">{item.desc}</p>
-                  <p className="text-sm font-medium text-indigo-400">{item.principle}</p>
+                  <p className="text-sm font-medium text-indigo-400">
+                    {item.principle}
+                  </p>
                 </motion.div>
               ))}
             </div>
@@ -168,20 +233,26 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="max-w-2xl mx-auto"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to transform your communication?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+              Ready to transform your communication?
+            </h2>
             <p className="text-xl text-gray-300 mb-8">
               Experience the future of AI-mediated discussions
             </p>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-lg shadow-lg flex items-center gap-2 mx-auto"
-            >
-              Get Started <ArrowRight className="w-4 h-4" />
-            </motion.button>
+            <div className="text-center mt-6">
+              <Link href="/get-started" passHref>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-lg shadow-lg cursor-pointer select-none"
+                >
+                  Get Started <ArrowRight className="w-4 h-4" />
+                </motion.div>
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>
     </div>
-  )
+  );
 }

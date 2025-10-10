@@ -157,19 +157,6 @@ export default function ServicesPage() {
                   </ul>
                 </div>
 
-                {/* CTA */}
-                <div className="mt-6">
-                  <Link 
-                    href="#" 
-                    className={`inline-flex items-center px-4 py-2 rounded-lg bg-gradient-to-r ${service.gradient} text-white font-medium text-sm hover:shadow-lg transition-all`}
-                  >
-                    Learn More
-                    <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                  </Link>
-                </div>
-
                 {/* Animated hover element */}
                 <div className={`absolute -bottom-8 -right-8 w-32 h-32 rounded-full ${service.gradient.replace('to', 'from')}/20 z-0 group-hover:scale-150 transition-transform duration-700`}></div>
               </div>
@@ -225,16 +212,16 @@ export default function ServicesPage() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link 
-              href="#" 
+              href="/get-started" 
               className="px-6 py-3 bg-white text-indigo-600 font-medium rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center"
             >
               Get Started
             </Link>
             <Link 
-              href="#" 
+              href="/chat/register" 
               className="px-6 py-3 border border-white text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center"
             >
-              Schedule Demo
+              Start chat
             </Link>
           </div>
         </motion.div>

@@ -5,7 +5,7 @@ import { AuthProvider } from "@/context/ApiContext";
 
 export const metadata = {
   title: {
-    default: "Gaprio | AI-Powered Mediator for Human Gaps",
+    default: "Gaprio",
     template: "%s | Gaprio",
   },
   description:

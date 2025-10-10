@@ -6,6 +6,7 @@ import { FiMic, FiHeart, FiUsers, FiCheckCircle, FiArrowRight } from 'react-icon
 import { gsap } from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import Link from 'next/link'
 
 // Register ScrollTrigger plugin
 if (typeof window !== 'undefined') {
@@ -232,20 +233,24 @@ export default function SolutionSection() {
 
         {/* CTA */}
         <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6, ease: "easeOut" }}
           viewport={{ once: true }}
           className="solution-cta mt-16 md:mt-20 text-center"
         >
-          <button className="group relative px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+          <Link
+            href="/get-started"
+            className="group relative inline-flex items-center justify-center px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-lg shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden"
+          >
             <span className="relative z-10 flex items-center justify-center">
               Explore All Solutions
               <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
             </span>
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </button>
+          </Link>
         </motion.div>
+
       </div>
 
       {/* Custom styles for animations */}
