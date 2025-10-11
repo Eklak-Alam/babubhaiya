@@ -308,58 +308,71 @@ const handleLogout = useCallback(async () => {
     [fetchConversationsAndGroups, showToast]
   );
 
-  const handleClearConversation = useCallback(
+const handleClearConversation = useCallback(
     async (otherUserId, otherUserName, e) => {
-      e.stopPropagation();
+        e.stopPropagation();
 
-      if (
-        !confirm(
-          `Are you sure you want to clear your conversation with ${otherUserName}? This action cannot be undone.`
-        )
-      ) {
-        return;
-      }
-
-      try {
-        const response = await API.delete(
-          `/messages/conversation/${otherUserId}`
-        );
-
-        if (response.data?.success) {
-          setConversations((prev) =>
-            prev.filter((conv) => conv.id !== otherUserId)
-          );
-
-          if (selectedUser?.id === otherUserId) {
-            onSelectUser(null);
-          }
-
-          showToast(
-            `Conversation with ${otherUserName} cleared successfully`,
-            "success"
-          );
-          console.log(
-            `✅ Conversation with ${otherUserName} cleared successfully`
-          );
-        } else {
-          showToast(
-            response.data?.message || "Failed to clear conversation.",
-            "error"
-          );
+        if (
+            !confirm(
+                `Are you sure you want to clear your conversation with ${otherUserName}? This action cannot be undone.`
+            )
+        ) {
+            return;
         }
-      } catch (error) {
-        console.error("❌ Error clearing conversation:", error);
-        showToast(
-          error.response?.data?.message ||
-            "Failed to clear conversation. Please try again.",
-          "error"
-        );
-      } finally {
-        setActiveMenu(null);
-      }
+
+        try {
+            const response = await API.delete(
+                `/messages/conversation/${otherUserId}`
+            );
+
+            console.log("Clear conversation response:", response.data);
+
+            if (response.data?.success) {
+                // Remove from conversations list immediately
+                setConversations((prev) =>
+                    prev.filter((conv) => conv.id !== otherUserId)
+                );
+
+                // If this conversation is currently selected, clear it
+                if (selectedUser?.id === otherUserId) {
+                    onSelectUser(null);
+                    setMessages([]);
+                }
+
+                showToast(
+                    `Conversation with ${otherUserName} cleared successfully`,
+                    "success"
+                );
+                console.log(
+                    `✅ Conversation with ${otherUserName} cleared successfully`
+                );
+                
+                // Refresh conversations to ensure UI is updated
+                setTimeout(() => {
+                    fetchConversationsAndGroups();
+                }, 100);
+            } else {
+                showToast(
+                    response.data?.message || "Failed to clear conversation.",
+                    "error"
+                );
+            }
+        } catch (error) {
+            console.error("❌ Error clearing conversation:", error);
+            console.error("Error details:", error.response?.data);
+            
+            let errorMessage = "Failed to clear conversation. Please try again.";
+            if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+            
+            showToast(errorMessage, "error");
+        } finally {
+            setActiveMenu(null);
+        }
     },
-    [API, selectedUser, onSelectUser, showToast]
-  );
+    [API, selectedUser, onSelectUser, showToast, fetchConversationsAndGroups]
+);
 
   const toggleMenu = useCallback(
     (menuId, e) => {

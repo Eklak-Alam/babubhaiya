@@ -112,13 +112,14 @@ const createGroup = async (req, res) => {
       [memberValues]
     );
 
-    // 3. Create initial "group created" system message
+    // 3. Create initial "group created" system message (FIXED - removed is_system_message)
     const [user] = await connection.query('SELECT name FROM users WHERE id = ?', [ownerId]);
     const systemMessage = `${user[0].name} created the group "${name}"`;
     
+    // FIX: Remove the is_system_message column reference
     await connection.query(
-      'INSERT INTO group_messages (group_id, sender_id, message_content, is_system_message) VALUES (?, ?, ?, ?)',
-      [groupId, ownerId, systemMessage, true]
+      'INSERT INTO group_messages (group_id, sender_id, message_content) VALUES (?, ?, ?)',
+      [groupId, ownerId, systemMessage]
     );
 
     await connection.commit();
@@ -390,8 +391,8 @@ const editGroup = async (req, res) => {
     // Create system message for significant changes
     if (name && groups[0].name !== name) {
       await db.query(
-        'INSERT INTO group_messages (group_id, sender_id, message_content, is_system_message) VALUES (?, ?, ?, ?)',
-        [groupId, userId, `Group name changed to "${name}"`, true]
+        'INSERT INTO group_messages (group_id, sender_id, message_content) VALUES (?, ?, ?)',
+        [groupId, userId, `Group name changed to "${name}"`]
       );
     }
 

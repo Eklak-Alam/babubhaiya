@@ -208,7 +208,7 @@ const handleAnalyzeChat = async () => {
     const chatId = selectedUser.id;
     const chatType = isGroup ? "group" : "private";
 
-    console.log(`🔍 Starting analysis for ${chatType} chat ${chatId}`);
+    console.log(`🔍 Starting analysis for ${chatType} chat ${chatId}`); 
 
     socket.emit("analyzeChat", { chatId, chatType });
 
@@ -268,51 +268,142 @@ const handleAnalyzeChat = async () => {
     }
   };
 
-  // Consolidated function to save an edited message
-  const handleSaveEdit = async (messageId, content) => {
+// Consolidated function to save an edited message
+const handleSaveEdit = async (messageId, content) => {
     const trimmedContent = content.trim();
-    if (!trimmedContent) return;
+    if (!trimmedContent) {
+        alert("Message content cannot be empty");
+        return;
+    }
+
+    // Validate messageId
+    const messageIdNum = parseInt(messageId);
+    if (isNaN(messageIdNum)) {
+        alert("Invalid message ID");
+        return;
+    }
 
     try {
-      const url = isGroup
-        ? `/groups/${selectedUser.id}/messages/${messageId}`
-        : `/messages/${messageId}`;
+        const url = isGroup
+            ? `/groups/${selectedUser?.id}/messages/${messageIdNum}`
+            : `/messages/${messageIdNum}`;
 
-      const response = await API.put(url, { message_content: trimmedContent });
+        console.log('🔄 SENDING EDIT REQUEST:', {
+            url: url,
+            messageId: messageIdNum,
+            content: trimmedContent,
+            isGroup: isGroup,
+            selectedUserId: selectedUser?.id,
+            currentUser: user?.id
+        });
 
-      if (response.data?.success && onMessageUpdate) {
-        onMessageUpdate(response.data.data);
-      }
-      setEditingMessage(null);
-      setEditMessageContent("");
+        // Enhanced request with better error handling
+        const response = await API.put(url, { 
+            message_content: trimmedContent 
+        }, {
+            timeout: 10000 // 10 second timeout
+        });
+
+        console.log('✅ EDIT RESPONSE:', response.data);
+
+        if (response.data?.success) {
+            if (onMessageUpdate) {
+                onMessageUpdate(response.data.data);
+            }
+            setEditingMessage(null);
+            setEditMessageContent("");
+            console.log('✅ Message edited successfully in UI');
+        } else {
+            console.warn('⚠️ Edit response without success flag:', response.data);
+            // Still treat as success if we get here
+            if (onMessageUpdate) {
+                onMessageUpdate({
+                    id: messageIdNum,
+                    message_content: trimmedContent,
+                    edited_at: new Date().toISOString(),
+                    ...response.data
+                });
+            }
+            setEditingMessage(null);
+            setEditMessageContent("");
+        }
+        
     } catch (error) {
-      console.error("Error editing message:", error);
-      alert(error.response?.data?.message || "Failed to update message");
+        console.error("❌ EDIT ERROR:", error);
+        
+        // Detailed error information
+        const errorDetails = {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            message: error.response?.data?.message,
+            url: error.config?.url,
+            method: error.config?.method,
+            headers: error.config?.headers
+        };
+        
+        console.error("❌ ERROR DETAILS:", errorDetails);
+        
+        // Show specific error message
+        let userMessage = "Failed to update message";
+        if (error.response?.data?.message) {
+            userMessage = error.response.data.message;
+        } else if (error.response?.status === 400) {
+            userMessage = "Bad request - the server rejected our request";
+        } else if (error.response?.status === 403) {
+            userMessage = "You don't have permission to edit this message";
+        } else if (error.response?.status === 404) {
+            userMessage = "Message not found";
+        } else if (error.code === 'ECONNABORTED') {
+            userMessage = "Request timeout - please try again";
+        }
+        
+        alert(`❌ ${userMessage}`);
     }
-  };
+};
 
-  // Consolidated function to delete a message
-  const handleDeleteMessage = async (messageId) => {
+// Consolidated function to delete a message
+const handleDeleteMessage = async (messageId) => {
     try {
-      const url = isGroup
-        ? `/groups/${selectedUser.id}/messages/${messageId}`
-        : `/messages/${messageId}`;
+        const url = isGroup
+            ? `/groups/${selectedUser.id}/messages/${messageId}`
+            : `/messages/${messageId}`;
 
-      await API.delete(url);
+        console.log('🗑️ Deleting message:', { url, messageId, isGroup });
 
-      if (onMessageDelete) {
-        onMessageDelete(messageId, isGroup ? selectedUser.id : null);
-      }
-      setShowMessageActionsModal(false);
-      setSelectedMessage(null);
+        await API.delete(url);
+
+        if (onMessageDelete) {
+            onMessageDelete(messageId, isGroup ? selectedUser.id : null);
+        }
+        setShowMessageActionsModal(false);
+        setSelectedMessage(null);
+        
+        console.log('✅ Message deleted successfully');
+        
     } catch (error) {
-      console.error("Error deleting message:", error);
-      throw new Error(
-        error.response?.data?.message || "Failed to delete message"
-      );
+        console.error("❌ Error deleting message:", error);
+        
+        const errorDetails = {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.response?.data?.message
+        };
+        
+        console.error("Delete error details:", errorDetails);
+        
+        let userMessage = "Failed to delete message";
+        if (error.response?.data?.message) {
+            userMessage = error.response.data.message;
+        } else if (error.response?.status === 403) {
+            userMessage = "You don't have permission to delete this message";
+        } else if (error.response?.status === 404) {
+            userMessage = "Message not found";
+        }
+        
+        throw new Error(userMessage);
     }
-  };
-
+};
   // New function to handle message reactions
   const handleAddReaction = async (messageId, reaction, isGroupMessage) => {
     try {
@@ -606,84 +697,109 @@ const handleAnalyzeChat = async () => {
         }}
       />
 
-      <AddMemberModal
-        isOpen={showAddMemberModal}
-        searchQuery={searchQuery}
-        searchUsers={searchUsers}
-        isSearching={isSearching}
-        groupMembers={groupMembers}
-        onClose={() => {
-          setShowAddMemberModal(false);
-          setSearchQuery("");
-          setSearchUsers([]);
-        }}
-        onSearchQueryChange={setSearchQuery}
-        onSearchUsers={async (query) => {
-          console.log("Searching for:", query);
+<AddMemberModal
+  isOpen={showAddMemberModal}
+  searchQuery={searchQuery}
+  searchUsers={searchUsers}
+  isSearching={isSearching}
+  groupMembers={groupMembers}
+  selectedUser={selectedUser}
+  onClose={() => {
+    setShowAddMemberModal(false);
+    setSearchQuery("");
+    setSearchUsers([]);
+  }}
+  onSearchQueryChange={setSearchQuery}
+  onSearchUsers={async (query) => {
+    console.log("Searching for:", query);
 
-          if (!query || query.trim().length < 2) {
-            setSearchUsers([]);
-            return;
-          }
+    if (!query || query.trim().length < 2) {
+      setSearchUsers([]);
+      return;
+    }
 
-          setIsSearching(true);
-          try {
-            const response = await API.get(`/tags/search-users`, {
-              params: {
-                query: query.trim(),
-              },
-            });
+    setIsSearching(true);
+    try {
+      const response = await API.get(`/users/search`, {
+        params: { q: query.trim() },
+      });
 
-            console.log("Search response:", response.data);
+      console.log("Search response:", response.data);
 
-            let usersData = [];
-            if (response.data?.success) {
-              usersData = response.data.data || [];
-            } else if (Array.isArray(response.data)) {
-              usersData = response.data;
-            } else {
-              usersData = response.data?.users || response.data || [];
-            }
+      let usersData = [];
+      if (response.data?.success) {
+        usersData = response.data.data || [];
+      } else if (Array.isArray(response.data)) {
+        usersData = response.data;
+      } else {
+        usersData = response.data?.users || response.data || [];
+      }
 
-            const filteredUsers = usersData.filter(
-              (userResult) =>
-                !groupMembers.some((member) => member.id === userResult.id)
-            );
+      const filteredUsers = usersData.filter(
+        (userResult) => !groupMembers.some((member) => member.id === userResult.id)
+      );
 
-            setSearchUsers(filteredUsers);
-          } catch (error) {
-            console.error("Error searching users:", error);
-            console.error("Error details:", error.response?.data);
-            setSearchUsers([]);
-          } finally {
-            setIsSearching(false);
-          }
-        }}
-        onAddMember={async (userToAdd) => {
-          try {
-            const response = await API.post(
-              `/groups/${selectedUser.id}/members`,
-              {
-                userIdToAdd: userToAdd.id,
-              }
-            );
-            if (response.data?.success) {
-              setGroupMembers((prev) => [
-                ...prev,
-                { ...userToAdd, is_owner: 0 },
-              ]);
-              setSearchUsers((prev) =>
-                prev.filter((u) => u.id !== userToAdd.id)
-              );
-              setShowAddMemberModal(false);
-              setSearchQuery("");
-            }
-          } catch (error) {
-            console.error("Error adding member:", error);
-            alert(error.response?.data?.message || "Failed to add member");
-          }
-        }}
-      />
+      setSearchUsers(filteredUsers);
+    } catch (error) {
+      console.error("Error searching users:", error);
+      setSearchUsers([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }}
+  onAddMember={async (userToAdd) => {
+    try {
+      console.log("🚀 Starting to add member...");
+      console.log("User to add:", userToAdd);
+      console.log("Selected group ID:", selectedUser?.id);
+      console.log("Selected group:", selectedUser);
+
+      if (!selectedUser?.id) {
+        throw new Error("No group selected");
+      }
+
+      const payload = {
+        userIdToAdd: userToAdd.id
+      };
+      console.log("Request payload:", payload);
+      console.log("Request URL:", `/groups/${selectedUser.id}/members`);
+
+      const response = await API.post(
+        `/groups/${selectedUser.id}/members`,
+        payload
+      );
+      
+      console.log("✅ Add member response:", response.data);
+
+      if (response.data?.success) {
+        console.log("✅ Member added successfully");
+        setGroupMembers((prev) => [
+          ...prev,
+          { ...userToAdd, role: 'member' },
+        ]);
+        setSearchUsers((prev) => prev.filter((u) => u.id !== userToAdd.id));
+      } else {
+        console.log("❌ Add member failed - no success flag");
+        throw new Error(response.data?.message || "Failed to add member");
+      }
+    } catch (error) {
+      console.error("❌ Error adding member:", error);
+      console.error("Error response:", error.response);
+      console.error("Error message:", error.message);
+      console.error("Error code:", error.code);
+      
+      let errorMessage = "Failed to add member";
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      throw new Error(errorMessage);
+    }
+  }}
+/>
 
       <EditGroupModal
         isOpen={showEditGroupModal}

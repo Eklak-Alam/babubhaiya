@@ -149,162 +149,12 @@ const getGroupMembers = async (req, res) => {
     }
 };
 
-// @desc    Add a member to a group
-// @route   POST /api/groups/:groupId/members
-const addMember = async (req, res) => {
-    const { groupId } = req.params;
-    const { userIdToAdd, role = 'member' } = req.body;
-    const userId = req.user.id;
 
-    // Validate input
-    if (!userIdToAdd || isNaN(parseInt(userIdToAdd))) {
-        return res.status(400).json({ 
-            success: false,
-            message: 'Valid userIdToAdd is required.' 
-        });
-    }
-
-    // Validate role
-    if (!['member', 'admin'].includes(role)) {
-        return res.status(400).json({
-            success: false,
-            message: 'Role must be either "member" or "admin".'
-        });
-    }
-
-    const connection = await db.getConnection();
-    
-    try {
-        await connection.beginTransaction();
-
-        // Check if current user has permission to add members
-        const [currentUserRole] = await connection.query(
-            'SELECT role FROM group_members WHERE group_id = ? AND user_id = ?',
-            [groupId, userId]
-        );
-
-        if (currentUserRole.length === 0 || currentUserRole[0].role === 'member') {
-            await connection.rollback();
-            return res.status(403).json({
-                success: false,
-                message: 'Only admins and owners can add members to the group.'
-            });
-        }
-
-        // 1. Check if user exists
-        const [users] = await connection.query(
-            'SELECT id, name, username FROM users WHERE id = ?', 
-            [userIdToAdd]
-        );
-        
-        if (users.length === 0) {
-            await connection.rollback();
-            return res.status(404).json({ 
-                success: false,
-                message: 'User not found.' 
-            });
-        }
-
-        // 2. Check if user is already a member
-        const [existingMembers] = await connection.query(
-            'SELECT * FROM group_members WHERE group_id = ? AND user_id = ?', 
-            [groupId, userIdToAdd]
-        );
-        
-        if (existingMembers.length > 0) {
-            await connection.rollback();
-            return res.status(409).json({ 
-                success: false,
-                message: 'User is already a member of this group.' 
-            });
-        }
-
-        // 3. Check group member limit
-        const [memberCount] = await connection.query(
-            'SELECT COUNT(*) as count FROM group_members WHERE group_id = ?',
-            [groupId]
-        );
-        
-        if (memberCount[0].count >= 100) {
-            await connection.rollback();
-            return res.status(400).json({ 
-                success: false,
-                message: 'Group member limit reached (max 100 members).' 
-            });
-        }
-
-        // 4. Add member to group
-        await connection.query(
-            'INSERT INTO group_members (group_id, user_id, role, added_by) VALUES (?, ?, ?, ?)', 
-            [groupId, userIdToAdd, role, userId]
-        );
-
-        // 5. Create system message
-        const [currentUser] = await connection.query('SELECT name FROM users WHERE id = ?', [userId]);
-        const [newUser] = await connection.query('SELECT name FROM users WHERE id = ?', [userIdToAdd]);
-        const [groupInfo] = await connection.query('SELECT name FROM `groups` WHERE id = ?', [groupId]);
-
-        const systemMessage = `${currentUser[0].name} added ${newUser[0].name} to the group`;
-        await connection.query(
-            'INSERT INTO group_messages (group_id, sender_id, message_content, is_system_message) VALUES (?, ?, ?, ?)',
-            [groupId, userId, systemMessage, true]
-        );
-
-        await connection.commit();
-
-        res.status(201).json({ 
-            success: true,
-            message: 'Member added successfully.',
-            data: {
-                user: {
-                    id: users[0].id,
-                    name: users[0].name,
-                    username: users[0].username,
-                    role: role,
-                    added_by: userId
-                },
-                group: {
-                    id: parseInt(groupId),
-                    name: groupInfo[0].name
-                }
-            }
-        });
-
-    } catch (error) {
-        await connection.rollback();
-        
-        console.error("Error adding member:", error);
-        
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ 
-                success: false,
-                message: 'User is already a member of this group.' 
-            });
-        }
-        
-        if (error.code === 'ER_NO_REFERENCED_ROW_2') {
-            return res.status(404).json({ 
-                success: false,
-                message: 'User or group not found.' 
-            });
-        }
-        
-        res.status(500).json({ 
-            success: false,
-            message: 'Server error while adding member.' 
-        });
-    } finally {
-        connection.release();
-    }
-};
-
-// @desc    Remove a member from a group
-// @route   DELETE /api/groups/:groupId/members/:memberId
+// Also update other functions that use is_system_message
 const removeMember = async (req, res) => {
     const { groupId, memberId } = req.params;
     const userId = req.user.id;
 
-    // Validate memberId
     if (isNaN(parseInt(memberId))) {
         return res.status(400).json({ 
             success: false,
@@ -317,7 +167,6 @@ const removeMember = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        // 1. Get group info and member details
         const [groupInfo] = await connection.query(
             `SELECT g.owner_id, g.name as group_name, 
                     u.name as member_name, u.id as member_id
@@ -338,7 +187,6 @@ const removeMember = async (req, res) => {
         const groupOwnerId = groupInfo[0].owner_id;
         const memberIdInt = parseInt(memberId);
 
-        // 2. Check if the member exists in the group
         const [existingMember] = await connection.query(
             'SELECT * FROM group_members WHERE group_id = ? AND user_id = ?', 
             [groupId, memberIdInt]
@@ -352,7 +200,7 @@ const removeMember = async (req, res) => {
             });
         }
 
-        // 3. Check permissions
+        // Check permissions
         const [currentUserRole] = await connection.query(
             'SELECT role FROM group_members WHERE group_id = ? AND user_id = ?',
             [groupId, userId]
@@ -362,10 +210,6 @@ const removeMember = async (req, res) => {
         const isOwner = userId === groupOwnerId;
         const isAdmin = currentUserRole.length > 0 && currentUserRole[0].role === 'admin';
 
-        // Permission logic:
-        // - Owners can remove anyone except themselves
-        // - Admins can remove members but not other admins or owners
-        // - Members can only remove themselves
         if (!isSelf) {
             if (!isOwner && !isAdmin) {
                 await connection.rollback();
@@ -392,7 +236,6 @@ const removeMember = async (req, res) => {
             }
         }
 
-        // 4. Prevent owner from being removed
         if (memberIdInt === groupOwnerId) {
             await connection.rollback();
             return res.status(403).json({ 
@@ -401,19 +244,18 @@ const removeMember = async (req, res) => {
             });
         }
 
-        // 5. Remove member from group
         const [result] = await connection.query(
             'DELETE FROM group_members WHERE group_id = ? AND user_id = ?', 
             [groupId, memberIdInt]
         );
 
-        // 6. Create system message if not self-removal
+        // Create system message without is_system_message column
         if (!isSelf) {
             const [removerUser] = await connection.query('SELECT name FROM users WHERE id = ?', [userId]);
-            const systemMessage = `${removerUser[0].name} removed ${groupInfo[0].member_name} from the group`;
+            const systemMessage = `🚪 ${removerUser[0].name} removed ${groupInfo[0].member_name} from the group`;
             await connection.query(
-                'INSERT INTO group_messages (group_id, sender_id, message_content, is_system_message) VALUES (?, ?, ?, ?)',
-                [groupId, userId, systemMessage, true]
+                'INSERT INTO group_messages (group_id, sender_id, message_content) VALUES (?, ?, ?)',
+                [groupId, userId, systemMessage]
             );
         }
 
@@ -453,8 +295,147 @@ const removeMember = async (req, res) => {
     }
 };
 
-// @desc    Update member role
-// @route   PUT /api/groups/:groupId/members/:memberId/role
+// @desc    Add a member to a group
+// @route   POST /api/groups/:groupId/members
+const addMember = async (req, res) => {
+    const { groupId } = req.params;
+    const { userIdToAdd, role = 'member' } = req.body;
+    const userId = req.user.id;
+
+    console.log('Add member request:', { groupId, userIdToAdd, role, currentUser: userId });
+
+    // Validate input
+    if (!userIdToAdd || isNaN(parseInt(userIdToAdd))) {
+        return res.status(400).json({ 
+            success: false,
+            message: 'Valid userIdToAdd is required.' 
+        });
+    }
+
+    const connection = await db.getConnection();
+    
+    try {
+        await connection.beginTransaction();
+
+        // 1. Check if group exists and get current user's role
+        const [groupInfo] = await connection.query(
+            `SELECT g.id, g.name, g.owner_id, gm.role as user_role 
+             FROM \`groups\` g 
+             LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = ?
+             WHERE g.id = ?`,
+            [userId, groupId]
+        );
+
+        if (groupInfo.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ 
+                success: false,
+                message: 'Group not found.' 
+            });
+        }
+
+        const isOwner = groupInfo[0].owner_id === userId;
+        const isAdmin = groupInfo[0].user_role === 'admin';
+        
+        // Check permissions - only owners and admins can add members
+        if (!isOwner && !isAdmin) {
+            await connection.rollback();
+            return res.status(403).json({
+                success: false,
+                message: 'Only group admins and owners can add members.'
+            });
+        }
+
+        // 2. Check if user to add exists
+        const [users] = await connection.query(
+            'SELECT id, name, username FROM users WHERE id = ?', 
+            [userIdToAdd]
+        );
+        
+        if (users.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ 
+                success: false,
+                message: 'User not found.' 
+            });
+        }
+
+        // 3. Check if user is already a member
+        const [existingMembers] = await connection.query(
+            'SELECT * FROM group_members WHERE group_id = ? AND user_id = ?', 
+            [groupId, userIdToAdd]
+        );
+        
+        if (existingMembers.length > 0) {
+            await connection.rollback();
+            return res.status(409).json({ 
+                success: false,
+                message: 'User is already a member of this group.' 
+            });
+        }
+
+        // 4. Add member to group
+        await connection.query(
+            'INSERT INTO group_members (group_id, user_id, role, added_by) VALUES (?, ?, ?, ?)', 
+            [groupId, userIdToAdd, role, userId]
+        );
+
+        // 5. Create system message WITHOUT is_system_message column
+        const [currentUser] = await connection.query('SELECT name FROM users WHERE id = ?', [userId]);
+        const [newUser] = await connection.query('SELECT name FROM users WHERE id = ?', [userIdToAdd]);
+
+        const systemMessage = `👋 ${currentUser[0].name} added ${newUser[0].name} to the group`;
+        
+        // FIXED: Remove is_system_message column
+        await connection.query(
+            'INSERT INTO group_messages (group_id, sender_id, message_content) VALUES (?, ?, ?)',
+            [groupId, userId, systemMessage]
+        );
+
+        await connection.commit();
+
+        console.log('Member added successfully:', { userIdToAdd, groupId });
+
+        res.status(201).json({ 
+            success: true,
+            message: 'Member added successfully.',
+            data: {
+                user: {
+                    id: parseInt(userIdToAdd),
+                    name: users[0].name,
+                    username: users[0].username,
+                    role: role,
+                    added_by: userId
+                },
+                group: {
+                    id: parseInt(groupId),
+                    name: groupInfo[0].name
+                }
+            }
+        });
+
+    } catch (error) {
+        await connection.rollback();
+        
+        console.error("Error adding member:", error);
+        
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ 
+                success: false,
+                message: 'User is already a member of this group.' 
+            });
+        }
+        
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while adding member.' 
+        });
+    } finally {
+        connection.release();
+    }
+};
+
+// FIXED: Remove is_system_message from updateMemberRole function
 const updateMemberRole = async (req, res) => {
     const { groupId, memberId } = req.params;
     const { role } = req.body;
@@ -526,15 +507,17 @@ const updateMemberRole = async (req, res) => {
             });
         }
 
-        // Create system message
+        // Create system message WITHOUT is_system_message
         const [currentUser] = await connection.query('SELECT name FROM users WHERE id = ?', [userId]);
         const [targetUser] = await connection.query('SELECT name FROM users WHERE id = ?', [memberIdInt]);
         const action = role === 'admin' ? 'promoted to admin' : 'demoted to member';
         
         const systemMessage = `${currentUser[0].name} ${action} ${targetUser[0].name}`;
+        
+        // FIXED: Remove is_system_message column
         await connection.query(
-            'INSERT INTO group_messages (group_id, sender_id, message_content, is_system_message) VALUES (?, ?, ?, ?)',
-            [groupId, userId, systemMessage, true]
+            'INSERT INTO group_messages (group_id, sender_id, message_content) VALUES (?, ?, ?)',
+            [groupId, userId, systemMessage]
         );
 
         await connection.commit();
@@ -561,8 +544,7 @@ const updateMemberRole = async (req, res) => {
     }
 };
 
-// @desc    Leave group
-// @route   POST /api/groups/:groupId/leave
+// FIXED: Remove is_system_message from leaveGroup function
 const leaveGroup = async (req, res) => {
     const { groupId } = req.params;
     const userId = req.user.id;
@@ -608,12 +590,14 @@ const leaveGroup = async (req, res) => {
             });
         }
 
-        // Create system message
+        // Create system message WITHOUT is_system_message
         const [user] = await connection.query('SELECT name FROM users WHERE id = ?', [userId]);
         const systemMessage = `${user[0].name} left the group`;
+        
+        // FIXED: Remove is_system_message column
         await connection.query(
-            'INSERT INTO group_messages (group_id, sender_id, message_content, is_system_message) VALUES (?, ?, ?, ?)',
-            [groupId, userId, systemMessage, true]
+            'INSERT INTO group_messages (group_id, sender_id, message_content) VALUES (?, ?, ?)',
+            [groupId, userId, systemMessage]
         );
 
         await connection.commit();
@@ -638,6 +622,7 @@ const leaveGroup = async (req, res) => {
         connection.release();
     }
 };
+
 
 // Middleware to check if user is either the group owner OR the member trying to remove themselves
 const isGroupMemberOrOwner = async (req, res, next) => {

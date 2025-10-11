@@ -19,8 +19,9 @@ router.use(protect);
 router.route('/conversations').get(getConversations);
 router.route('/mark-read').post(markMessagesAsRead);
 
+// Make sure this route is correctly defined
 router.route('/:messageId')
-    .put(editMessage)
+    .put(editMessage)    // This should handle PUT /api/messages/296
     .delete(deleteMessage);
 
 router.route('/:messageId/reaction')

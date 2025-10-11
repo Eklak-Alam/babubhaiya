@@ -34,20 +34,21 @@ export default function MessageActionsModal({
     }, 2000);
   };
 
-  // Handle edit message
-  const handleEditMessage = async () => {
+  // In MessageActionsModal component, update the handleEditMessage function:
+const handleEditMessage = async () => {
     setLoadingStates(prev => ({ ...prev, edit: true }));
     try {
-      await onEditMessage(selectedMessage);
-      showToast("📝 Ready to edit message");
-      onClose();
+        // Just pass the message to parent, don't try to edit here
+        await onEditMessage(selectedMessage);
+        showToast("📝 Ready to edit message");
+        onClose();
     } catch (error) {
-      console.error("Error preparing edit:", error);
-      showToast("❌ Failed to edit message");
+        console.error("Error preparing edit:", error);
+        showToast("❌ Failed to edit message");
     } finally {
-      setLoadingStates(prev => ({ ...prev, edit: false }));
+        setLoadingStates(prev => ({ ...prev, edit: false }));
     }
-  };
+};
 
   // Handle delete message with confirmation
   const handleDeleteMessage = async () => {

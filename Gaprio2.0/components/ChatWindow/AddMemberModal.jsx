@@ -1,9 +1,14 @@
-// AddMemberModal.js
-"use client";
-import { IoClose, IoSearch } from "react-icons/io5";
-import { FaUserFriends, FaUserPlus } from "react-icons/fa";
-import { STYLES } from "./styles";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  FaTimes, 
+  FaSearch, 
+  FaUserPlus, 
+  FaCheck, 
+  FaExclamationTriangle,
+  FaSpinner
+} from "react-icons/fa";
+import { IoClose, IoPeople } from "react-icons/io5";
 
 export default function AddMemberModal({
   isOpen,
@@ -15,163 +20,272 @@ export default function AddMemberModal({
   onSearchQueryChange,
   onSearchUsers,
   onAddMember,
+  selectedUser
 }) {
-  const [localSearchQuery, setLocalSearchQuery] = useState("");
-  const searchTimeoutRef = useRef(null);
+  const modalRef = useRef(null);
+  const [localError, setLocalError] = useState("");
+  const [addingUserId, setAddingUserId] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
-  // Sync local state with prop
+  // Close modal on outside click or Escape key
   useEffect(() => {
-    setLocalSearchQuery(searchQuery || "");
-  }, [searchQuery]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        handleClose();
       }
     };
+
+    const handleEscapeKey = (event) => {
+      if (event.key === "Escape") {
+        handleClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscapeKey);
+      setLocalError("");
+      setSuccessMessage("");
+    }
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscapeKey);
+    };
+  }, [isOpen]);
+
+  const handleClose = useCallback(() => {
+    setLocalError("");
+    setSuccessMessage("");
+    setAddingUserId(null);
+    onClose();
+  }, [onClose]);
+
+  const handleSearch = useCallback((e) => {
+    e.preventDefault();
+    setLocalError("");
+    if (!searchQuery.trim()) {
+      setLocalError("Please enter a search term");
+      return;
+    }
+    if (searchQuery.trim().length < 2) {
+      setLocalError("Please enter at least 2 characters");
+      return;
+    }
+    onSearchUsers(searchQuery);
+  }, [searchQuery, onSearchUsers]);
+
+  const handleAddMember = useCallback(async (userToAdd) => {
+    if (!selectedUser?.id) {
+      setLocalError("No group selected");
+      return;
+    }
+
+    setAddingUserId(userToAdd.id);
+    setLocalError("");
+    setSuccessMessage("");
+
+    try {
+      await onAddMember(userToAdd);
+      setSuccessMessage(`${userToAdd.name} added successfully!`);
+      // Clear success message after 2 seconds
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 2000);
+    } catch (error) {
+      setLocalError(error.message || "Failed to add member");
+    } finally {
+      setAddingUserId(null);
+    }
+  }, [selectedUser, onAddMember]);
+
+  const getInitials = useCallback((name) => {
+    return name ? name.charAt(0).toUpperCase() : '?';
   }, []);
 
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setLocalSearchQuery(value);
-    onSearchQueryChange(value);
-
-    // Clear previous timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    // Only search if query is at least 2 characters long
-    if (value.trim().length >= 2) {
-      searchTimeoutRef.current = setTimeout(() => {
-        onSearchUsers(value.trim());
-      }, 500); // Increased debounce time
-    } else if (value.trim().length === 0) {
-      // Clear results if search is empty
-      onSearchUsers("");
-    }
-    // If length is 1, do nothing (wait for more input)
-  };
-
-  const handleAddMember = (user) => {
-    onAddMember(user);
-  };
+  const isUserAlreadyMember = useCallback((user) => {
+    return groupMembers.some(member => member.id === user.id);
+  }, [groupMembers]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="absolute inset-0 bg-black/70 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div
-        className={`bg-gray-800/95 rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden border border-gray-700/50 backdrop-blur-xl`}
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       >
-        <div
-          className={`p-6 border-b border-gray-700/50 bg-gradient-to-r from-blue-600 to-blue-700 text-white`}
+        <motion.div
+          ref={modalRef}
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          className="relative w-full max-w-md bg-gray-800 rounded-2xl shadow-xl border border-gray-700 max-h-[90vh] overflow-hidden"
         >
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-lg">Add Members</h3>
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-700 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <IoPeople className="text-xl" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Add Members</h2>
+                <p className="text-blue-100 text-sm">Search and add users to the group</p>
+              </div>
+            </div>
             <button
-              onClick={onClose}
-              className="p-1 hover:bg-blue-600/30 rounded-xl transition-colors"
+              onClick={handleClose}
+              className="p-2 hover:bg-blue-600/30 rounded-xl transition-all"
             >
               <IoClose size={20} />
             </button>
           </div>
-        </div>
 
-        <div className="p-4">
-          <div className="relative mb-4">
-            <IoSearch
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400/70"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder="Search users by name or username..."
-              value={localSearchQuery}
-              onChange={handleSearchChange}
-              className={`w-full pl-10 pr-4 py-3 border border-gray-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 bg-gray-700/30 text-white placeholder-gray-400 backdrop-blur-sm`}
-            />
-            {localSearchQuery && (
-              <button
-                onClick={() => {
-                  setLocalSearchQuery("");
-                  onSearchQueryChange("");
-                  onSearchUsers("");
-                }}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-              >
-                <IoClose size={16} />
-              </button>
+          {/* Content */}
+          <div className="p-6 space-y-4">
+            {/* Error Message */}
+            {localError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 text-red-400">
+                <FaExclamationTriangle />
+                <span className="text-sm">{localError}</span>
+              </div>
             )}
-          </div>
 
-          <div className="max-h-64 overflow-y-auto custom-scrollbar">
-            {isSearching ? (
-              <div className={`text-center py-8 text-gray-500`}>
-                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <p>Searching users...</p>
+            {/* Success Message */}
+            {successMessage && (
+              <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center gap-2 text-green-400">
+                <FaCheck />
+                <span className="text-sm">{successMessage}</span>
               </div>
-            ) : searchUsers.length === 0 && localSearchQuery.length >= 2 ? (
-              <div className={`text-center py-8 text-gray-500`}>
-                <FaUserFriends className="mx-auto text-3xl mb-2 opacity-50" />
-                <p>No users found for "{localSearchQuery}"</p>
-                <p className="text-sm mt-1">
-                  Try a different name or username
-                </p>
+            )}
+
+            {/* Search Section */}
+            <form onSubmit={handleSearch} className="space-y-3">
+              <div className="relative">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search users by name or username..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    onSearchQueryChange(e.target.value);
+                    setLocalError("");
+                  }}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-gray-400"
+                />
               </div>
-            ) : searchUsers.length === 0 && localSearchQuery.length === 1 ? (
-              <div className={`text-center py-8 text-gray-500`}>
-                <p>Type at least 2 characters to search</p>
-              </div>
-            ) : searchUsers.length === 0 ? (
-              <div className={`text-center py-8 text-gray-500`}>
-                <FaUserFriends className="mx-auto text-3xl mb-2 opacity-50" />
-                <p>Search for users to add</p>
-                <p className="text-sm mt-1">
-                  Enter a name or username above
-                </p>
-              </div>
-            ) : (
-              searchUsers.map((user) => (
-                <div
-                  key={user.id}
-                  onClick={() => handleAddMember(user)}
-                  className={`flex items-center justify-between p-3 hover:bg-gray-700/50 rounded-xl cursor-pointer transition-all duration-200 border-b border-gray-700/50 last:border-b-0 backdrop-blur-sm group`}
-                >
-                  <div className="flex items-center">
-                    <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full mr-3 text-white text-sm font-semibold ring-1 ring-blue-500/30">
-                      {user.name?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                    <div>
-                      <div className={`font-medium text-white`}>
-                        {user.name || 'Unknown User'}
+              <button
+                type="submit"
+                disabled={isSearching || !searchQuery.trim()}
+                className="w-full py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              >
+                {isSearching ? (
+                  <FaSpinner className="animate-spin" />
+                ) : (
+                  <FaSearch />
+                )}
+                {isSearching ? "Searching..." : "Search Users"}
+              </button>
+            </form>
+
+            {/* Search Results */}
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {searchUsers.length > 0 ? (
+                searchUsers.map((user) => {
+                  const isAlreadyMember = isUserAlreadyMember(user);
+                  const isAdding = addingUserId === user.id;
+                  
+                  return (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between p-3 bg-gray-700/50 rounded-xl hover:bg-gray-700 transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center text-white font-semibold">
+                          {getInitials(user.name)}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-white">{user.name}</div>
+                          <div className="text-sm text-gray-400">@{user.username}</div>
+                        </div>
                       </div>
-                      <div className={`text-xs text-gray-400`}>
-                        @{user.username}
+                      <button
+                        onClick={() => !isAlreadyMember && handleAddMember(user)}
+                        disabled={isAlreadyMember || isAdding}
+                        className={`p-2 rounded-lg transition-colors ${
+                          isAlreadyMember
+                            ? "text-gray-500 cursor-not-allowed"
+                            : isAdding
+                            ? "text-blue-400 cursor-wait"
+                            : "text-green-400 hover:text-green-300 hover:bg-green-400/10"
+                        }`}
+                        title={isAlreadyMember ? "Already a member" : "Add to group"}
+                      >
+                        {isAdding ? (
+                          <FaSpinner className="animate-spin" />
+                        ) : isAlreadyMember ? (
+                          <FaCheck />
+                        ) : (
+                          <FaUserPlus />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })
+              ) : searchQuery.trim() && !isSearching ? (
+                <div className="text-center py-4 text-gray-400">
+                  No users found matching "{searchQuery}"
+                </div>
+              ) : null}
+            </div>
+
+            {/* Current Members */}
+            <div className="pt-4 border-t border-gray-700">
+              <h3 className="font-semibold text-gray-200 mb-3 flex items-center gap-2">
+                <FaCheck className="text-green-400" />
+                Current Members ({groupMembers.length})
+              </h3>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {groupMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-3 p-2 bg-gray-700/30 rounded-lg"
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center text-white text-sm font-semibold">
+                      {getInitials(member.name)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-white text-sm truncate">
+                        {member.name}
+                      </div>
+                      <div className="text-xs text-gray-400 truncate">
+                        @{member.username}
                       </div>
                     </div>
                   </div>
-                  <FaUserPlus 
-                    className="text-green-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200" 
-                    size={14} 
-                  />
-                </div>
-              ))
-            )}
+                ))}
+                {groupMembers.length === 0 && (
+                  <div className="text-center py-2 text-gray-400 text-sm">
+                    No members yet
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Search tips */}
-          {localSearchQuery.length === 1 && (
-            <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <p className="text-xs text-blue-400 text-center">
-                💡 Type at least 2 characters to search for users
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+          {/* Footer */}
+          <div className="border-t border-gray-700 p-4 bg-gray-800/50">
+            <button
+              onClick={handleClose}
+              className="w-full py-3 text-gray-300 border border-gray-600 rounded-xl hover:bg-gray-700 transition-all"
+            >
+              Close
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }

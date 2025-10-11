@@ -44,27 +44,33 @@ export default function CreateGroupModal({ onClose, onGroupCreated }) {
   }, [activeTab]);
 
   const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
+  e.preventDefault();
+  if (!searchQuery.trim()) {
+    setSearchResults([]);
+    return;
+  }
+  
+  setIsSearching(true);
+  try {
+    // CHANGE THIS: Use /api/users/search instead of /api/users/search
+    const response = await API.get(`/users/search`, {
+      params: {
+        q: searchQuery.trim()
+      }
+    });
     
-    setIsSearching(true);
-    try {
-      const response = await API.get(`/users/search?q=${encodeURIComponent(searchQuery)}`);
-      const filteredResults = response.data.filter(
-        userResult => !selectedMembers.some(member => member.id === userResult.id) && userResult.id !== user.id
-      );
-      setSearchResults(filteredResults);
-      setError('');
-    } catch (err) {
-      console.error('Search failed:', err);
-      setError('Failed to search users. Please try again.');
-    } finally {
-      setIsSearching(false);
-    }
-  };
+    const filteredResults = response.data.filter(
+      userResult => !selectedMembers.some(member => member.id === userResult.id) && userResult.id !== user.id
+    );
+    setSearchResults(filteredResults);
+    setError('');
+  } catch (err) {
+    console.error('Search failed:', err);
+    setError('Failed to search users. Please try again.');
+  } finally {
+    setIsSearching(false);
+  }
+};
 
   const addMember = (userToAdd) => {
     if (selectedMembers.length >= 49) {

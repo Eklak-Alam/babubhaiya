@@ -11,6 +11,8 @@ const editGroupMessage = async (req, res) => {
         const { message_content } = req.body;
         const userId = req.user.id;
 
+        console.log('Group edit request:', { groupId, messageId, message_content, userId });
+
         if (isNaN(groupId) || isNaN(messageId)) {
             return res.status(400).json({ 
                 success: false,
@@ -27,7 +29,7 @@ const editGroupMessage = async (req, res) => {
 
         // Find the message and verify the sender in one query
         const [messages] = await db.query(
-            'SELECT sender_id, timestamp FROM group_messages WHERE id = ? AND group_id = ?',
+            'SELECT sender_id FROM group_messages WHERE id = ? AND group_id = ?',
             [messageId, groupId]
         );
 
@@ -46,18 +48,7 @@ const editGroupMessage = async (req, res) => {
             });
         }
 
-        // Optional: Check if message is too old to edit (e.g., 15 minutes)
-        const messageAge = Date.now() - new Date(messages[0].timestamp).getTime();
-        const fifteenMinutes = 15 * 60 * 1000;
-        
-        if (messageAge > fifteenMinutes) {
-            return res.status(400).json({
-                success: false,
-                message: "Message is too old to edit. You can only edit messages within 15 minutes."
-            });
-        }
-
-        // Update the message
+        // NO TIME LIMIT - Update the message
         await db.query(
             'UPDATE group_messages SET message_content = ?, edited_at = NOW() WHERE id = ?',
             [message_content.trim(), messageId]
@@ -87,6 +78,7 @@ const editGroupMessage = async (req, res) => {
     }
 };
 
+
 // @desc    Delete a group message
 // @route   DELETE /api/groups/:groupId/messages/:messageId
 const deleteGroupMessage = async (req, res) => {
@@ -102,9 +94,9 @@ const deleteGroupMessage = async (req, res) => {
             });
         }
 
-        // Fetch group owner and message sender details simultaneously
+        // Fetch group owner and message sender details
         const [messages] = await db.query(
-            `SELECT gm.sender_id, g.owner_id, gm.is_system_message
+            `SELECT gm.sender_id, g.owner_id
              FROM group_messages gm 
              JOIN \`groups\` g ON gm.group_id = g.id
              WHERE gm.id = ? AND gm.group_id = ?`,
@@ -118,15 +110,7 @@ const deleteGroupMessage = async (req, res) => {
             });
         }
 
-        const { sender_id, owner_id, is_system_message } = messages[0];
-
-        // Prevent deletion of system messages
-        if (is_system_message) {
-            return res.status(403).json({
-                success: false,
-                message: 'System messages cannot be deleted.'
-            });
-        }
+        const { sender_id, owner_id } = messages[0];
 
         // Check if user is the sender OR the group owner/admin
         if (sender_id !== userId && owner_id !== userId) {
@@ -161,6 +145,8 @@ const deleteGroupMessage = async (req, res) => {
         });
     }
 };
+
+
 
 // @desc    Get a specific group message
 // @route   GET /api/groups/:groupId/messages/:messageId
