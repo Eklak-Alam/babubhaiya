@@ -16,10 +16,12 @@ export default function MessageInput({
   user,
   onReplyCancel,
   replyingTo,
+  isConnected,
 }) {
   const [showTaggingDropdown, setShowTaggingDropdown] = useState(false);
   const [taggingQuery, setTaggingQuery] = useState("");
   const [taggingPosition, setTaggingPosition] = useState(0);
+  const [isSending, setIsSending] = useState(false);
   const inputRef = useRef(null);
 
   // Focus input when replying to a message
@@ -29,11 +31,36 @@ export default function MessageInput({
     }
   }, [replyingTo]);
 
+  // FIXED: Enhanced send handler with proper event prevention
+  const handleSendMessageProtected = async (e) => {
+    // CRITICAL: Prevent default form submission that causes page reload
+    if (e) {
+      e.preventDefault();
+    }
+    
+    // Prevent multiple sends
+    if (isSending || isLoading || !newMessage.trim() || !selectedUser) {
+      return;
+    }
+
+    setIsSending(true);
+    
+    try {
+      await onSendMessage(e);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    } finally {
+      // Reset sending state after a short delay to prevent rapid successive sends
+      setTimeout(() => setIsSending(false), 500);
+    }
+  };
+
+  // FIXED: Enhanced key press handler
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
+      e.preventDefault(); // CRITICAL: Prevent form submission on Enter
       if (!showTaggingDropdown) {
-        onSendMessage(e);
+        handleSendMessageProtected(e);
       }
     } else if (e.key === "@" && !showTaggingDropdown) {
       // Start tagging when @ is pressed
@@ -42,6 +69,7 @@ export default function MessageInput({
       setTaggingPosition(newMessage.length);
       setTaggingQuery("");
     } else if (showTaggingDropdown && e.key === "Escape") {
+      e.preventDefault();
       setShowTaggingDropdown(false);
     } else if (showTaggingDropdown && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       e.preventDefault();
@@ -118,7 +146,9 @@ export default function MessageInput({
     }
   };
 
-  const handleManualTagging = () => {
+  const handleManualTagging = (e) => {
+    // FIXED: Prevent any default behavior
+    if (e) e.preventDefault();
     setShowTaggingDropdown(true);
     setTaggingPosition(newMessage.length);
     setTaggingQuery("");
@@ -127,9 +157,11 @@ export default function MessageInput({
     }
   };
 
+  const isDisabled = isSending || isLoading || !isConnected;
+
   return (
     <form
-      onSubmit={onSendMessage}
+      onSubmit={handleSendMessageProtected}
       className={`p-4 border-t border-gray-700/50 ${STYLES.bg.section} relative z-20`}
     >
       {/* Reply Preview */}
@@ -147,6 +179,7 @@ export default function MessageInput({
             type="button"
             onClick={onReplyCancel}
             className="p-1 text-blue-400 hover:text-blue-300 transition-colors"
+            disabled={isDisabled}
           >
             <FaTimes size={14} />
           </button>
@@ -162,34 +195,42 @@ export default function MessageInput({
             onChange={handleInputChange}
             onKeyDown={handleKeyPress}
             placeholder={
-              replyingTo 
-                ? `Reply to ${replyingTo.sender_name}...` 
-                : `Message ${isGroup ? selectedUser?.name : selectedUser?.name}... (Type @ to mention)`
+              !isConnected 
+                ? "Connecting to server..."
+                : replyingTo 
+                  ? `Reply to ${replyingTo.sender_name}...` 
+                  : `Message ${isGroup ? selectedUser?.name : selectedUser?.name}... (Type @ to mention)`
             }
-            className={`w-full p-4 border border-gray-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 bg-gray-700/30 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-200 pr-12`}
-            disabled={isLoading}
+            className={`w-full p-4 border rounded-xl focus:outline-none focus:ring-2 bg-gray-700/30 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-200 pr-12 ${
+              !isConnected 
+                ? "border-red-500/50 focus:ring-red-500/50 cursor-not-allowed" 
+                : "border-gray-600/50 focus:ring-blue-500/50"
+            }`}
+            disabled={isDisabled}
             maxLength={1000}
           />
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
             <button
-              type="button"
+              type="button" // FIXED: Always use type="button" for non-submit buttons
               onClick={handleManualTagging}
-              className="p-1.5 text-gray-400 hover:text-blue-400 transition-colors rounded-lg hover:bg-blue-500/20"
+              className="p-1.5 text-gray-400 hover:text-blue-400 transition-colors rounded-lg hover:bg-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Mention someone (@)"
+              disabled={isDisabled}
             >
               <FaAt size={16} />
             </button>
             <button
-              type="button"
-              className="p-1.5 text-gray-400 hover:text-yellow-400 transition-colors rounded-lg hover:bg-yellow-500/20"
+              type="button" // FIXED: Always use type="button" for non-submit buttons
+              className="p-1.5 text-gray-400 hover:text-yellow-400 transition-colors rounded-lg hover:bg-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Add emoji"
+              disabled={isDisabled}
             >
               <FaRegSmileBeam size={16} />
             </button>
           </div>
 
           {/* Tagging Dropdown */}
-          {showTaggingDropdown && (
+          {showTaggingDropdown && !isDisabled && (
             <TaggingDropdown
               query={taggingQuery}
               selectedUser={selectedUser}
@@ -205,12 +246,20 @@ export default function MessageInput({
 
         <button
           type="submit"
-          disabled={isLoading || !newMessage.trim()}
-          className={`p-4 text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-600 disabled:to-gray-700 rounded-xl transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-blue-500/25 disabled:shadow-none min-w-[60px] backdrop-blur-sm border border-blue-500/30 disabled:border-gray-600/50`}
-          title="Send message"
+          disabled={isDisabled || !newMessage.trim()}
+          className={`p-4 text-white bg-gradient-to-r rounded-xl transition-all duration-300 flex items-center justify-center shadow-lg min-w-[60px] backdrop-blur-sm border ${
+            !isConnected
+              ? "from-red-600 to-red-700 border-red-500/30 cursor-not-allowed"
+              : isDisabled || !newMessage.trim()
+              ? "from-gray-600 to-gray-700 border-gray-600/50 cursor-not-allowed"
+              : "from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border-blue-500/30 hover:shadow-blue-500/25"
+          }`}
+          title={!isConnected ? "Not connected to server" : "Send message"}
         >
-          {isLoading ? (
+          {isSending || isLoading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : !isConnected ? (
+            <div className="w-5 h-5 bg-red-400 rounded-full animate-pulse"></div>
           ) : (
             <IoSend size={20} />
           )}

@@ -148,6 +148,8 @@ const initializeSocket = (io) => {
         const roomName = `group-${groupId}`;
         io.to(roomName).emit('newGroupMessage', message);
 
+        socket.emit('messageSent', message);
+
         // Handle AI tagging in group messages - FIXED: Check for ai_request type
         const hasAITag = tags.special.some(tag => tag.type === 'ai_request');
         if (hasAITag) {

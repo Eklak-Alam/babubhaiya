@@ -14,7 +14,7 @@ import { useAuth } from "@/context/ApiContext";
 
 export default function ChatWindow({
   selectedUser,
-  messages,
+  messages: propMessages,
   socket,
   onGroupUpdate,
   onGroupDelete,
@@ -41,22 +41,32 @@ export default function ChatWindow({
   const [showMessageActionsModal, setShowMessageActionsModal] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [localMessages, setLocalMessages] = useState([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [pendingMessages, setPendingMessages] = useState(new Set()); // Track pending messages
+  // FIXED: Enhanced message sending with duplicate protection
+const [lastSentMessage, setLastSentMessage] = useState("");
+const [lastSentTime, setLastSentTime] = useState(0);
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
   const isGroup = selectedUser?.type === "group";
-  const safeMessages = Array.isArray(messages) ? messages : [];
+  const safePropMessages = Array.isArray(propMessages) ? propMessages : [];
+
+  // Sync prop messages with local messages
+  useEffect(() => {
+    setLocalMessages(safePropMessages);
+  }, [safePropMessages]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
-  }, [safeMessages, replyingTo]);
+  }, [localMessages, replyingTo]);
 
   const scrollToBottom = useCallback(() => {
     if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop =
-        messagesContainerRef.current.scrollHeight;
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
   }, []);
 
@@ -79,52 +89,176 @@ export default function ChatWindow({
     setTimeout(scrollToBottom, 100);
   }, [selectedUser, isGroup]);
 
-  // Socket event listeners for real-time updates
+  // Socket connection status
   useEffect(() => {
-    if (!socket) return;
+    if (socket) {
+      setIsConnected(socket.connected);
+      
+      const handleConnect = () => {
+        console.log("✅ Socket connected");
+        setIsConnected(true);
+      };
 
-    // Handle new messages
+      const handleDisconnect = () => {
+        console.log("❌ Socket disconnected");
+        setIsConnected(false);
+      };
+
+      socket.on("connect", handleConnect);
+      socket.on("disconnect", handleDisconnect);
+
+      return () => {
+        socket.off("connect", handleConnect);
+        socket.off("disconnect", handleDisconnect);
+      };
+    }
+  }, [socket]);
+
+  // Enhanced Socket event listeners for real-time updates
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    console.log("🔌 Setting up socket listeners...");
+
+    // Handle new private messages
     const handleNewMessage = (message) => {
-      console.log("New message received:", message);
+      console.log("📩 New private message received:", message);
+      
+      setLocalMessages(prev => {
+        // Check if message already exists to avoid duplicates
+        const exists = prev.some(msg => 
+          msg.id === message.id || 
+          (msg.is_temp && msg.tempId === message.tempId)
+        );
+        
+        if (!exists) {
+          console.log("✅ Adding new private message to local state");
+          // Remove temp message if exists and add real message
+          const filteredPrev = prev.filter(msg => !msg.is_temp || msg.tempId !== message.tempId);
+          return [...filteredPrev, message];
+        }
+        return prev;
+      });
+
+      // Remove from pending messages
+      setPendingMessages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(message.tempId);
+        return newSet;
+      });
+
       if (onNewMessage) {
         onNewMessage(message);
       }
     };
 
-    // Handle new group messages
-    const handleNewGroupMessage = (message) => {
-      console.log("New group message received:", message);
-      if (onNewMessage && isGroup && selectedUser?.id === message.group_id) {
-        onNewMessage(message);
+    // Handle new group messages - FIXED: Optimistic updates for groups
+      const handleNewGroupMessage = (message) => {
+      // ADD THIS CHECK AT THE TOP:
+      // If the message is from the current user, do nothing.
+      // The 'messageSent' event you added to the backend will handle it.
+      if (message.sender_id === user.id) {
+        return;
+      }
+
+      // The rest of your original code runs only for messages from OTHERS.
+      console.log("📩 New group message received from another user:", message);
+      
+      if (isGroup && selectedUser?.id === message.group_id) {
+        setLocalMessages(prev => {
+          const exists = prev.some(msg => 
+            msg.id === message.id || 
+            (msg.is_temp && msg.tempId === message.tempId)
+          );
+          
+          if (!exists) {
+            console.log("✅ Adding new group message to local state");
+            // Remove temp message and add real message
+            const filteredPrev = prev.filter(msg => !msg.is_temp || msg.tempId !== message.tempId);
+            return [...filteredPrev, message];
+          }
+          return prev;
+        });
+
+        // This part might be redundant if the parent state is also updated,
+        // but we'll keep it for now as per your original code.
+        setPendingMessages(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(message.tempId);
+          return newSet;
+        });
+
+        if (onNewMessage) {
+          onNewMessage(message);
+        }
       }
     };
 
-    // Handle message reactions
-    const handleMessageReaction = (data) => {
-      console.log("Reaction update received:", data);
-      // This will be handled by the parent component
+    // Handle message sent confirmation
+    const handleMessageSent = (message) => {
+      console.log("✅ Message sent confirmation:", message);
+      setIsLoading(false);
+      
+      // Replace temp message with real one
+      setLocalMessages(prev => 
+        prev.map(msg => 
+          msg.is_temp && msg.tempId === message.tempId
+            ? { ...message, id: message.id }
+            : msg
+        )
+      );
+
+      // Remove from pending messages
+      setPendingMessages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(message.tempId);
+        return newSet;
+      });
+    };
+
+    // Handle message errors
+    const handleMessageError = (error) => {
+      console.error("❌ Message error:", error);
+      setIsLoading(false);
+      
+      // Remove temp message on error
+      setLocalMessages(prev => prev.filter(msg => !msg.is_temp));
+      
+      // Remove from pending messages
+      setPendingMessages(prev => {
+        const newSet = new Set(prev);
+        newSet.clear(); // Clear all pending messages on error
+        return newSet;
+      });
+      
+      alert(error.error || "Failed to send message");
     };
 
     // Handle AI responses
     const handleAIResponse = (data) => {
-      console.log("AI response received:", data);
+      console.log("🤖 AI response received:", data);
       if (onNewMessage) {
         onNewMessage(data);
       }
+      // Also add to local messages
+      setLocalMessages(prev => [...prev, data]);
     };
 
     socket.on("newMessage", handleNewMessage);
     socket.on("newGroupMessage", handleNewGroupMessage);
-    socket.on("messageReactionUpdate", handleMessageReaction);
+    socket.on("messageSent", handleMessageSent);
+    socket.on("messageError", handleMessageError);
     socket.on("aiResponse", handleAIResponse);
 
     return () => {
+      console.log("🧹 Cleaning up socket listeners");
       socket.off("newMessage", handleNewMessage);
       socket.off("newGroupMessage", handleNewGroupMessage);
-      socket.off("messageReactionUpdate", handleMessageReaction);
+      socket.off("messageSent", handleMessageSent);
+      socket.off("messageError", handleMessageError);
       socket.off("aiResponse", handleAIResponse);
     };
-  }, [socket, isGroup, selectedUser, onNewMessage]);
+  }, [socket, isConnected, isGroup, selectedUser, onNewMessage, user]);
 
   const fetchGroupMembers = useCallback(async () => {
     if (!isGroup || !selectedUser?.id) return;
@@ -132,8 +266,7 @@ export default function ChatWindow({
     try {
       const response = await API.get(`/groups/${selectedUser.id}/members`);
       if (response.data?.success) {
-        const members =
-          response.data.data?.members || response.data.members || [];
+        const members = response.data.data?.members || response.data.members || [];
         setGroupMembers(Array.isArray(members) ? members : []);
       } else {
         const members = response.data?.members || response.data || [];
@@ -164,100 +297,161 @@ export default function ChatWindow({
     }
   }, [isGroup, selectedUser, user, API]);
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedUser || !socket || isLoading) return;
 
-    setIsLoading(true);
-    try {
-      const messageData = {
-        messageContent: newMessage.trim(),
-        replyTo: replyingTo?.id || null,
-      };
+const handleSendMessage = async (e) => {
+  e.preventDefault();
+  
+  if (!newMessage.trim() || !selectedUser || isLoading) return;
 
-      console.log("Sending message:", messageData);
+  const messageContent = newMessage.trim();
+  
+  // DUPLICATE PROTECTION: Check if this is the same message sent recently
+  const now = Date.now();
+  if (messageContent === lastSentMessage && (now - lastSentTime) < 3000) {
+    console.log("🛑 Duplicate message prevented");
+    return;
+  }
 
-      if (isGroup) {
-        socket.emit("groupMessage", {
-          groupId: selectedUser.id,
-          ...messageData,
-        });
-      } else {
-        socket.emit("privateMessage", {
-          receiverId: selectedUser.id,
-          ...messageData,
-        });
-      }
+  // Check socket connection
+  if (!socket || !isConnected) {
+    alert("❌ Not connected to server. Please refresh the page.");
+    return;
+  }
 
-      setNewMessage("");
-      setReplyingTo(null);
-      setTimeout(scrollToBottom, 100);
-    } catch (error) {
-      console.error("❌ Error sending message:", error);
-    } finally {
-      setIsLoading(false);
+  // OPTIMISTIC UPDATE: Add the message to UI immediately
+  const tempMessage = {
+    id: `temp-${Date.now()}`,
+    message_content: messageContent,
+    sender_id: user.id,
+    sender_name: user.name,
+    sender_username: user.username,
+    timestamp: new Date().toISOString(),
+    is_read: false,
+    reactions: [],
+    is_temp: true,
+    ...(replyingTo && { 
+      reply_to: replyingTo.id, 
+      reply_to_content: replyingTo.message_content,
+      reply_to_sender: replyingTo.sender_name 
+    })
+  };
+
+  console.log("📤 Sending message optimistically:", tempMessage);
+
+  // Update duplicate protection
+  setLastSentMessage(messageContent);
+  setLastSentTime(now);
+
+  // Add to local messages immediately
+  setLocalMessages(prev => [...prev, tempMessage]);
+  setNewMessage("");
+  setReplyingTo(null);
+  setIsLoading(true);
+
+  try {
+    const messageData = {
+      messageContent: messageContent,
+      ...(replyingTo && { replyTo: replyingTo.id })
+    };
+
+    console.log("📤 Emitting socket message:", {
+      isGroup,
+      messageData,
+      selectedUserId: selectedUser.id
+    });
+
+    if (isGroup) {
+      socket.emit("groupMessage", {
+        groupId: selectedUser.id,
+        ...messageData,
+      });
+    } else {
+      socket.emit("privateMessage", {
+        receiverId: selectedUser.id,
+        ...messageData,
+      });
     }
+
+    // Scroll to bottom after sending
+    setTimeout(scrollToBottom, 100);
+
+  } catch (error) {
+    console.error('❌ Error emitting socket message:', error);
+    // Remove temporary message on error
+    setLocalMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
+    setIsLoading(false);
+    // Clear duplicate protection on error
+    setLastSentMessage("");
+    setLastSentTime(0);
+  }
+};
+  const handleNewMessageChange = (value) => {
+    setNewMessage(value);
+  };
+
+  const handleReplyCancel = () => {
+    setReplyingTo(null);
   };
 
   // Enhanced AI Chat Analysis
-const handleAnalyzeChat = async () => {
-  if (!socket || isAnalyzing) return;
+  const handleAnalyzeChat = async () => {
+    if (!socket || !isConnected || isAnalyzing) {
+      alert("❌ Not connected to server. Please check your connection.");
+      return;
+    }
 
-  try {
-    setIsAnalyzing(true);
-    const chatId = selectedUser.id;
-    const chatType = isGroup ? "group" : "private";
+    try {
+      setIsAnalyzing(true);
+      const chatId = selectedUser.id;
+      const chatType = isGroup ? "group" : "private";
 
-    console.log(`🔍 Starting analysis for ${chatType} chat ${chatId}`); 
+      console.log(`🔍 Starting analysis for ${chatType} chat ${chatId}`);
 
-    socket.emit("analyzeChat", { chatId, chatType });
+      // Set up one-time listeners for analysis
+      const analysisCompleteHandler = (data) => {
+        console.log("✅ Analysis received");
+        setIsAnalyzing(false);
+        alert(`🤖 Chat Analysis:\n\n${data.analysis}`);
+      };
 
-    // Set timeout for analysis
-    const timeout = setTimeout(() => {
-      setIsAnalyzing(false);
-      alert("🕒 Analysis is taking longer than expected. This might be because:\n\n• The AI service is starting up\n• The conversation history is large\n• The AI model is processing\n\nPlease try again in a moment.");
-    }, 35000);
+      const analysisErrorHandler = (data) => {
+        console.error("❌ Analysis error:", data.error);
+        setIsAnalyzing(false);
+        alert(`❌ Analysis Failed:\n\n${data.error}`);
+      };
 
-    socket.once("analysisComplete", (data) => {
-      clearTimeout(timeout);
-      setIsAnalyzing(false);
-      console.log("✅ Analysis received");
+      socket.emit("analyzeChat", { chatId, chatType });
       
-      // Show analysis in a nice modal or alert
-      alert(`🤖 Chat Analysis:\n\n${data.analysis}`);
-    });
+      // Set timeout for analysis
+      const timeout = setTimeout(() => {
+        socket.off("analysisComplete", analysisCompleteHandler);
+        socket.off("analysisError", analysisErrorHandler);
+        setIsAnalyzing(false);
+        alert("🕒 Analysis is taking longer than expected. Please try again in a moment.");
+      }, 35000);
 
-    socket.once("analysisError", (data) => {
-      clearTimeout(timeout);
+      // Use once to automatically remove listeners after first call
+      socket.once("analysisComplete", analysisCompleteHandler);
+      socket.once("analysisError", analysisErrorHandler);
+
+      // Cleanup timeout
+      return () => clearTimeout(timeout);
+
+    } catch (error) {
+      console.error("Error analyzing chat:", error);
       setIsAnalyzing(false);
-      console.error("❌ Analysis error:", data.error);
-      
-      let userMessage = data.error;
-      if (data.error.includes('offline') || data.error.includes('ECONNREFUSED')) {
-        userMessage = `🔌 AI Service Offline\n\nPlease ensure:\n\n1. Ollama is running: 'ollama serve'\n2. AI service is running: 'uvicorn app:app --port 5002'\n3. Model is downloaded: 'ollama pull llama3:instruct'`;
-      }
-      
-      alert(`❌ Analysis Failed:\n\n${userMessage}`);
-    });
-
-  } catch (error) {
-    console.error("Error analyzing chat:", error);
-    setIsAnalyzing(false);
-    alert("❌ Failed to start analysis. Please check your connection.");
-  }
-};
+      alert("❌ Failed to start analysis. Please check your connection.");
+    }
+  };
 
   // Function to handle clearing private conversations
   const handleClearConversation = async () => {
     if (isGroup || !selectedUser) return;
 
-    if (
-      window.confirm(
-        "Are you sure you want to delete all messages in this conversation?"
-      )
-    ) {
+    if (window.confirm("Are you sure you want to delete all messages in this conversation?")) {
       try {
         await API.delete(`/messages/conversation/${selectedUser.id}`);
+        setLocalMessages([]);
         if (onClearConversation) {
           onClearConversation(selectedUser.id);
         }
@@ -268,143 +462,87 @@ const handleAnalyzeChat = async () => {
     }
   };
 
-// Consolidated function to save an edited message
-const handleSaveEdit = async (messageId, content) => {
+  // Consolidated function to save an edited message
+  const handleSaveEdit = async (messageId, content) => {
     const trimmedContent = content.trim();
     if (!trimmedContent) {
-        alert("Message content cannot be empty");
-        return;
+      alert("Message content cannot be empty");
+      return;
     }
 
-    // Validate messageId
     const messageIdNum = parseInt(messageId);
     if (isNaN(messageIdNum)) {
-        alert("Invalid message ID");
-        return;
+      alert("Invalid message ID");
+      return;
     }
 
     try {
-        const url = isGroup
-            ? `/groups/${selectedUser?.id}/messages/${messageIdNum}`
-            : `/messages/${messageIdNum}`;
+      const url = isGroup
+        ? `/groups/${selectedUser?.id}/messages/${messageIdNum}`
+        : `/messages/${messageIdNum}`;
 
-        console.log('🔄 SENDING EDIT REQUEST:', {
-            url: url,
-            messageId: messageIdNum,
-            content: trimmedContent,
-            isGroup: isGroup,
-            selectedUserId: selectedUser?.id,
-            currentUser: user?.id
-        });
+      console.log('🔄 Sending edit request:', { url, messageId: messageIdNum });
 
-        // Enhanced request with better error handling
-        const response = await API.put(url, { 
-            message_content: trimmedContent 
-        }, {
-            timeout: 10000 // 10 second timeout
-        });
+      const response = await API.put(url, { 
+        message_content: trimmedContent 
+      });
 
-        console.log('✅ EDIT RESPONSE:', response.data);
+      console.log('✅ Edit response:', response.data);
 
-        if (response.data?.success) {
-            if (onMessageUpdate) {
-                onMessageUpdate(response.data.data);
-            }
-            setEditingMessage(null);
-            setEditMessageContent("");
-            console.log('✅ Message edited successfully in UI');
-        } else {
-            console.warn('⚠️ Edit response without success flag:', response.data);
-            // Still treat as success if we get here
-            if (onMessageUpdate) {
-                onMessageUpdate({
-                    id: messageIdNum,
-                    message_content: trimmedContent,
-                    edited_at: new Date().toISOString(),
-                    ...response.data
-                });
-            }
-            setEditingMessage(null);
-            setEditMessageContent("");
-        }
+      if (response.data?.success) {
+        // Update local messages
+        setLocalMessages(prev => 
+          prev.map(msg => 
+            msg.id === messageIdNum 
+              ? { ...msg, message_content: trimmedContent, edited_at: new Date().toISOString() }
+              : msg
+          )
+        );
         
+        if (onMessageUpdate) {
+          onMessageUpdate(response.data.data);
+        }
+        setEditingMessage(null);
+        setEditMessageContent("");
+      } else {
+        throw new Error(response.data?.message || "Edit failed");
+      }
+      
     } catch (error) {
-        console.error("❌ EDIT ERROR:", error);
-        
-        // Detailed error information
-        const errorDetails = {
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            data: error.response?.data,
-            message: error.response?.data?.message,
-            url: error.config?.url,
-            method: error.config?.method,
-            headers: error.config?.headers
-        };
-        
-        console.error("❌ ERROR DETAILS:", errorDetails);
-        
-        // Show specific error message
-        let userMessage = "Failed to update message";
-        if (error.response?.data?.message) {
-            userMessage = error.response.data.message;
-        } else if (error.response?.status === 400) {
-            userMessage = "Bad request - the server rejected our request";
-        } else if (error.response?.status === 403) {
-            userMessage = "You don't have permission to edit this message";
-        } else if (error.response?.status === 404) {
-            userMessage = "Message not found";
-        } else if (error.code === 'ECONNABORTED') {
-            userMessage = "Request timeout - please try again";
-        }
-        
-        alert(`❌ ${userMessage}`);
+      console.error("❌ Edit error:", error);
+      alert(error.response?.data?.message || "Failed to update message");
     }
-};
+  };
 
-// Consolidated function to delete a message
-const handleDeleteMessage = async (messageId) => {
+  // Consolidated function to delete a message
+  const handleDeleteMessage = async (messageId) => {
     try {
-        const url = isGroup
-            ? `/groups/${selectedUser.id}/messages/${messageId}`
-            : `/messages/${messageId}`;
+      const url = isGroup
+        ? `/groups/${selectedUser.id}/messages/${messageId}`
+        : `/messages/${messageId}`;
 
-        console.log('🗑️ Deleting message:', { url, messageId, isGroup });
+      console.log('🗑️ Deleting message:', { url, messageId, isGroup });
 
-        await API.delete(url);
+      await API.delete(url);
 
-        if (onMessageDelete) {
-            onMessageDelete(messageId, isGroup ? selectedUser.id : null);
-        }
-        setShowMessageActionsModal(false);
-        setSelectedMessage(null);
-        
-        console.log('✅ Message deleted successfully');
-        
+      // Remove from local messages
+      setLocalMessages(prev => prev.filter(msg => msg.id !== messageId));
+      
+      if (onMessageDelete) {
+        onMessageDelete(messageId, isGroup ? selectedUser.id : null);
+      }
+      setShowMessageActionsModal(false);
+      setSelectedMessage(null);
+      
+      console.log('✅ Message deleted successfully');
+      
     } catch (error) {
-        console.error("❌ Error deleting message:", error);
-        
-        const errorDetails = {
-            status: error.response?.status,
-            data: error.response?.data,
-            message: error.response?.data?.message
-        };
-        
-        console.error("Delete error details:", errorDetails);
-        
-        let userMessage = "Failed to delete message";
-        if (error.response?.data?.message) {
-            userMessage = error.response.data.message;
-        } else if (error.response?.status === 403) {
-            userMessage = "You don't have permission to delete this message";
-        } else if (error.response?.status === 404) {
-            userMessage = "Message not found";
-        }
-        
-        throw new Error(userMessage);
+      console.error("❌ Error deleting message:", error);
+      alert(error.response?.data?.message || "Failed to delete message");
     }
-};
-  // New function to handle message reactions
+  };
+
+  // Function to handle message reactions
   const handleAddReaction = async (messageId, reaction, isGroupMessage) => {
     try {
       console.log("Adding reaction:", { messageId, reaction, isGroupMessage });
@@ -421,19 +559,23 @@ const handleDeleteMessage = async (messageId) => {
       console.log("Reaction response:", response.data);
 
       if (response.data?.success) {
+        // Update local messages with new reactions
+        setLocalMessages(prev => 
+          prev.map(msg => 
+            msg.id === messageId 
+              ? { ...msg, reactions: response.data.data || [] }
+              : msg
+          )
+        );
+
         // Emit socket event for real-time updates
-        if (socket) {
+        if (socket && isConnected) {
           socket.emit("messageReaction", {
             messageId,
             reaction,
             isGroupMessage,
             userId: user.id,
           });
-        }
-
-        // Refresh messages to get updated reactions
-        if (onNewMessage) {
-          onNewMessage({ type: "reaction_update", messageId });
         }
       }
     } catch (error) {
@@ -451,27 +593,27 @@ const handleDeleteMessage = async (messageId) => {
 
       await API.delete(endpoint);
 
+      // Update local messages
+      setLocalMessages(prev => 
+        prev.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, reactions: msg.reactions?.filter(r => r.user_id !== user.id) || [] }
+            : msg
+        )
+      );
+
       // Emit socket event
-      if (socket) {
+      if (socket && isConnected) {
         socket.emit("removeReaction", {
           messageId,
           isGroupMessage,
           userId: user.id,
         });
       }
-
-      // Refresh messages
-      if (onNewMessage) {
-        onNewMessage({ type: "reaction_remove", messageId });
-      }
     } catch (error) {
       console.error("Error removing reaction:", error);
       alert(error.response?.data?.message || "Failed to remove reaction");
     }
-  };
-
-  const cancelReply = () => {
-    setReplyingTo(null);
   };
 
   const openMessageActions = (message) => {
@@ -480,7 +622,7 @@ const handleDeleteMessage = async (messageId) => {
   };
 
   // Enhanced messages with reactions
-  const messagesWithReactions = safeMessages.map((msg) => ({
+  const messagesWithReactions = localMessages.map((msg) => ({
     ...msg,
     reactions: msg.reactions || [],
   }));
@@ -490,9 +632,15 @@ const handleDeleteMessage = async (messageId) => {
   }
 
   return (
-    <div
-      className={`flex flex-col flex-grow ${STYLES.bg.main} relative overflow-hidden`}
-    >
+    <div className={`flex flex-col flex-grow ${STYLES.bg.main} relative overflow-hidden`}>
+
+      {/* Pending Messages Indicator */}
+      {pendingMessages.size > 0 && (
+        <div className="bg-yellow-500 text-white text-center py-2 text-sm">
+          ⏳ Sending {pendingMessages.size} message(s)... 
+        </div>
+      )}
+
       {/* Header */}
       <ChatHeader
         selectedUser={selectedUser}
@@ -501,12 +649,8 @@ const handleDeleteMessage = async (messageId) => {
         groupMembers={groupMembers}
         onShowGroupInfo={() => setShowGroupInfo(true)}
         onClearConversation={handleClearConversation}
-        onStartVoiceCall={() =>
-          alert("Voice call feature would be implemented here")
-        }
-        onStartVideoCall={() =>
-          alert("Video call feature would be implemented here")
-        }
+        onStartVoiceCall={() => alert("Voice call feature would be implemented here")}
+        onStartVideoCall={() => alert("Video call feature would be implemented here")}
         onAnalyzeChat={handleAnalyzeChat}
         isAnalyzing={isAnalyzing}
       />
@@ -530,7 +674,7 @@ const handleDeleteMessage = async (messageId) => {
 
       {/* Reply Preview */}
       {replyingTo && (
-        <ReplyPreview replyingTo={replyingTo} onCancelReply={cancelReply} />
+        <ReplyPreview replyingTo={replyingTo} onCancelReply={handleReplyCancel} />
       )}
 
       {/* Enhanced Message Input with Tagging */}
@@ -539,15 +683,16 @@ const handleDeleteMessage = async (messageId) => {
         isLoading={isLoading}
         selectedUser={selectedUser}
         isGroup={isGroup}
-        onNewMessageChange={setNewMessage}
+        onNewMessageChange={handleNewMessageChange}
         onSendMessage={handleSendMessage}
         API={API}
         user={user}
-        onReplyCancel={cancelReply}
+        onReplyCancel={handleReplyCancel}
         replyingTo={replyingTo}
+        isConnected={isConnected}
       />
 
-      {/* Modals */}
+      {/* Rest of your modals remain the same */}
       <MessageActionsModal
         isOpen={showMessageActionsModal}
         selectedMessage={selectedMessage}
@@ -563,9 +708,7 @@ const handleDeleteMessage = async (messageId) => {
           setSelectedMessage(null);
 
           setTimeout(() => {
-            const textarea = document.querySelector(
-              'textarea[data-editing="true"]'
-            );
+            const textarea = document.querySelector('textarea[data-editing="true"]');
             if (textarea) {
               textarea.focus();
               textarea.scrollIntoView({ behavior: "smooth", block: "center" });

@@ -2,9 +2,9 @@
 
 import { useRef, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import Link from 'next/link';
+import Link from 'next/link'
 
-// --- SVG Icon Components ---
+// --- Lucide Icons ---
 const ArrowRightIcon = (props) => (
   <svg
     {...props}
@@ -18,60 +18,165 @@ const ArrowRightIcon = (props) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <line x1="5" y1="12" x2="19" y2="12"></line>
-    <polyline points="12 5 19 12 12 19"></polyline>
+    <path d="M5 12h14"/>
+    <path d="m12 5 7 7-7 7"/>
   </svg>
-);
+)
 
 const BotIcon = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
-);
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 8V4H8"/>
+    <rect width="16" height="12" x="4" y="8" rx="2"/>
+    <path d="M2 14h2"/>
+    <path d="M20 14h2"/>
+    <path d="M15 13v2"/>
+    <path d="M9 13v2"/>
+  </svg>
+)
+
 const UsersIcon = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-);
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+)
+
 const FileTextIcon = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
-);
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="16" x2="8" y1="13" y2="13"/>
+    <line x1="16" x2="8" y1="17" y2="17"/>
+    <line x1="10" x2="8" y1="9" y2="9"/>
+  </svg>
+)
+
 const MessageCircleIcon = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-);
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+  </svg>
+)
+
+const SparklesIcon = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+    <path d="M5 3v4"/>
+    <path d="M19 17v4"/>
+    <path d="M3 5h4"/>
+    <path d="M17 19h4"/>
+  </svg>
+)
+
+const ZapIcon = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+  </svg>
+)
 
 // --- Custom Hook to load external scripts ---
 const useExternalScript = (url, callback) => {
-    useEffect(() => {
-        if (!url) return;
-        const script = document.createElement('script');
-        script.src = url;
-        script.async = true;
-        script.onload = () => {
-            if (callback) callback();
-        };
-        document.body.appendChild(script);
-        return () => {
-            document.body.removeChild(script);
-        };
-    }, [url, callback]);
-};
+  useEffect(() => {
+    if (!url) return
+    const script = document.createElement('script')
+    script.src = url
+    script.async = true
+    script.onload = () => {
+      if (callback) callback()
+    }
+    document.body.appendChild(script)
+    return () => {
+      document.body.removeChild(script)
+    }
+  }, [url, callback])
+}
 
 // --- Animated Magnetic Button Component ---
 const MagneticButton = ({ children }) => {
-  const ref = useRef(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const ref = useRef(null)
+  const [position, setPosition] = useState({ x: 0, y: 0 })
 
   const handleMouse = (e) => {
-    if (!ref.current) return;
-    const { clientX, clientY } = e;
-    const { height, width, left, top } = ref.current.getBoundingClientRect();
-    const middleX = clientX - (left + width / 2);
-    const middleY = clientY - (top + height / 2);
-    setPosition({ x: middleX * 0.15, y: middleY * 0.15 });
-  };
+    if (!ref.current) return
+    const { clientX, clientY } = e
+    const { height, width, left, top } = ref.current.getBoundingClientRect()
+    const middleX = clientX - (left + width / 2)
+    const middleY = clientY - (top + height / 2)
+    setPosition({ x: middleX * 0.15, y: middleY * 0.15 })
+  }
 
   const reset = () => {
-    setPosition({ x: 0, y: 0 });
-  };
+    setPosition({ x: 0, y: 0 })
+  }
 
-  const { x, y } = position;
+  const { x, y } = position
 
   return (
     <motion.div
@@ -84,131 +189,71 @@ const MagneticButton = ({ children }) => {
     >
       {children}
     </motion.div>
-  );
-};
+  )
+}
 
-// --- Floating Platform Element Components ---
-const ContractCard = () => (
+// --- Floating Icons ---
+const FloatingIcon = ({ icon: Icon, delay, position, size = "w-8 h-8" }) => (
   <motion.div
-    initial={{ opacity: 0, scale: 0.8, y: 20 }}
+    initial={{ opacity: 0, scale: 0, y: 20 }}
     animate={{ opacity: 1, scale: 1, y: 0 }}
-    transition={{ duration: 0.6, delay: 1.2 }}
-    className="absolute top-6 right-6 sm:top-10 sm:right-10 lg:top-20 lg:right-20 w-20 h-28 sm:w-24 sm:h-32 lg:w-32 lg:h-40 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl shadow-2xl p-2 sm:p-3 lg:p-4 backdrop-blur-sm border border-white/20"
+    transition={{ duration: 0.6, delay }}
+    className={`absolute ${position} ${size} text-white/20`}
   >
-    <div className="flex items-center gap-1 lg:gap-2 mb-2">
-      <FileTextIcon className="w-3 h-3 sm:w-3 sm:h-3 lg:w-4 lg:h-4 text-white" />
-      <span className="text-white text-xs font-semibold">Contract</span>
-    </div>
-    <div className="space-y-1">
-      <div className="h-1 bg-white/40 rounded"></div>
-      <div className="h-1 bg-white/30 rounded w-3/4"></div>
-      <div className="h-1 bg-white/20 rounded w-1/2"></div>
-    </div>
-    <div className="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3">
-      <div className="h-2 bg-green-400 rounded-full"></div>
-    </div>
+    <motion.div
+      animate={{ y: [0, -10, 0], rotate: [0, 5, 0] }}
+      transition={{ duration: 4, repeat: Infinity, delay }}
+    >
+      <Icon />
+    </motion.div>
   </motion.div>
-);
-
-const ChatBubble = ({ message, isAI, delay }) => (
-  <motion.div
-    initial={{ opacity: 0, x: isAI ? -20 : 20, scale: 0.9 }}
-    animate={{ opacity: 1, x: 0, scale: 1 }}
-    transition={{ duration: 0.5, delay }}
-    className={`flex ${isAI ? 'justify-start' : 'justify-end'} mb-1 sm:mb-2`}
-  >
-    <div className={`max-w-[80px] sm:max-w-xs lg:max-w-sm p-2 sm:p-3 lg:p-4 rounded-2xl ${
-      isAI 
-        ? 'bg-white/10 backdrop-blur-sm border border-white/20 rounded-bl-none' 
-        : 'bg-gradient-to-r from-purple-500 to-pink-500 rounded-br-none'
-    }`}>
-      <p className="text-white text-xs sm:text-xs lg:text-sm">{message}</p>
-    </div>
-  </motion.div>
-);
-
-const GroupChatWindow = () => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-    animate={{ opacity: 1, scale: 1, y: 0 }}
-    transition={{ duration: 0.6, delay: 1.4 }}
-    className="absolute bottom-16 left-6 sm:bottom-20 sm:left-10 lg:bottom-32 lg:left-20 w-28 h-36 sm:w-32 sm:h-40 lg:w-40 lg:h-48 bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/10 p-2 sm:p-3 lg:p-4"
-  >
-    <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
-      <UsersIcon className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
-      <span className="text-white text-xs sm:text-sm font-semibold">Team Chat</span>
-    </div>
-    <div className="space-y-1 sm:space-y-2">
-      <ChatBubble message="Review contract?" isAI={true} delay={1.6} />
-      <ChatBubble message="Generating..." isAI={false} delay={1.8} />
-    </div>
-  </motion.div>
-);
-
-const AIAssistant = () => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.8 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.6, delay: 1.6 }}
-    className="absolute top-1/2 right-1/4 transform -translate-y-1/2 hidden xl:block"
-  >
-    <div className="relative w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full shadow-2xl flex items-center justify-center">
-      <BotIcon className="w-8 h-8 text-white" />
-      <motion.div
-        animate={{ scale: [1, 1.2, 1] }}
-        transition={{ duration: 2, repeat: Infinity }}
-        className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-gray-900"
-      />
-    </div>
-  </motion.div>
-);
+)
 
 // --- Main Hero Section Component ---
 export default function Hero() {
-  const heroRef = useRef(null);
-  const [isGsapReady, setIsGsapReady] = useState(false);
+  const heroRef = useRef(null)
+  const [isGsapReady, setIsGsapReady] = useState(false)
 
   // Load GSAP and then set ready state
   useExternalScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js', () => {
-    setIsGsapReady(true);
-  });
+    setIsGsapReady(true)
+  })
 
-  const textGradient = `bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent`;
+  const textGradient = `bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent`
 
   // GSAP Animations
   useEffect(() => {
-    if (!isGsapReady || !heroRef.current) return;
-    const gsap = window.gsap;
+    if (!isGsapReady || !heroRef.current) return
+    const gsap = window.gsap
     
-    const tl = gsap.timeline({ defaults: { ease: 'power3.out' }});
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' }})
 
     tl.fromTo('.hero-element', 
       { opacity: 0, y: 30 },
       { opacity: 1, y: 0, duration: 1, stagger: 0.2, delay: 0.5 }
-    );
-  }, [isGsapReady]);
+    )
+  }, [isGsapReady])
 
-useEffect(() => {
-  const handleMouseMove = (e) => {
-    if (!heroRef.current) return; // ✅ Check here too
-    const { clientX, clientY } = e;
-    const x = (clientX / window.innerWidth) * 100;
-    const y = (clientY / window.innerHeight) * 100;
-    heroRef.current.style.setProperty('--x', `${x}%`);
-    heroRef.current.style.setProperty('--y', `${y}%`);
-  };
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!heroRef.current) return
+      const { clientX, clientY } = e
+      const x = (clientX / window.innerWidth) * 100
+      const y = (clientY / window.innerHeight) * 100
+      heroRef.current.style.setProperty('--x', `${x}%`)
+      heroRef.current.style.setProperty('--y', `${y}%`)
+    }
 
-  window.addEventListener('mousemove', handleMouseMove);
-  return () => window.removeEventListener('mousemove', handleMouseMove);
-}, []);
-
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [])
 
   return (
-<section
-  ref={heroRef}
-  className="relative w-full bg-gray-900 text-white overflow-hidden flex items-center justify-center min-h-auto sm:min-h-screen pt-14 sm:pt-0 pb-4 sm:py-8"
-  style={{ '--x': '50%', '--y': '50%' }}
->
+    <section
+      ref={heroRef}
+      className="relative w-full bg-gray-900 text-white overflow-hidden flex items-center justify-center min-h-auto sm:min-h-screen pt-14 sm:pt-0 pb-4 sm:py-8"
+      style={{ '--x': '50%', '--y': '50%' }}
+    >
       {/* Enhanced Background Effects */}
       <div className="absolute inset-0 -z-20 grid-pattern"></div>
       <div 
@@ -236,15 +281,16 @@ useEffect(() => {
         className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -z-10"
       />
 
+      {/* Floating Icons */}
+      <div className="hidden sm:block">
+        <FloatingIcon icon={SparklesIcon} delay={1.2} position="top-10 right-10" />
+        <FloatingIcon icon={ZapIcon} delay={1.4} position="bottom-20 left-10" />
+        <FloatingIcon icon={BotIcon} delay={1.6} position="top-20 left-20" size="w-10 h-10" />
+        <FloatingIcon icon={MessageCircleIcon} delay={1.8} position="bottom-32 right-20" />
+      </div>
+
       <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-6xl mx-auto">
-          {/* Platform Elements - Hidden on mobile, shown on tablet and up */}
-          <div className="hidden sm:block">
-            <ContractCard />
-            <GroupChatWindow />
-            <AIAssistant />
-          </div>
-
           {/* Top Badge - More compact on mobile */}
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
