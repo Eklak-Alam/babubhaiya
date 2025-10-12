@@ -141,6 +141,127 @@ const ZapIcon = (props) => (
   </svg>
 )
 
+// --- Enhanced Auto-Play Image Gallery Component ---
+const AutoPlayImageGallery = ({ images, interval = 3000 }) => {
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length)
+    }, interval)
+
+    return () => clearInterval(timer)
+  }, [images.length, interval])
+
+  return (
+    <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Enhanced Main Card with Better Aesthetics */}
+      <div className="relative group">
+        {/* Glow Effect */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl blur-2xl opacity-30 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+        
+        {/* Main Card Container */}
+        <div className="relative bg-gray-800/90 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+          {/* Animated Border */}
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-indigo-500/30 rounded-2xl animate-border-flow"></div>
+          
+          {/* Content */}
+          <div className="relative p-1">
+            <div className="relative w-full h-72 sm:h-96 md:h-[500px] lg:h-[600px] rounded-xl overflow-hidden">
+              {images.map((image, index) => (
+                <motion.div
+                  key={index}
+                  className="absolute inset-0 w-full h-full"
+                  initial={{ opacity: 0, scale: 1.1, filter: "blur(4px)" }}
+                  animate={{ 
+                    opacity: index === currentIndex ? 1 : 0,
+                    scale: index === currentIndex ? 1 : 1.1,
+                    filter: index === currentIndex ? "blur(0px)" : "blur(4px)"
+                  }}
+                  transition={{ duration: 1.5, ease: "easeInOut" }}
+                >
+                  {/* Image with Enhanced Styling */}
+                  <div 
+                    className="w-full h-full bg-cover bg-center transform transition-transform duration-1000"
+                    style={{ backgroundImage: `url(${image})` }}
+                  />
+                  
+                  {/* Enhanced Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                  
+                  {/* Shine Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 animate-shine" />
+                </motion.div>
+              ))}
+              
+              {/* Enhanced Navigation Controls */}
+              <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-black/40 backdrop-blur-lg rounded-full px-6 py-3 border border-white/10">
+                {/* Previous Button */}
+                <button
+                  onClick={() => setCurrentIndex((currentIndex - 1 + images.length) % images.length)}
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 hover:scale-110"
+                >
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+
+                {/* Enhanced Indicator Dots */}
+                <div className="flex space-x-3">
+                  {images.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`w-3 h-3 rounded-full transition-all duration-500 transform ${
+                        index === currentIndex 
+                          ? 'bg-white scale-125 shadow-lg ring-2 ring-purple-400' 
+                          : 'bg-white/40 hover:bg-white/60 hover:scale-110'
+                      }`}
+                      onClick={() => setCurrentIndex(index)}
+                    />
+                  ))}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  onClick={() => setCurrentIndex((currentIndex + 1) % images.length)}
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 hover:scale-110"
+                >
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500"
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ 
+                    duration: interval / 1000, 
+                    ease: "linear",
+                    repeat: Infinity,
+                    repeatType: "loop"
+                  }}
+                  key={currentIndex}
+                />
+              </div>
+
+              {/* Image Counter
+              <div className="absolute top-6 right-6 bg-black/40 backdrop-blur-lg rounded-full px-4 py-2 border border-white/10">
+                <span className="text-sm font-medium text-white">
+                  {currentIndex + 1} / {images.length}
+                </span>
+              </div> */}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // --- Custom Hook to load external scripts ---
 const useExternalScript = (url, callback) => {
   useEffect(() => {
@@ -214,6 +335,16 @@ export default function Hero() {
   const heroRef = useRef(null)
   const [isGsapReady, setIsGsapReady] = useState(false)
 
+  // Your images array
+  const galleryImages = [
+    '/heroimg/contract.png',
+    '/heroimg/contractgenerate.png',
+    '/heroimg/chathero.png',
+    '/heroimg/chatdashboard.png',
+    '/heroimg/groupchat.png',
+    '/heroimg/groupdashboard.png',
+  ]
+
   // Load GSAP and then set ready state
   useExternalScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js', () => {
     setIsGsapReady(true)
@@ -249,130 +380,135 @@ export default function Hero() {
   }, [])
 
   return (
-    <section
-      ref={heroRef}
-      className="relative w-full bg-gray-900 text-white overflow-hidden flex items-center justify-center min-h-auto sm:min-h-screen pt-14 sm:pt-0 pb-4 sm:py-8"
-      style={{ '--x': '50%', '--y': '50%' }}
-    >
-      {/* Enhanced Background Effects */}
-      <div className="absolute inset-0 -z-20 grid-pattern"></div>
-      <div 
-        className="pointer-events-none absolute inset-0 -z-10 transition-all duration-300"
-        style={{
-          background: `radial-gradient(circle at var(--x) var(--y), rgba(139, 92, 246, 0.25), transparent 35%)`,
-        }}
-      />
-      
-      {/* Animated Orbs */}
-      <motion.div
-        animate={{ 
-          x: [0, 100, 0],
-          y: [0, -50, 0],
-        }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl -z-10"
-      />
-      <motion.div
-        animate={{ 
-          x: [0, -80, 0],
-          y: [0, 60, 0],
-        }}
-        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -z-10"
-      />
+    <div className="relative">
+      {/* Main Section with Graph Background */}
+      <section
+        ref={heroRef}
+        className="relative w-full bg-gray-900 text-white overflow-hidden"
+        style={{ '--x': '50%', '--y': '50%' }}
+      >
+        {/* Graph Line Pattern Background */}
+        <div className="absolute inset-0 graph-pattern opacity-90"></div>
+        
+        {/* Enhanced Background Effects */}
+        <div className="absolute inset-0 -z-10 transition-all duration-300"
+          style={{
+            background: `radial-gradient(circle at var(--x) var(--y), rgba(139, 92, 246, 0.15), transparent 40%)`,
+          }}
+        />
+        
+        {/* Animated Orbs */}
+        <motion.div
+          animate={{ 
+            x: [0, 100, 0],
+            y: [0, -50, 0],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl -z-10"
+        />
+        <motion.div
+          animate={{ 
+            x: [0, -80, 0],
+            y: [0, 60, 0],
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -z-10"
+        />
 
-      {/* Floating Icons */}
-      <div className="hidden sm:block">
-        <FloatingIcon icon={SparklesIcon} delay={1.2} position="top-10 right-10" />
-        <FloatingIcon icon={ZapIcon} delay={1.4} position="bottom-20 left-10" />
-        <FloatingIcon icon={BotIcon} delay={1.6} position="top-20 left-20" size="w-10 h-10" />
-        <FloatingIcon icon={MessageCircleIcon} delay={1.8} position="bottom-32 right-20" />
-      </div>
+        {/* Floating Icons */}
+        <div className="hidden sm:block">
+          <FloatingIcon icon={SparklesIcon} delay={1.2} position="top-10 right-10" />
+          <FloatingIcon icon={ZapIcon} delay={1.4} position="bottom-20 left-10" />
+          <FloatingIcon icon={BotIcon} delay={1.6} position="top-20 left-20" size="w-10 h-10" />
+          <FloatingIcon icon={MessageCircleIcon} delay={1.8} position="bottom-32 right-20" />
+        </div>
 
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="max-w-6xl mx-auto">
-          {/* Top Badge - More compact on mobile */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.25, 1, 0.5, 1], delay: 0.5 }}
-            className="hero-element inline-flex items-center gap-2 border border-white/20 bg-black/40 backdrop-blur-lg rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-4 sm:mb-8 shadow-2xl"
-          >
-            <BotIcon className="text-purple-400 w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="text-xs sm:text-sm font-medium text-gray-300">
-              Next-Gen AI Workspace
-            </span>
-          </motion.div>
-          
-          {/* Main Heading - More compact spacing */}
-          <h1 className="hero-element text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter mb-4 sm:mb-6 leading-tight">
-            Your All-in-One <span className={`${textGradient} animate-gradient`}>AI Workspace</span>
-          </h1>
+        {/* Hero Content */}
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-20 flex items-center justify-center min-h-screen">
+          <div className="max-w-6xl mx-auto text-center">
+            {/* Top Badge */}
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease: [0.25, 1, 0.5, 1], delay: 0.5 }}
+              className="hero-element inline-flex items-center gap-2 border border-white/20 bg-black/40 backdrop-blur-lg rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-4 sm:mb-8 shadow-2xl"
+            >
+              <BotIcon className="text-purple-400 w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="text-xs sm:text-sm font-medium text-gray-300">
+                Next-Gen AI Workspace
+              </span>
+            </motion.div>
+            
+            {/* Main Heading */}
+            <h1 className="hero-element text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter mb-4 sm:mb-6 leading-tight">
+              Your All-in-One <span className={`${textGradient} animate-gradient`}>AI Workspace</span>
+            </h1>
 
-          {/* Description - Shorter and more compact */}
-          <p className="hero-element text-base sm:text-xl lg:text-2xl text-gray-300 max-w-2xl sm:max-w-4xl mx-auto mb-6 sm:mb-10 leading-relaxed px-2">
-            Generate contracts, collaborate in group chats, and leverage AI assistants—all in one intelligent platform for modern teams.
-          </p>
+            {/* Description */}
+            <p className="hero-element text-base sm:text-xl lg:text-2xl text-gray-300 max-w-2xl sm:max-w-4xl mx-auto mb-6 sm:mb-10 leading-relaxed px-2">
+              Generate contracts, collaborate in group chats, and leverage AI assistants—all in one intelligent platform for modern teams.
+            </p>
 
-          {/* Feature Highlights - Compact grid */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="hero-element grid grid-cols-3 gap-2 sm:gap-4 mb-8 sm:mb-12 max-w-md sm:max-w-2xl mx-auto px-2"
-          >
-            {[
-              { icon: FileTextIcon, text: "Smart Contracts" },
-              { icon: UsersIcon, text: "Group Chats" },
-              { icon: MessageCircleIcon, text: "AI Assistants" }
-            ].map((feature, index) => (
-              <motion.div
-                key={feature.text}
-                whileHover={{ scale: 1.05 }}
-                className="flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-4 rounded-lg sm:rounded-xl bg-white/5 backdrop-blur-sm border border-white/10"
-              >
-                <feature.icon className="w-4 h-4 sm:w-6 sm:h-6 text-purple-400" />
-                <span className="text-xs sm:text-sm font-medium text-gray-300 text-center leading-tight">
-                  {feature.text.split(' ').map((word, i) => (
-                    <span key={i}>
-                      {word}
-                      {i < feature.text.split(' ').length - 1 && <br />}
-                    </span>
-                  ))}
-                </span>
-              </motion.div>
-            ))}
-          </motion.div>
-          
-          {/* CTA Buttons - Compact and stacked on mobile */}
-          <div className="hero-element flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-2">
-            <MagneticButton>
-              <Link href="/chat" className="group relative flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-3 sm:py-4 px-6 sm:px-10 rounded-full transition-all duration-300 shadow-2xl hover:shadow-purple-500/50 hover:scale-105 text-sm sm:text-base">
-                Start your journey
-                <ArrowRightIcon className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-300 group-hover:translate-x-1" />
-              </Link>
-            </MagneticButton>
-            <MagneticButton>
-              <Link href="/contract-generator" className="group relative flex items-center justify-center w-full sm:w-auto bg-transparent border-2 border-white/20 hover:bg-white/10 hover:border-white/30 text-gray-300 font-medium py-3 sm:py-4 px-6 sm:px-10 rounded-full transition-all duration-300 backdrop-blur-sm text-sm sm:text-base">
-                Generate Contract
-              </Link>
-            </MagneticButton>
+            {/* Feature Highlights */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              className="hero-element grid grid-cols-3 gap-2 sm:gap-4 mb-8 sm:mb-12 max-w-md sm:max-w-2xl mx-auto px-2"
+            >
+              {[
+                { icon: FileTextIcon, text: "Smart Contracts" },
+                { icon: UsersIcon, text: "Group Chats" },
+                { icon: MessageCircleIcon, text: "AI Assistants" }
+              ].map((feature, index) => (
+                <motion.div
+                  key={feature.text}
+                  whileHover={{ scale: 1.05 }}
+                  className="flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-4 rounded-lg sm:rounded-xl bg-white/5 backdrop-blur-sm border border-white/10"
+                >
+                  <feature.icon className="w-4 h-4 sm:w-6 sm:h-6 text-purple-400" />
+                  <span className="text-xs sm:text-sm font-medium text-gray-300 text-center leading-tight">
+                    {feature.text.split(' ').map((word, i) => (
+                      <span key={i}>
+                        {word}
+                        {i < feature.text.split(' ').length - 1 && <br />}
+                      </span>
+                    ))}
+                  </span>
+                </motion.div>
+              ))}
+            </motion.div>
+            
+            {/* CTA Buttons */}
+            <div className="hero-element flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-2">
+              <MagneticButton>
+                <Link href="/chat" className="group relative flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-3 sm:py-4 px-6 sm:px-10 rounded-full transition-all duration-300 shadow-2xl hover:shadow-purple-500/50 hover:scale-105 text-sm sm:text-base">
+                  Start your journey
+                  <ArrowRightIcon className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-300 group-hover:translate-x-1" />
+                </Link>
+              </MagneticButton>
+              <MagneticButton>
+                <Link href="/contract-generator" className="group relative flex items-center justify-center w-full sm:w-auto bg-transparent border-2 border-white/20 hover:bg-white/10 hover:border-white/30 text-gray-300 font-medium py-3 sm:py-4 px-6 sm:px-10 rounded-full transition-all duration-300 backdrop-blur-sm text-sm sm:text-base">
+                  Generate Contract
+                </Link>
+              </MagneticButton>
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Image Gallery Section - Now part of the same background */}
+        <section className="relative pb-32 -mt-10">
+          <AutoPlayImageGallery images={galleryImages} interval={4000} />
+        </section>
+      </section>
 
       {/* Enhanced Styles */}
       <style jsx>{`
-        .grid-pattern {
-          background-image:
-            linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-          background-size: 2rem 2rem;
-        }
-        @media (min-width: 640px) {
-          .grid-pattern {
-            background-size: 3rem 3rem;
-          }
+        .graph-pattern {
+          background-image: 
+            linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+          background-size: 50px 50px;
         }
         .animate-gradient {
           background-size: 200% 200%;
@@ -383,7 +519,23 @@ export default function Hero() {
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
+        @keyframes borderFlow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animate-border-flow {
+          background-size: 200% 200%;
+          animation: borderFlow 3s ease infinite;
+        }
+        @keyframes shine {
+          0% { transform: translateX(-100%) skewX(-12deg); }
+          100% { transform: translateX(200%) skewX(-12deg); }
+        }
+        .animate-shine {
+          animation: shine 3s ease-in-out infinite;
+        }
       `}</style>
-    </section>
+    </div>
   )
 }
