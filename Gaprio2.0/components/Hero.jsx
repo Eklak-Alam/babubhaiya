@@ -141,8 +141,8 @@ const ZapIcon = (props) => (
   </svg>
 )
 
-// --- Enhanced Auto-Play Image Gallery Component ---
-const AutoPlayImageGallery = ({ images, interval = 3000 }) => {
+// --- Ultimate Auto-Play Image Gallery Component ---
+const AutoPlayImageGallery = ({ images, interval = 4000 }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
 
   useEffect(() => {
@@ -154,113 +154,69 @@ const AutoPlayImageGallery = ({ images, interval = 3000 }) => {
   }, [images.length, interval])
 
   return (
-    <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Enhanced Main Card with Better Aesthetics */}
-      <div className="relative group">
-        {/* Glow Effect */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl blur-2xl opacity-30 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+    <div className="relative w-full max-w-6xl mx-auto px-4">
+      {/* Premium Glass Container */}
+      <div className="relative">
+        {/* Ambient Glow */}
+        <div className="absolute -inset-4 bg-gradient-to-r from-violet-500/20 via-fuchsia-500/20 to-cyan-500/20 rounded-3xl blur-3xl opacity-0 group-hover:opacity-100 transition-all duration-1000" />
         
-        {/* Main Card Container */}
-        <div className="relative bg-gray-800/90 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
-          {/* Animated Border */}
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-indigo-500/30 rounded-2xl animate-border-flow"></div>
+        {/* Main Gallery Container */}
+        <div className="relative bg-white/5 backdrop-blur-3xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+          {/* Animated Gradient Border */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-white/5 rounded-2xl animate-pulse-slow" />
           
-          {/* Content */}
-          <div className="relative p-1">
-            <div className="relative w-full h-72 sm:h-96 md:h-[500px] lg:h-[600px] rounded-xl overflow-hidden">
-              {images.map((image, index) => (
-                <motion.div
-                  key={index}
-                  className="absolute inset-0 w-full h-full"
-                  initial={{ opacity: 0, scale: 1.1, filter: "blur(4px)" }}
-                  animate={{ 
-                    opacity: index === currentIndex ? 1 : 0,
-                    scale: index === currentIndex ? 1 : 1.1,
-                    filter: index === currentIndex ? "blur(0px)" : "blur(4px)"
-                  }}
-                  transition={{ duration: 1.5, ease: "easeInOut" }}
-                >
-                  {/* Image with Enhanced Styling */}
-                  <div 
-                    className="w-full h-full bg-cover bg-center transform transition-transform duration-1000"
-                    style={{ backgroundImage: `url(${image})` }}
-                  />
-                  
-                  {/* Enhanced Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  
-                  {/* Shine Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 animate-shine" />
-                </motion.div>
-              ))}
-              
-              {/* Enhanced Navigation Controls */}
-              <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-black/40 backdrop-blur-lg rounded-full px-6 py-3 border border-white/10">
-                {/* Previous Button */}
-                <button
-                  onClick={() => setCurrentIndex((currentIndex - 1 + images.length) % images.length)}
-                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 hover:scale-110"
-                >
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-
-                {/* Enhanced Indicator Dots */}
-                <div className="flex space-x-3">
-                  {images.map((_, index) => (
-                    <button
-                      key={index}
-                      className={`w-3 h-3 rounded-full transition-all duration-500 transform ${
-                        index === currentIndex 
-                          ? 'bg-white scale-125 shadow-lg ring-2 ring-purple-400' 
-                          : 'bg-white/40 hover:bg-white/60 hover:scale-110'
-                      }`}
-                      onClick={() => setCurrentIndex(index)}
-                    />
-                  ))}
+          {/* Image Canvas */}
+          <div className="relative aspect-[16/9] w-full overflow-hidden">
+            {images.map((image, index) => (
+              <motion.div
+                key={index}
+                className="absolute inset-0 w-full h-full"
+                initial={{ 
+                  opacity: 0,
+                  scale: 1.08,
+                  filter: "brightness(0.8) blur(8px)"
+                }}
+                animate={{ 
+                  opacity: index === currentIndex ? 1 : 0,
+                  scale: index === currentIndex ? 1 : 1.08,
+                  filter: index === currentIndex ? "brightness(1) blur(0px)" : "brightness(0.8) blur(8px)"
+                }}
+                transition={{ 
+                  duration: 2.2,
+                  ease: [0.25, 0.46, 0.45, 0.94]
+                }}
+              >
+                {/* Premium Image Display */}
+                <div 
+                  className="w-full h-full bg-cover bg-center"
+                  style={{ backgroundImage: `url(${image})` }}
+                />
+                
+                {/* Multi-layer Gradient Overlay */}
+                <div className="absolute inset-0">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/30" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+                  <div className="absolute inset-0 bg-radial-gradient(circle at 30% 70%, transparent, black/40)" />
                 </div>
 
-                {/* Next Button */}
-                <button
-                  onClick={() => setCurrentIndex((currentIndex + 1) % images.length)}
-                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 hover:scale-110"
-                >
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
+                {/* Crystal Shine Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/3 to-transparent transform -skew-x-12 translate-x-[-100%] animate-shine-slow" />
+                
+                {/* Subtle Vignette */}
+                <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.3)]" />
+              </motion.div>
+            ))}
 
-              {/* Progress Bar */}
-              <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500"
-                  initial={{ width: "0%" }}
-                  animate={{ width: "100%" }}
-                  transition={{ 
-                    duration: interval / 1000, 
-                    ease: "linear",
-                    repeat: Infinity,
-                    repeatType: "loop"
-                  }}
-                  key={currentIndex}
-                />
-              </div>
-
-              {/* Image Counter
-              <div className="absolute top-6 right-6 bg-black/40 backdrop-blur-lg rounded-full px-4 py-2 border border-white/10">
-                <span className="text-sm font-medium text-white">
-                  {currentIndex + 1} / {images.length}
-                </span>
-              </div> */}
-            </div>
+            {/* Floating Light Orbs */}
+            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-blue-400/10 rounded-full blur-2xl animate-float-slow" />
+            <div className="absolute bottom-1/3 right-1/4 w-40 h-40 bg-purple-400/10 rounded-full blur-2xl animate-float-slower" />
           </div>
         </div>
       </div>
     </div>
   )
 }
+
 
 // --- Custom Hook to load external scripts ---
 const useExternalScript = (url, callback) => {

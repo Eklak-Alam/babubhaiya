@@ -5,6 +5,9 @@ const fetch = require('node-fetch');
 
 const onlineUsers = new Map();
 
+// Your Google Colab AI Service URL - UPDATE THIS!
+const AI_SERVICE_URL = "https://homozygous-cephalous-hee.ngrok-free.dev/";
+
 const initializeSocket = (io) => {
   io.on('connection', (socket) => {
     console.log(`🔌 New connection: ${socket.id}`);
@@ -94,7 +97,7 @@ const initializeSocket = (io) => {
         // Send back to sender
         socket.emit('messageSent', message);
 
-        // Handle AI tagging - FIXED: Check for ai_request type
+        // Handle AI tagging - UPDATED: Uses Colab AI Service
         const hasAITag = tags.special.some(tag => tag.type === 'ai_request');
         if (hasAITag) {
           handleAITagging(senderId, receiverId, processedMessage, 'private', io);
@@ -150,7 +153,7 @@ const initializeSocket = (io) => {
 
         socket.emit('messageSent', message);
 
-        // Handle AI tagging in group messages - FIXED: Check for ai_request type
+        // Handle AI tagging in group messages - UPDATED: Uses Colab AI Service
         const hasAITag = tags.special.some(tag => tag.type === 'ai_request');
         if (hasAITag) {
           handleAITagging(senderId, groupId, processedMessage, 'group', io);
@@ -162,7 +165,7 @@ const initializeSocket = (io) => {
       }
     });
 
-    // Enhanced chat analysis request
+    // Enhanced chat analysis request - UPDATED: Uses Colab AI Service
     socket.on('analyzeChat', async ({ chatId, chatType }) => {
       const userId = socket.userId;
       if (!userId) return;
@@ -217,8 +220,8 @@ const initializeSocket = (io) => {
           chatHistory = messages.map(msg => `${msg.sender_name}: ${msg.message_content}`).join('\n');
         }
 
-        // Send to AI service for analysis
-        const aiResponse = await fetch('http://localhost:5002/ask', {
+        // UPDATED: Send to Google Colab AI service for analysis
+        const aiResponse = await fetch(`${AI_SERVICE_URL}/ask`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -314,7 +317,7 @@ async function processMessageTags(messageContent, senderId, chatType, chatId) {
   };
 }
 
-// Enhanced AI tagging and responses with better error handling
+// Enhanced AI tagging and responses with better error handling - UPDATED for Colab
 async function handleAITagging(senderId, chatId, messageContent, chatType, io) {
   try {
     // Extract the actual question (remove the @ai tag)
@@ -357,13 +360,14 @@ async function handleAITagging(senderId, chatId, messageContent, chatType, io) {
 
     console.log(`🤖 AI Request from user ${senderId}: ${question}`);
     console.log(`📜 Chat History Length: ${chatHistory.length} characters`);
+    console.log(`🌐 Using AI Service: ${AI_SERVICE_URL}`);
 
-    // Enhanced AI service call with timeout and better error handling
+    // UPDATED: Enhanced AI service call to Google Colab
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
     try {
-      const aiResponse = await fetch('http://localhost:5002/ask', {
+      const aiResponse = await fetch(`${AI_SERVICE_URL}/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -410,9 +414,11 @@ async function handleAITagging(senderId, chatId, messageContent, chatType, io) {
     let errorMessage = "Sorry, I encountered an error while processing your request. ";
     
     if (error.message.includes('ECONNREFUSED') || error.message.includes('fetch failed')) {
-      errorMessage += "The AI service appears to be offline. Please make sure Ollama and the AI service are running.";
+      errorMessage += "The AI service appears to be offline. Please make sure the Google Colab AI service is running.";
     } else if (error.message.includes('timeout') || error.message.includes('AbortError')) {
       errorMessage += "The request timed out. Please try again.";
+    } else if (error.message.includes('404')) {
+      errorMessage += "AI service endpoint not found. Please check the Colab URL.";
     } else {
       errorMessage += "Please try again later.";
     }
@@ -514,124 +520,6 @@ function sendAIFallback(senderId, chatId, message, chatType, io, isError = false
   }
   
   console.log('📤 AI response sent via fallback method');
-}
-
-// Enhanced chat analysis with better error handling
-async function handleChatAnalysis(userId, chatId, chatType, socket) {
-  try {
-    console.log(`🔍 Starting AI analysis for ${chatType} chat ${chatId} by user ${userId}`);
-    
-    let chatHistory = '';
-    
-    if (chatType === 'private') {
-      // Verify user has access to this conversation
-      const [access] = await db.query(
-        'SELECT * FROM messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) LIMIT 1',
-        [userId, chatId, chatId, userId]
-      );
-      
-      if (access.length === 0) {
-        socket.emit('analysisError', { error: 'Access denied to this conversation' });
-        return;
-      }
-
-      // Get private chat history
-      const [messages] = await db.query(
-        `SELECT m.*, u.name as sender_name 
-         FROM messages m 
-         JOIN users u ON m.sender_id = u.id 
-         WHERE (m.sender_id = ? AND m.receiver_id = ?) 
-         OR (m.sender_id = ? AND m.receiver_id = ?) 
-         ORDER BY m.timestamp ASC 
-         LIMIT 100`,
-        [userId, chatId, chatId, userId]
-      );
-      chatHistory = messages.map(msg => `${msg.sender_name}: ${msg.message_content}`).join('\n');
-    } else if (chatType === 'group') {
-      // Verify user is member of group
-      const [membership] = await db.query(
-        'SELECT * FROM group_members WHERE group_id = ? AND user_id = ?',
-        [chatId, userId]
-      );
-      
-      if (membership.length === 0) {
-        socket.emit('analysisError', { error: 'You are not a member of this group' });
-        return;
-      }
-
-      // Get group chat history
-      const [messages] = await db.query(
-        `SELECT gm.*, u.name as sender_name 
-         FROM group_messages gm 
-         JOIN users u ON gm.sender_id = u.id 
-         WHERE gm.group_id = ? 
-         ORDER BY gm.timestamp ASC 
-         LIMIT 100`,
-        [chatId]
-      );
-      chatHistory = messages.map(msg => `${msg.sender_name}: ${msg.message_content}`).join('\n');
-    }
-
-    if (!chatHistory.trim()) {
-      socket.emit('analysisError', { error: 'No conversation history found to analyze' });
-      return;
-    }
-
-    console.log(`📊 Analysis history length: ${chatHistory.length} characters`);
-
-    // Enhanced analysis request with timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 35000); // 35 seconds for analysis
-
-    try {
-      const aiResponse = await fetch('http://localhost:5002/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          history: chatHistory, 
-          question: '', 
-          analysis_mode: true 
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (aiResponse.ok) {
-        const aiData = await aiResponse.json();
-        const analysis = aiData.answer || "I couldn't generate an analysis at this time.";
-
-        console.log(`✅ Analysis completed (${analysis.length} chars)`);
-        socket.emit('analysisComplete', { 
-          chatId, 
-          chatType,
-          analysis: analysis 
-        });
-      } else {
-        console.error(`❌ Analysis service error: ${aiResponse.status}`);
-        socket.emit('analysisError', { error: 'AI analysis service unavailable' });
-      }
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      
-      if (fetchError.name === 'AbortError') {
-        console.error('⏰ Analysis request timeout');
-        socket.emit('analysisError', { error: 'Analysis timed out. Please try again.' });
-      } else {
-        throw fetchError;
-      }
-    }
-
-  } catch (error) {
-    console.error('❌ Error analyzing chat:', error);
-    
-    let errorMessage = 'Analysis failed';
-    if (error.message.includes('ECONNREFUSED')) {
-      errorMessage = 'AI service is offline. Please ensure Ollama and the AI service are running.';
-    }
-    
-    socket.emit('analysisError', { error: errorMessage });
-  }
 }
 
 module.exports = { initializeSocket };
