@@ -1,3 +1,4 @@
+// src/components/chat/MessageItem.jsx
 import { useRef, useEffect, useState } from "react";
 import { FaCrown, FaCheck, FaReply, FaRegSmile, FaRegThumbsUp, FaRobot } from "react-icons/fa";
 import { IoEllipsisVertical } from "react-icons/io5";
@@ -21,8 +22,9 @@ export default function MessageItem({
   onAddReaction,
   onRemoveReaction,
 }) {
-  const isOwnMessage = message.sender_id === user.id;
   const isAIMessage = message.is_ai_response || message.sender_id === 5;
+  // ✅ FIXED: A message is only "your own" if it's not an AI response.
+  const isOwnMessage = message.sender_id === user.id && !isAIMessage;
   const showSenderInfo = isGroup && !isOwnMessage;
   const isConsecutive =
     index > 0 &&

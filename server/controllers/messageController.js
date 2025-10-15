@@ -78,7 +78,7 @@ const getConversations = async (req, res) => {
   }
 };
 
-// @desc    Get message history with another user
+// @desc    Get message history with another user - UPDATED: Include AI responses
 // @route   GET /api/messages/:otherUserId
 const getChatHistory = async (req, res) => {
   const loggedInUserId = req.user.id;
@@ -94,6 +94,7 @@ const getChatHistory = async (req, res) => {
       [loggedInUserId, otherUserId]
     );
 
+    // UPDATED QUERY: Include AI responses in the conversation
     const [messages] = await db.query(
       `SELECT m.*, 
                     u.name as sender_name,
@@ -102,10 +103,15 @@ const getChatHistory = async (req, res) => {
              FROM messages m
              JOIN users u ON m.sender_id = u.id
              WHERE (m.sender_id = ? AND m.receiver_id = ?) 
-             OR (m.sender_id = ? AND m.receiver_id = ?) 
+             OR (m.sender_id = ? AND m.receiver_id = ?)
+             OR (m.is_ai_response = true AND ((m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?)))
              ORDER BY m.timestamp DESC
              LIMIT ? OFFSET ?`,
       [
+        loggedInUserId,
+        otherUserId,
+        otherUserId,
+        loggedInUserId,
         loggedInUserId,
         otherUserId,
         otherUserId,
@@ -163,6 +169,7 @@ const getChatHistory = async (req, res) => {
     });
   }
 };
+
 
 // controllers/messageController.js
 
