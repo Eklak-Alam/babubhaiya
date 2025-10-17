@@ -1,22 +1,27 @@
 import { forwardRef } from "react";
 import MessageItem from "./MessageItem";
-import { FaUserFriends, FaRobot } from "react-icons/fa";
+import AILoadingIndicator from "./AILoadingIndicator";
+import { FaUserFriends } from "react-icons/fa";
 import { STYLES } from "./styles";
 
-const MessageList = forwardRef(function MessageList({
-  messages,
-  user,
-  selectedUser,
-  isGroup,
-  editingMessage,
-  editMessageContent,
-  onEditMessage,
-  onEditMessageContent,
-  onSaveEdit,
-  onOpenMessageActions,
-  onAddReaction,
-  onRemoveReaction,
-}, ref) {
+const MessageList = forwardRef(function MessageList(
+  {
+    messages,
+    user,
+    selectedUser,
+    isGroup,
+    editingMessage,
+    editMessageContent,
+    onEditMessage,
+    onEditMessageContent,
+    onSaveEdit,
+    onOpenMessageActions,
+    onAddReaction,
+    onRemoveReaction,
+    isAIResponding = false, // Single prop to control AI loading
+  },
+  ref
+) {
   if (messages.length === 0) {
     return (
       <div
@@ -65,6 +70,9 @@ const MessageList = forwardRef(function MessageList({
             onRemoveReaction={onRemoveReaction}
           />
         ))}
+
+        {/* AI Loading Indicator - Only shows when AI is responding */}
+        {isAIResponding && <AILoadingIndicator />}
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
 # app.py - Enhanced AI Service for Accord Chat with Rate Limiting
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify
 import requests
 import json
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 import re
 from functools import wraps
 import threading
@@ -20,12 +20,12 @@ app = Flask(__name__)
 
 # Configuration
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
-MAX_RESPONSE_LENGTH = 1500  # Reduced character limit
-MAX_CHAT_HISTORY_LENGTH = 500000  # Maximum characters of chat history to process
-MAX_PROMPT_LENGTH = 6000  # Maximum total prompt length
-REQUEST_TIMEOUT = 100  # Reduced timeout for faster responses
-RATE_LIMIT_REQUESTS = 10  # Max requests per minute per IP
-RATE_LIMIT_WINDOW = 60  # Time window in seconds
+MAX_RESPONSE_LENGTH = 1500
+MAX_CHAT_HISTORY_LENGTH = 500000
+MAX_PROMPT_LENGTH = 6000
+REQUEST_TIMEOUT = 100
+RATE_LIMIT_REQUESTS = 10
+RATE_LIMIT_WINDOW = 60
 
 # Rate limiting storage
 rate_limit_data = {}
@@ -37,19 +37,14 @@ class AIService:
         self.model = "llama3:instruct"
     
     def truncate_chat_history(self, chat_data, max_length=MAX_CHAT_HISTORY_LENGTH):
-        """Truncate chat history to prevent overly long prompts"""
         if not chat_data or len(chat_data) <= max_length:
             return chat_data
         
-        # Keep the most recent part of the conversation (most relevant)
         truncated = chat_data[-max_length:]
         logger.info(f"Truncated chat history from {len(chat_data)} to {len(truncated)} characters")
-        return f"...{truncated}"  # Indicate it was truncated
+        return f"...{truncated}"
     
     def generate_prompt(self, chat_data, user_prompt, analysis_mode=False):
-        """Generate appropriate prompt with optimized length"""
-        
-        # Truncate chat history to prevent overly long prompts
         truncated_chat = self.truncate_chat_history(chat_data)
         
         if analysis_mode:
@@ -94,7 +89,6 @@ You are Accord, a helpful AI assistant.
 **Please provide a concise, helpful response (1-2 paragraphs max).**
 """
         
-        # Ensure prompt doesn't exceed maximum length
         if len(prompt) > MAX_PROMPT_LENGTH:
             excess = len(prompt) - MAX_PROMPT_LENGTH
             prompt = prompt[:MAX_PROMPT_LENGTH] + "\n[Content truncated due to length]"
@@ -103,8 +97,6 @@ You are Accord, a helpful AI assistant.
         return prompt
     
     def call_ollama(self, prompt):
-        """Make request to Ollama API with timeout protection"""
-        
         payload = {
             "model": self.model,
             "prompt": prompt,
@@ -112,7 +104,7 @@ You are Accord, a helpful AI assistant.
             "options": {
                 "temperature": 0.7,
                 "top_p": 0.9,
-                "num_predict": 500,  # Reduced for faster responses
+                "num_predict": 500,
                 "repeat_penalty": 1.1,
             }
         }
@@ -131,7 +123,6 @@ You are Accord, a helpful AI assistant.
             response_data = response.json()
             ai_response = response_data.get("response", "").strip()
             
-            # Clean and truncate response
             ai_response = self.clean_response(ai_response)
             
             return ai_response, None
@@ -153,43 +144,31 @@ You are Accord, a helpful AI assistant.
             return None, "An unexpected error occurred. Please try again."
     
     def clean_response(self, response):
-        """Clean and format the AI response"""
         if not response:
             return "I couldn't generate a response. Please try again."
         
-        # Remove excessive whitespace
         response = re.sub(r'\n\s*\n', '\n\n', response)
         
-        # Truncate if too long
         if len(response) > MAX_RESPONSE_LENGTH:
             response = response[:MAX_RESPONSE_LENGTH].rsplit('.', 1)[0] + "..."
         
         return response.strip()
 
-# Initialize AI service
 ai_service = AIService()
 
 def rate_limit(f):
-    """Rate limiting decorator"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Get client IP
         client_ip = request.remote_addr
-        
         current_time = time.time()
         
         with rate_lock:
-            # Clean old entries
             for ip in list(rate_limit_data.keys()):
                 if current_time - rate_limit_data[ip]['start_time'] > RATE_LIMIT_WINDOW:
                     del rate_limit_data[ip]
             
-            # Check rate limit
             if client_ip not in rate_limit_data:
-                rate_limit_data[client_ip] = {
-                    'count': 1,
-                    'start_time': current_time
-                }
+                rate_limit_data[client_ip] = {'count': 1, 'start_time': current_time}
             else:
                 rate_limit_data[client_ip]['count'] += 1
             
@@ -208,17 +187,14 @@ def rate_limit(f):
 
 @app.before_request
 def before_request():
-    """Global request timing"""
     request.start_time = time.time()
 
 @app.after_request
 def after_request(response):
-    """Log request completion time"""
     if hasattr(request, 'start_time'):
         response_time = time.time() - request.start_time
         logger.info(f"Request {request.method} {request.path} completed in {response_time:.2f}s - Status: {response.status_code}")
     
-    # Add security headers
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     
@@ -227,11 +203,7 @@ def after_request(response):
 @app.route('/analyze', methods=['POST'])
 @rate_limit
 def analyze_chat():
-    """
-    Optimized chat analysis endpoint with rate limiting
-    """
     try:
-        # Validate request
         if not request.is_json:
             return jsonify({'error': 'Request must be JSON'}), 400
             
@@ -243,27 +215,23 @@ def analyze_chat():
         user_prompt = data.get('user_prompt', '')
         analysis_mode = data.get('analysis_mode', False)
         
-        # Validate required fields
         if not user_prompt:
             return jsonify({'error': 'Missing user_prompt'}), 400
         
-        # Validate input lengths
         if len(user_prompt) > 1000:
             return jsonify({'error': 'User prompt too long (max 1000 characters)'}), 400
         
-        if len(chat_data) > 10000:  # Absolute maximum
+        if len(chat_data) > 10000:
             return jsonify({'error': 'Chat history too long (max 10000 characters)'}), 400
         
         logger.info(f"AI Request - Prompt: {user_prompt[:80]}... | Chat history: {len(chat_data)} chars")
         
-        # Generate prompt and get AI response
         prompt = ai_service.generate_prompt(chat_data, user_prompt, analysis_mode)
         ai_response, error = ai_service.call_ollama(prompt)
         
         if error:
             return jsonify({'response': error})
         
-        # Calculate response time
         response_time = time.time() - request.start_time
         
         logger.info(f"AI Response generated in {response_time:.2f}s - Length: {len(ai_response)}")
@@ -286,9 +254,6 @@ def analyze_chat():
 @app.route('/ask', methods=['POST'])
 @rate_limit
 def ask_ai():
-    """
-    Legacy endpoint with rate limiting
-    """
     try:
         if not request.is_json:
             return jsonify({'error': 'Request must be JSON'}), 400
@@ -301,11 +266,9 @@ def ask_ai():
         if not question:
             return jsonify({'error': 'Missing question'}), 400
         
-        # Validate input lengths
         if len(question) > 1000:
             return jsonify({'error': 'Question too long (max 1000 characters)'}), 400
         
-        # Convert to new format
         prompt = ai_service.generate_prompt(history, question, analysis_mode)
         ai_response, error = ai_service.call_ollama(prompt)
         
@@ -320,7 +283,6 @@ def ask_ai():
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Enhanced health check endpoint"""
     health_data = {
         'status': 'healthy',
         'timestamp': datetime.utcnow().isoformat(),
@@ -334,7 +296,6 @@ def health_check():
     }
     
     try:
-        # Quick Ollama connection test
         test_payload = {
             "model": "llama3:instruct",
             "prompt": "Say OK",
@@ -361,7 +322,6 @@ def health_check():
 
 @app.route('/status', methods=['GET'])
 def status():
-    """Simple status endpoint"""
     return jsonify({
         'status': 'ok', 
         'service': 'Accord AI',
@@ -370,7 +330,6 @@ def status():
 
 @app.route('/', methods=['GET'])
 def index():
-    """Root endpoint with service information"""
     return jsonify({
         'service': 'Accord AI Service',
         'version': '2.0.0',
@@ -388,7 +347,6 @@ def index():
 
 @app.route('/limits', methods=['GET'])
 def get_limits():
-    """Endpoint to check current rate limits"""
     client_ip = request.remote_addr
     current_time = time.time()
     
@@ -435,36 +393,3 @@ def internal_error(error):
 @app.errorhandler(413)
 def too_large(error):
     return jsonify({'error': 'Request too large'}), 413
-
-if __name__ == '__main__':
-    logger.info("Starting Enhanced Accord AI Service...")
-    
-    # Quick Ollama health check
-    try:
-        test_response = requests.post(OLLAMA_API_URL, json={
-            "model": "llama3:instruct",
-            "prompt": "Test",
-            "stream": False,
-            "options": {"num_predict": 5}
-        }, timeout=5)
-        
-        if test_response.status_code == 200:
-            logger.info("✅ Ollama connection verified")
-        else:
-            logger.warning(f"⚠️ Ollama status: {test_response.status_code}")
-            
-    except Exception as e:
-        logger.warning(f"⚠️ Ollama not available: {str(e)}")
-    
-    logger.info("🚀 AI Service starting with features:")
-    logger.info(f"   • Rate limiting: {RATE_LIMIT_REQUESTS} requests/minute")
-    logger.info(f"   • Request timeout: {REQUEST_TIMEOUT}s")
-    logger.info(f"   • Max response length: {MAX_RESPONSE_LENGTH} chars")
-    logger.info(f"   • Max chat history: {MAX_CHAT_HISTORY_LENGTH} chars")
-    
-    # Start Flask app
-    app.run(
-        host='0.0.0.0',
-        port=5001,
-        debug=False
-    )
