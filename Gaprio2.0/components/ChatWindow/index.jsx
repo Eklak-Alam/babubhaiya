@@ -341,6 +341,9 @@ export default function ChatWindow({
     // Also listen to regular newMessage for AI responses
     socket.on("newMessage", handleAnyAIMessage);
 
+    // --- THIS IS THE FIX (Add this line) ---
+    socket.on("newGroupMessage", handleAnyAIMessage);
+
     return () => {
       console.log("🧹 Cleaning up socket listeners");
       socket.off("newMessage", handleNewMessage);
@@ -349,6 +352,9 @@ export default function ChatWindow({
       socket.off("messageError", handleMessageError);
       socket.off("aiResponse", handleAIResponse);
       socket.off("newMessage", handleAnyAIMessage);
+
+      // --- THIS IS THE FIX (Add this line) ---
+      socket.off("newGroupMessage", handleAnyAIMessage);
 
       // Clear timeout on cleanup
       if (aiResponseTimeoutRef.current) {
@@ -363,10 +369,9 @@ export default function ChatWindow({
     onNewMessage,
     user,
     isAIChat,
-    isAIResponding,
+    isAIResponding, // Make sure isAIResponding is in the dependency array
     scrollToBottom,
   ]);
-
   const fetchGroupMembers = useCallback(async () => {
     if (!isGroup || !selectedUser?.id) return;
 
