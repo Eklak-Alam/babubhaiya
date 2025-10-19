@@ -27,39 +27,46 @@ export default function PremiumNavbar() {
     setIsClient(true)
   }, [])
 
-  // Simple scroll handling
-  useEffect(() => {
-    if (!isClient) return
+  // Fixed scroll handling
+useEffect(() => {
+  if (!isClient) return
 
-    let lastScrollY = window.scrollY
-    let ticking = false
+  let lastScrollY = window.scrollY
+  let ticking = false
 
-    const updateNavbar = () => {
-      const currentScrollY = window.scrollY
-        
-      // Show/hide based on scroll direction
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        setVisible(false)
-      } else {
-        setVisible(true)
-      }
-      
-      // Background change
-      setIsScrolled(currentScrollY > 10)
-      lastScrollY = currentScrollY
-      ticking = false
+  const updateNavbar = () => {
+    const currentScrollY = window.scrollY
+    
+    // Only hide if scrolling down and past a certain threshold
+    if (currentScrollY > lastScrollY && currentScrollY > 100) {
+      setVisible(false)
+    } 
+    // Show if scrolling up
+    else if (currentScrollY < lastScrollY) {
+      setVisible(true)
     }
-
-    const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(updateNavbar)
-        ticking = true
-      }
+    
+    // Always show if at the top of the page
+    if (currentScrollY < 10) {
+      setVisible(true)
     }
+    
+    // Background change
+    setIsScrolled(currentScrollY > 10)
+    lastScrollY = currentScrollY
+    ticking = false
+  }
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [isClient])
+  const handleScroll = () => {
+    if (!ticking) {
+      requestAnimationFrame(updateNavbar)
+      ticking = true
+    }
+  }
+
+  window.addEventListener('scroll', handleScroll, { passive: true })
+  return () => window.removeEventListener('scroll', handleScroll)
+}, [isClient])
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -278,7 +285,7 @@ const LightningButton = ({ href, children, className = "", mobile = false }) => 
                 <Link 
                   key={item.href} 
                   href={item.href}
-                  className={`relative px-4 py-2.5 text-sm font-medium transition-all duration-300 focus-visible:outline-none rounded-xl group
+                  className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 focus-visible:outline-none rounded-xl group
                     ${pathname === item.href 
                       ? 'text-white bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30' 
                       : 'text-gray-400 hover:text-white hover:bg-gray-800/50 border border-transparent'
