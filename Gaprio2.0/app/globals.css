@@ -1,5 +1,62 @@
 @import "tailwindcss";
 
+/* ===== CUSTOM SCROLLBAR - RIGHT SIDE ONLY ===== */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  border-radius: 8px;
+  margin: 4px 0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, 
+    #8b5cf6 0%, 
+    #ec4899 30%, 
+    #3b82f6 70%, 
+    #8b5cf6 100%);
+  border-radius: 8px;
+  border: 3px solid #0f172a;
+  background-size: 100% 400%;
+  animation: scrollbarGradient 3s ease infinite;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, 
+    #7c3aed 0%, 
+    #db2777 30%, 
+    #2563eb 70%, 
+    #7c3aed 100%);
+  transform: scale(1.1);
+}
+
+::-webkit-scrollbar-corner {
+  background: #0f172a;
+}
+
+/* Firefox Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #8b5cf6 #0f172a;
+}
+
+/* Scrollbar Gradient Animation */
+@keyframes scrollbarGradient {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 0% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+/* Keep your existing animations */
 @keyframes pulse {
   0%, 100% { opacity: 0.2; }
   50% { opacity: 0.4; }
@@ -49,4 +106,3 @@
 .animate-float {
   animation: float infinite ease-in-out;
 }
-
