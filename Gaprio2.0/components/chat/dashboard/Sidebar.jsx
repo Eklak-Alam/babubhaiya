@@ -24,89 +24,7 @@ import {
 } from "react-icons/fa";
 import CreateGroupModal from "./CreateGroupModal";
 import ProfileModal from "@/components/ChatWindow/ProfileModal";
-
-// ================================
-// COLOR PALETTE CONSTANTS
-// ================================
-const COLORS = {
-  primary: {
-    500: "rgb(59, 130, 246)",
-    600: "rgb(37, 99, 235)",
-    700: "rgb(29, 78, 216)",
-  },
-  status: {
-    success: "text-green-400",
-    warning: "text-yellow-400",
-    error: "text-red-400",
-    errorHover: "bg-red-500/20",
-  },
-};
-
-// ================================
-// STYLE CLASSES CONSTANTS
-// ================================
-const STYLES = {
-  sidebar: `
-    flex flex-col 
-    w-64 md:w-72 lg:w-80 
-    h-screen 
-    bg-gray-900 
-    border-r border-gray-700 
-    shadow-2xl 
-    relative overflow-y-auto 
-    transition-all duration-300
-  `,
-
-  header: `
-    p-4 
-    border-b border-gray-700 
-    bg-gray-800/80 
-    backdrop-blur-sm 
-    flex items-center justify-between
-  `,
-
-  sectionHeader: `
-    px-3 py-2 
-    text-xs md:text-sm 
-    font-semibold 
-    text-white/80 
-    uppercase tracking-wide 
-    truncate
-  `,
-
-  button: {
-    primary: `w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-blue-500/40 transition-all duration-300 font-semibold group relative overflow-hidden`,
-    secondary: `px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all duration-300 text-sm font-medium shadow-lg hover:shadow-blue-500/40`,
-    danger: `flex items-center w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/20 transition-colors duration-200 rounded-lg`,
-    icon: `p-2 text-gray-400 hover:text-blue-300 transition-all duration-200 rounded-lg hover:bg-blue-500/10 backdrop-blur-sm`,
-  },
-
-  input: `w-full pl-10 pr-4 py-2.5 border border-gray-600 rounded-xl bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`,
-
-  listItem: (isActive) =>
-    `group relative flex items-center justify-between p-3 mx-2 rounded-xl cursor-pointer transition-all duration-200 border mb-2 ${
-      isActive
-        ? "bg-blue-500/20 border-blue-500/50 shadow-lg shadow-blue-500/20"
-        : "border-transparent hover:bg-blue-500/20 hover:border-blue-500/30"
-    }`,
-  avatar: (colorClass) =>
-    `flex items-center justify-center w-10 h-10 bg-gradient-to-br ${colorClass} rounded-full shadow-md ring-1 ring-blue-500/30 transition-shadow duration-200`,
-
-  tab: {
-    active: `flex-1 py-3 px-4 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 text-white bg-blue-500/20 border-b-2 border-blue-500`,
-    inactive: `flex-1 py-3 px-4 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 text-gray-400 hover:text-blue-300 hover:bg-blue-500/10`,
-  },
-
-  menu: `absolute right-0 top-8 z-50 w-48 py-2 bg-gray-800 rounded-xl shadow-2xl border border-gray-600 backdrop-blur-sm transform origin-top-right`,
-
-  emptyState: {
-    container:
-      "flex flex-col items-center justify-center py-12 px-4 text-center",
-    icon: "w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4 ring-1 ring-blue-500/30",
-    title: "font-semibold text-white mb-2",
-    description: "text-sm text-gray-400 mb-4",
-  },
-};
+import { useTheme } from "@/context/ThemeContext";
 
 // Utility function to truncate long messages
 const truncateMessage = (message, maxLength = 35) => {
@@ -117,6 +35,7 @@ const truncateMessage = (message, maxLength = 35) => {
 
 export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
   const { user, logout, API } = useAuth();
+  const { theme } = useTheme();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -133,6 +52,76 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
   const menuRef = useRef(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
+  // Theme-based styles
+  const getStyles = (theme) => ({
+    sidebar: `
+      flex flex-col 
+      w-64 md:w-72 lg:w-80 
+      h-screen 
+      ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-200'} 
+      border-r ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} 
+      shadow-2xl 
+      relative overflow-y-auto 
+      transition-all duration-300
+    `,
+
+    header: `
+      p-4 
+      border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} 
+      ${theme === 'dark' ? 'bg-gray-800/80' : 'bg-gray-100'} 
+      backdrop-blur-sm 
+      flex items-center justify-between
+    `,
+
+    sectionHeader: `
+      px-3 py-2 
+      text-xs md:text-sm 
+      font-semibold 
+      ${theme === 'dark' ? 'text-white/80' : 'text-gray-700'} 
+      uppercase tracking-wide 
+      truncate
+    `,
+
+    button: {
+      primary: `w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-blue-500/40 transition-all duration-300 font-semibold group relative overflow-hidden`,
+      secondary: `px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all duration-300 text-sm font-medium shadow-lg hover:shadow-blue-500/40`,
+      danger: `flex items-center w-full px-4 py-2.5 text-sm ${theme === 'dark' ? 'text-red-400 hover:bg-red-500/20' : 'text-red-600 hover:bg-red-100'} transition-colors duration-200 rounded-lg`,
+      icon: `p-2 ${theme === 'dark' ? 'text-gray-400 hover:text-blue-300' : 'text-gray-600 hover:text-blue-600'} transition-all duration-200 rounded-lg ${theme === 'dark' ? 'hover:bg-blue-500/10' : 'hover:bg-blue-100'} backdrop-blur-sm`,
+    },
+
+    input: `w-full pl-10 pr-4 py-2.5 border ${theme === 'dark' ? 'border-gray-600' : 'border-gray-300'} rounded-xl ${theme === 'dark' ? 'bg-gray-800 text-white placeholder-gray-400' : 'bg-gray-50 text-gray-900 placeholder-gray-500'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`,
+
+    listItem: (isActive) =>
+      `group relative flex items-center justify-between p-3 mx-2 rounded-xl cursor-pointer transition-all duration-200 border mb-2 ${
+        isActive
+          ? theme === 'dark'
+            ? "bg-blue-500/20 border-blue-500/50 shadow-lg shadow-blue-500/20"
+            : "bg-blue-100 border-blue-300 shadow-lg shadow-blue-200"
+          : theme === 'dark'
+          ? "border-transparent hover:bg-blue-500/20 hover:border-blue-500/30"
+          : "border-transparent hover:bg-blue-50 hover:border-blue-200"
+      }`,
+
+    avatar: (colorClass) =>
+      `flex items-center justify-center w-10 h-10 bg-gradient-to-br ${colorClass} rounded-full shadow-md ring-1 ring-blue-500/30 transition-shadow duration-200`,
+
+    tab: {
+      active: `flex-1 py-3 px-4 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${theme === 'dark' ? 'text-white bg-blue-500/20' : 'text-blue-700 bg-blue-100'} border-b-2 border-blue-500`,
+      inactive: `flex-1 py-3 px-4 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${theme === 'dark' ? 'text-gray-400 hover:text-blue-300 hover:bg-blue-500/10' : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`,
+    },
+
+    menu: `absolute right-0 top-8 z-50 w-48 py-2 ${theme === 'dark' ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'} rounded-xl shadow-2xl border backdrop-blur-sm transform origin-top-right`,
+
+    emptyState: {
+      container: "flex flex-col items-center justify-center py-12 px-4 text-center",
+      icon: `w-16 h-16 ${theme === 'dark' ? 'bg-blue-500/20' : 'bg-blue-100'} rounded-full flex items-center justify-center mb-4 ring-1 ${theme === 'dark' ? 'ring-blue-500/30' : 'ring-blue-300'}`,
+      title: `font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'} mb-2`,
+      description: `text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} mb-4`,
+    },
+  });
+
+  const STYLES = getStyles(theme);
+
   // Toast configuration - FIXED top-right
   const showToast = useCallback((message, type = "success") => {
     const toastOptions = {
@@ -142,7 +131,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true,
-      theme: "dark",
+      theme: theme === 'dark' ? 'dark' : 'light',
     };
 
     switch (type) {
@@ -161,7 +150,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
       default:
         toast(message, toastOptions);
     }
-  }, []);
+  }, [theme]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -598,7 +587,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
           pauseOnFocusLoss
           draggable
           pauseOnHover
-          theme="dark"
+          theme={theme === 'dark' ? 'dark' : 'light'}
           style={{
             position: "fixed",
             top: "20px",
@@ -610,68 +599,85 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
         />
 
         {/* Improved Header */}
-        <div className="p-4 border-b border-gray-700 bg-gray-800/80 backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            {/* User Info */}
-            <div
-              onClick={() => setShowProfileModal(true)}
-              className="flex items-center gap-3 cursor-pointer group flex-1 min-w-0"
-            >
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`flex items-center justify-center w-10 h-10 bg-gradient-to-br ${getRandomColor(
-                  user.name
-                )} rounded-xl shadow-lg ring-2 ring-blue-500/30 transition-all duration-300 group-hover:ring-blue-500/50`}
-              >
-                <span className="font-bold text-white text-sm">
-                  {getInitials(user.name)}
-                </span>
-              </motion.div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-white text-sm truncate group-hover:text-blue-300 transition-colors duration-200">
-                  {user.name}
-                </h3>
-                <p className="text-xs text-gray-400 truncate group-hover:text-gray-300 transition-colors duration-200">
-                  @{user.username}
-                </p>
-              </div>
-            </div>
+<div className={STYLES.header}>
+  <div className="flex items-center justify-between gap-4 py-0.5 px-2">
+    {/* User Info */}
+    <div
+      onClick={() => setShowProfileModal(true)}
+      className="flex items-center gap-3 cursor-pointer group flex-1 min-w-0"
+    >
+      <motion.div
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
+        className={`flex items-center justify-center w-11 h-11 bg-gradient-to-br ${getRandomColor(
+          user.name
+        )} rounded-xl shadow-lg ring-2 ring-blue-500/30 transition-all duration-300`}
+      >
+        <span className="font-bold text-white text-sm">
+          {getInitials(user.name)}
+        </span>
+      </motion.div>
+      <div className="flex flex-col min-w-0">
+        <h3
+          className={`font-semibold text-[15px] truncate transition-colors duration-200 ${
+            theme === "dark" ? "text-white" : "text-gray-900"
+          }`}
+        >
+          {user.name}
+        </h3>
+        <p
+          className={`text-xs truncate transition-colors duration-200 ${
+            theme === "dark" ? "text-gray-400" : "text-gray-600"
+          }`}
+        >
+          @{user.username}
+        </p>
+      </div>
+    </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              {/* Refresh Button */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={refreshConversations}
-                className="p-2 rounded-lg bg-white/5 hover:bg-green-500/20 transition-all duration-300"
-                title="Refresh"
-              >
-                <FiRefreshCw
-                  className={`text-green-400 ${
-                    isRefreshing ? "animate-spin" : ""
-                  }`}
-                  size={16}
-                />
-              </motion.button>
+    {/* Action Buttons */}
+    <div className="flex items-center gap-3 ml-4">
+      {/* Refresh Button */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={refreshConversations}
+        className={`p-2 rounded-lg shadow-sm border transition-all duration-300 ${
+          theme === "dark"
+            ? "bg-white/5 border-white/10 hover:bg-green-500/20"
+            : "bg-gray-100 border-gray-200 hover:bg-green-100"
+        }`}
+        title="Refresh"
+      >
+        <FiRefreshCw
+          className={`${
+            theme === "dark" ? "text-green-400" : "text-green-600"
+          } ${isRefreshing ? "animate-spin" : ""}`}
+          size={18}
+        />
+      </motion.button>
 
-              {/* Logout Button */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={handleLogout}
-                className="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 transition-all duration-300 text-red-400"
-                title="Logout"
-              >
-                <FaSignOutAlt size={16} />
-              </motion.button>
-            </div>
-          </div>
-        </div>
+      {/* Logout Button */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={handleLogout}
+        className={`p-2 rounded-lg shadow-sm border transition-all duration-300 ${
+          theme === "dark"
+            ? "bg-white/5 border-white/10 text-red-400 hover:bg-red-500/20"
+            : "bg-gray-100 border-gray-200 text-red-500 hover:bg-red-100"
+        }`}
+        title="Logout"
+      >
+        <FaSignOutAlt size={18} />
+      </motion.button>
+    </div>
+  </div>
+</div>
+
 
         {/* Create Group Button */}
-        <div className="p-4 border-b border-gray-700">
+        <div className={`p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
           <button
             onClick={() => setShowGroupModal(true)}
             className={STYLES.button.primary}
@@ -687,10 +693,10 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
         </div>
 
         {/* Search Section */}
-        <div className="p-4 border-b border-gray-700">
+        <div className={`p-4 border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-              <FaSearch className="h-4 w-4 text-gray-400" />
+              <FaSearch className={`h-4 w-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`} />
             </div>
             <input
               type="text"
@@ -705,7 +711,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                 onClick={() => setSearchQuery("")}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center z-10"
               >
-                <FaTimes className="h-4 w-4 text-gray-400 hover:text-gray-300 transition-colors" />
+                <FaTimes className={`h-4 w-4 ${theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'} transition-colors`} />
               </button>
             )}
           </div>
@@ -713,7 +719,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
 
         {/* Navigation Tabs */}
         {!searchQuery && (
-          <div className="flex border-b border-gray-700 bg-gray-800/30">
+          <div className={`flex border-b ${theme === 'dark' ? 'border-gray-700 bg-gray-800/30' : 'border-gray-200 bg-gray-50/30'}`}>
             <button
               onClick={() => setActiveTab("chats")}
               className={
@@ -761,10 +767,10 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-white truncate">
+                      <div className={`font-semibold truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                         {foundUser.name}
                       </div>
-                      <div className="text-xs text-gray-400 truncate">
+                      <div className={`text-xs truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                         @{foundUser.username}
                       </div>
                     </div>
@@ -779,12 +785,12 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
           ) : searchQuery && isSearching ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-3"></div>
-              <p className="text-sm text-gray-400">Searching users...</p>
+              <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Searching users...</p>
             </div>
           ) : searchQuery ? (
             <div className={STYLES.emptyState.container}>
-              <FaSearch className="text-gray-500 text-3xl mb-3" />
-              <p className="text-gray-400">No users found</p>
+              <FaSearch className={`text-3xl mb-3 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
+              <p className={STYLES.emptyState.description}>No users found</p>
             </div>
           ) : (
             <>
@@ -820,7 +826,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                                 <FaUsers className="text-white text-sm" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="font-semibold text-white truncate flex items-center gap-2">
+                                <div className={`font-semibold truncate flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                                   {group.name}
                                   {isOwner && (
                                     <FaCrown
@@ -830,7 +836,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                                     />
                                   )}
                                 </div>
-                                <div className="text-xs text-gray-400 truncate flex items-center gap-1">
+                                <div className={`text-xs truncate flex items-center gap-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                                   <span>{group.member_count || 0} members</span>
                                   {group.owner_name && (
                                     <>
@@ -847,7 +853,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                                 onClick={(e) =>
                                   toggleMenu(`group-${group.id}`, e)
                                 }
-                                className="p-1.5 text-gray-400 hover:text-gray-300 transition-all duration-200 rounded-lg hover:bg-blue-500/20"
+                                className={STYLES.button.icon}
                                 title="Group options"
                               >
                                 <FaEllipsisV size={12} />
@@ -889,7 +895,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                   ) : (
                     <div className={STYLES.emptyState.container}>
                       <div className={STYLES.emptyState.icon}>
-                        <FaUsers className="text-blue-400 text-2xl" />
+                        <FaUsers className={`text-2xl ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
                       </div>
                       <h3 className={STYLES.emptyState.title}>
                         No Groups Yet
@@ -915,7 +921,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                   {loading ? (
                     <div className="flex flex-col items-center justify-center py-12">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-3"></div>
-                      <p className="text-sm text-gray-300">
+                      <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                         Loading conversations...
                       </p>
                     </div>
@@ -949,22 +955,22 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                               </div>
                               <div className="flex-1 min-w-0 overflow-hidden">
                                 <div className="flex items-center justify-between mb-1">
-                                  <div className="font-semibold text-white truncate flex-1">
+                                  <div className={`font-semibold truncate flex-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                                     {convoUser.name}
                                   </div>
                                   {convoUser.last_message_at && (
-                                    <span className="text-xs text-gray-400 font-normal whitespace-nowrap ml-2">
+                                    <span className={`text-xs font-normal whitespace-nowrap ml-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                                       {getLastMessageTime(
                                         convoUser.last_message_at
                                       )}
                                     </span>
                                   )}
                                 </div>
-                                <div className="flex items-center text-xs text-gray-400 min-w-0">
+                                <div className={`flex items-center text-xs min-w-0 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                                   <span className="truncate flex-1">
                                     @{convoUser.username}
                                     {convoUser.last_message && (
-                                      <span className="ml-2 text-gray-500">
+                                      <span className={`ml-2 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
                                         •{" "}
                                         {truncateMessage(
                                           convoUser.last_message,
@@ -982,7 +988,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                                 onClick={(e) =>
                                   toggleMenu(`chat-${convoUser.id}`, e)
                                 }
-                                className="p-1.5 text-gray-400 hover:text-gray-300 transition-all duration-200 rounded-lg hover:bg-blue-500/20 flex-shrink-0"
+                                className={STYLES.button.icon}
                                 title="Conversation options"
                               >
                                 <FaEllipsisV size={12} />
@@ -1013,7 +1019,7 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
                   ) : (
                     <div className={STYLES.emptyState.container}>
                       <div className={STYLES.emptyState.icon}>
-                        <FaUserFriends className="text-blue-400 text-2xl" />
+                        <FaUserFriends className={`text-2xl ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
                       </div>
                       <h3 className={STYLES.emptyState.title}>
                         No Conversations Yet
@@ -1036,12 +1042,12 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
         </div>
 
         {/* AI Branding Footer */}
-        <div className="p-4 border-t border-gray-700 bg-gradient-to-r from-blue-600/20 to-purple-600/20">
+        <div className={`p-4 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} bg-gradient-to-r from-blue-600/20 to-purple-600/20`}>
           <div className="flex items-center justify-center gap-2 text-white/80 text-sm font-medium">
-            <FaRobot className="text-blue-300" />
-            <span className="hidden sm:inline">AI-Powered Chat Platform</span>
+            <FaRobot className="text-blue-700" />
+            <span className={`text-center hidden sm:inline text-xs mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-900'}`} >AI-Powered Chat Platform</span>
           </div>
-          <p className="text-center text-xs text-gray-400 mt-1">
+          <p className={`text-center text-xs mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-800'}`}>
             Secure • Fast • Intelligent
           </p>
         </div>
@@ -1059,15 +1065,15 @@ export default function Sidebar({ onSelectUser, onGroupDelete, selectedUser }) {
             width: 6px;
           }
           .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(75, 85, 99, 0.3);
+            background: ${theme === 'dark' ? 'rgba(75, 85, 99, 0.3)' : 'rgba(209, 213, 219, 0.3)'};
             border-radius: 3px;
           }
           .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(156, 163, 175, 0.5);
+            background: ${theme === 'dark' ? 'rgba(156, 163, 175, 0.5)' : 'rgba(156, 163, 175, 0.5)'};
             border-radius: 3px;
           }
           .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(156, 163, 175, 0.7);
+            background: ${theme === 'dark' ? 'rgba(156, 163, 175, 0.7)' : 'rgba(156, 163, 175, 0.7)'};
           }
         `}</style>
       </div>

@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FaRegSmileBeam, FaAt, FaHashtag, FaTimes } from "react-icons/fa";
 import { IoSend } from "react-icons/io5";
-import { STYLES } from "./styles";
+import { useTheme } from "@/context/ThemeContext";
 import TaggingDropdown from "./TaggingDropdown";
 
 export default function MessageInput({
@@ -18,11 +18,91 @@ export default function MessageInput({
   replyingTo,
   isConnected,
 }) {
+  const { theme } = useTheme();
   const [showTaggingDropdown, setShowTaggingDropdown] = useState(false);
   const [taggingQuery, setTaggingQuery] = useState("");
   const [taggingPosition, setTaggingPosition] = useState(0);
   const [isSending, setIsSending] = useState(false);
   const inputRef = useRef(null);
+
+  // Theme-based styles
+  const getStyles = (theme) => ({
+    container: `
+      p-4 border-t transition-colors duration-200
+      ${theme === 'dark' ? 'border-gray-700/50 bg-gray-800' : 'border-gray-300 bg-white'}
+    `,
+    input: `
+      w-full p-4 border rounded-xl focus:outline-none focus:ring-2 backdrop-blur-sm transition-all duration-200 pr-12
+      ${theme === 'dark' 
+        ? 'bg-gray-700/30 text-white placeholder-gray-400 border-gray-600/50 focus:ring-blue-500/50' 
+        : 'bg-gray-50 text-gray-900 placeholder-gray-500 border-gray-300 focus:ring-blue-500/50'
+      }
+    `,
+    inputDisabled: `
+      ${theme === 'dark' 
+        ? 'border-red-500/50 focus:ring-red-500/50 cursor-not-allowed' 
+        : 'border-red-400/50 focus:ring-red-400/50 cursor-not-allowed'
+      }
+    `,
+    replyPreview: `
+      mb-3 p-3 rounded-lg flex items-center justify-between border transition-colors duration-200
+      ${theme === 'dark' 
+        ? 'bg-blue-500/10 border-blue-500/20' 
+        : 'bg-blue-100 border-blue-200'
+      }
+    `,
+    replyText: {
+      header: `text-xs font-medium mb-1 transition-colors duration-200 ${
+        theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+      }`,
+      content: `text-sm truncate transition-colors duration-200 ${
+        theme === 'dark' ? 'text-blue-300' : 'text-blue-700'
+      }`
+    },
+    button: {
+      tag: `
+        p-1.5 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed
+        ${theme === 'dark' 
+          ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-500/20' 
+          : 'text-gray-500 hover:text-blue-600 hover:bg-blue-100'
+        }
+      `,
+      emoji: `
+        p-1.5 transition-colors rounded-lg disabled:opacity-50 disabled:cursor-not-allowed
+        ${theme === 'dark' 
+          ? 'text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/20' 
+          : 'text-gray-500 hover:text-yellow-600 hover:bg-yellow-100'
+        }
+      `,
+      send: `
+        p-4 text-white bg-gradient-to-r rounded-xl transition-all duration-300 flex items-center justify-center shadow-lg min-w-[60px] backdrop-blur-sm border
+      `,
+      sendConnected: `
+        from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border-blue-500/30 hover:shadow-blue-500/25
+      `,
+      sendDisabled: `
+        from-gray-600 to-gray-700 border-gray-600/50 cursor-not-allowed
+        ${theme === 'dark' ? 'border-gray-600/50' : 'border-gray-400/50'}
+      `,
+      sendError: `
+        from-red-600 to-red-700 border-red-500/30 cursor-not-allowed
+        ${theme === 'dark' ? 'border-red-500/30' : 'border-red-400/30'}
+      `
+    },
+    closeButton: `
+      p-1 transition-colors disabled:opacity-50
+      ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-500 hover:text-blue-700'}
+    `
+  });
+
+  const STYLES = getStyles(theme);
+
+  // FIX: Focus input after sending message and when selectedUser changes
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [selectedUser]); // Focus when chat changes
 
   // Focus input when replying to a message
   useEffect(() => {
@@ -31,14 +111,12 @@ export default function MessageInput({
     }
   }, [replyingTo]);
 
-  // FIXED: Enhanced send handler with proper event prevention
+  // FIXED: Enhanced send handler with proper event prevention and auto-focus
   const handleSendMessageProtected = async (e) => {
-    // CRITICAL: Prevent default form submission that causes page reload
     if (e) {
       e.preventDefault();
     }
     
-    // Prevent multiple sends
     if (isSending || isLoading || !newMessage.trim() || !selectedUser) {
       return;
     }
@@ -47,10 +125,16 @@ export default function MessageInput({
     
     try {
       await onSendMessage(e);
+      // FIX: Clear message but keep focus after sending
+      if (inputRef.current) {
+        // Small timeout to ensure message is sent before refocusing
+        setTimeout(() => {
+          inputRef.current.focus();
+        }, 100);
+      }
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
-      // Reset sending state after a short delay to prevent rapid successive sends
       setTimeout(() => setIsSending(false), 500);
     }
   };
@@ -58,12 +142,11 @@ export default function MessageInput({
   // FIXED: Enhanced key press handler
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault(); // CRITICAL: Prevent form submission on Enter
+      e.preventDefault();
       if (!showTaggingDropdown) {
         handleSendMessageProtected(e);
       }
     } else if (e.key === "@" && !showTaggingDropdown) {
-      // Start tagging when @ is pressed
       e.preventDefault();
       setShowTaggingDropdown(true);
       setTaggingPosition(newMessage.length);
@@ -80,7 +163,6 @@ export default function MessageInput({
     const value = e.target.value;
     onNewMessageChange(value);
 
-    // Handle tagging logic
     if (showTaggingDropdown) {
       const textAfterAt = value.slice(taggingPosition);
       const spaceIndex = textAfterAt.indexOf(' ');
@@ -102,7 +184,14 @@ export default function MessageInput({
       onNewMessageChange(newMessageText);
       setShowTaggingDropdown(false);
       setTaggingQuery("");
-      inputRef.current.focus();
+      
+      // FIX: Focus input after selecting user
+      setTimeout(() => {
+        inputRef.current.focus();
+        // Position cursor after the mention
+        const cursorPosition = beforeTag.length + selectedUser.username.length + 2;
+        inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+      }, 0);
     }
   };
 
@@ -111,25 +200,21 @@ export default function MessageInput({
       const beforeTag = newMessage.slice(0, taggingPosition);
       const afterTag = newMessage.slice(taggingPosition + 1 + taggingQuery.length);
       
-      // If a specific prompt is provided, use it
       const aiText = prompt ? `@ai ${prompt}` : "@ai ";
-      
       const newMessageText = `${beforeTag}${aiText}${afterTag}`;
       
       onNewMessageChange(newMessageText);
       setShowTaggingDropdown(false);
       setTaggingQuery("");
-      inputRef.current.focus();
       
-      // If it's a quick prompt, auto-focus and put cursor at end for user to complete
-      if (prompt) {
-        setTimeout(() => {
-          inputRef.current.setSelectionRange(
-            newMessageText.length,
-            newMessageText.length
-          );
-        }, 0);
-      }
+      // FIX: Focus input after selecting AI
+      setTimeout(() => {
+        inputRef.current.focus();
+        if (prompt) {
+          const cursorPosition = newMessageText.length;
+          inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+        }
+      }, 0);
     }
   };
 
@@ -142,12 +227,17 @@ export default function MessageInput({
       onNewMessageChange(newMessageText);
       setShowTaggingDropdown(false);
       setTaggingQuery("");
-      inputRef.current.focus();
+      
+      // FIX: Focus input after selecting everyone
+      setTimeout(() => {
+        inputRef.current.focus();
+        const cursorPosition = beforeTag.length + 5; // Position after "@all "
+        inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+      }, 0);
     }
   };
 
   const handleManualTagging = (e) => {
-    // FIXED: Prevent any default behavior
     if (e) e.preventDefault();
     setShowTaggingDropdown(true);
     setTaggingPosition(newMessage.length);
@@ -162,23 +252,23 @@ export default function MessageInput({
   return (
     <form
       onSubmit={handleSendMessageProtected}
-      className={`p-4 border-t border-gray-700/50 ${STYLES.bg.section} relative z-20`}
+      className={STYLES.container}
     >
       {/* Reply Preview */}
       {replyingTo && (
-        <div className="mb-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-between">
+        <div className={STYLES.replyPreview}>
           <div className="flex-1">
-            <div className="text-xs text-blue-400 font-medium mb-1">
+            <div className={STYLES.replyText.header}>
               Replying to {replyingTo.sender_name || "message"}
             </div>
-            <div className="text-sm text-blue-300 truncate">
+            <div className={STYLES.replyText.content}>
               {replyingTo.message_content}
             </div>
           </div>
           <button
             type="button"
             onClick={onReplyCancel}
-            className="p-1 text-blue-400 hover:text-blue-300 transition-colors"
+            className={STYLES.closeButton}
             disabled={isDisabled}
           >
             <FaTimes size={14} />
@@ -201,27 +291,26 @@ export default function MessageInput({
                   ? `Reply to ${replyingTo.sender_name}...` 
                   : `Message ${isGroup ? selectedUser?.name : selectedUser?.name}... (Type @ to mention)`
             }
-            className={`w-full p-4 border rounded-xl focus:outline-none focus:ring-2 bg-gray-700/30 text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-200 pr-12 ${
-              !isConnected 
-                ? "border-red-500/50 focus:ring-red-500/50 cursor-not-allowed" 
-                : "border-gray-600/50 focus:ring-blue-500/50"
+            className={`${STYLES.input} ${
+              !isConnected ? STYLES.inputDisabled : ''
             }`}
             disabled={isDisabled}
             maxLength={1000}
+            autoFocus // FIX: Auto-focus the input
           />
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
             <button
-              type="button" // FIXED: Always use type="button" for non-submit buttons
+              type="button"
               onClick={handleManualTagging}
-              className="p-1.5 text-gray-400 hover:text-blue-400 transition-colors rounded-lg hover:bg-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={STYLES.button.tag}
               title="Mention someone (@)"
               disabled={isDisabled}
             >
               <FaAt size={16} />
             </button>
             <button
-              type="button" // FIXED: Always use type="button" for non-submit buttons
-              className="p-1.5 text-gray-400 hover:text-yellow-400 transition-colors rounded-lg hover:bg-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              className={STYLES.button.emoji}
               title="Add emoji"
               disabled={isDisabled}
             >
@@ -240,6 +329,7 @@ export default function MessageInput({
               onSelectEveryone={handleSelectEveryone}
               onClose={() => setShowTaggingDropdown(false)}
               API={API}
+              theme={theme}
             />
           )}
         </div>
@@ -247,19 +337,21 @@ export default function MessageInput({
         <button
           type="submit"
           disabled={isDisabled || !newMessage.trim()}
-          className={`p-4 text-white bg-gradient-to-r rounded-xl transition-all duration-300 flex items-center justify-center shadow-lg min-w-[60px] backdrop-blur-sm border ${
+          className={`${STYLES.button.send} ${
             !isConnected
-              ? "from-red-600 to-red-700 border-red-500/30 cursor-not-allowed"
+              ? STYLES.button.sendError
               : isDisabled || !newMessage.trim()
-              ? "from-gray-600 to-gray-700 border-gray-600/50 cursor-not-allowed"
-              : "from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border-blue-500/30 hover:shadow-blue-500/25"
+              ? STYLES.button.sendDisabled
+              : STYLES.button.sendConnected
           }`}
           title={!isConnected ? "Not connected to server" : "Send message"}
         >
           {isSending || isLoading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
           ) : !isConnected ? (
-            <div className="w-5 h-5 bg-red-400 rounded-full animate-pulse"></div>
+            <div className={`w-5 h-5 rounded-full animate-pulse ${
+              theme === 'dark' ? 'bg-red-400' : 'bg-red-500'
+            }`}></div>
           ) : (
             <IoSend size={20} />
           )}

@@ -9,8 +9,8 @@ import GroupInfoSidebar from "./GroupInfoSidebar";
 import AddMemberModal from "./AddMemberModal";
 import EditGroupModal from "./EditGroupModal";
 import EmptyState from "./EmptyState";
-import { STYLES } from "./styles";
 import { useAuth } from "@/context/ApiContext";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function ChatWindow({
   selectedUser,
@@ -24,6 +24,23 @@ export default function ChatWindow({
   onNewMessage,
 }) {
   const { user, API } = useAuth();
+  const { theme } = useTheme();
+  
+  // Theme-based styles
+  const getStyles = (theme) => ({
+    bg: {
+      main: theme === 'dark' ? 'bg-gray-900' : 'bg-white',
+      section: theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50',
+    },
+    text: {
+      primary: theme === 'dark' ? 'text-white' : 'text-gray-900',
+      secondary: theme === 'dark' ? 'text-gray-300' : 'text-gray-600',
+    }
+  });
+
+  const STYLES = getStyles(theme);
+
+  // All your existing state and logic remains exactly the same
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showGroupInfo, setShowGroupInfo] = useState(false);
@@ -835,11 +852,11 @@ export default function ChatWindow({
 
   return (
     <div
-      className={`flex flex-col flex-grow ${STYLES.bg.main} relative overflow-hidden`}
+      className={`flex flex-col flex-grow ${STYLES.bg.main} relative overflow-hidden transition-colors duration-200`}
     >
       {/* Pending Messages Indicator */}
       {pendingMessages.size > 0 && (
-        <div className="bg-yellow-500 text-white text-center py-2 text-sm">
+        <div className="bg-yellow-500 text-white text-center py-2 text-sm transition-colors duration-200">
           ⏳ Sending {pendingMessages.size} message(s)...
         </div>
       )}

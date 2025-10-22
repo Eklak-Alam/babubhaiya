@@ -1,8 +1,9 @@
-'use client'
+"use client";
 
-import { useRef, useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import Link from 'next/link'
+import { useRef, useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { useTheme } from "@/context/ThemeContext";
 
 // --- Lucide Icons ---
 const ArrowRightIcon = (props) => (
@@ -18,10 +19,10 @@ const ArrowRightIcon = (props) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M5 12h14"/>
-    <path d="m12 5 7 7-7 7"/>
+    <path d="M5 12h14" />
+    <path d="m12 5 7 7-7 7" />
   </svg>
-)
+);
 
 const BotIcon = (props) => (
   <svg
@@ -36,14 +37,14 @@ const BotIcon = (props) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M12 8V4H8"/>
-    <rect width="16" height="12" x="4" y="8" rx="2"/>
-    <path d="M2 14h2"/>
-    <path d="M20 14h2"/>
-    <path d="M15 13v2"/>
-    <path d="M9 13v2"/>
+    <path d="M12 8V4H8" />
+    <rect width="16" height="12" x="4" y="8" rx="2" />
+    <path d="M2 14h2" />
+    <path d="M20 14h2" />
+    <path d="M15 13v2" />
+    <path d="M9 13v2" />
   </svg>
-)
+);
 
 const UsersIcon = (props) => (
   <svg
@@ -58,12 +59,12 @@ const UsersIcon = (props) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-    <circle cx="9" cy="7" r="4"/>
-    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
   </svg>
-)
+);
 
 const FileTextIcon = (props) => (
   <svg
@@ -78,13 +79,13 @@ const FileTextIcon = (props) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-    <polyline points="14 2 14 8 20 8"/>
-    <line x1="16" x2="8" y1="13" y2="13"/>
-    <line x1="16" x2="8" y1="17" y2="17"/>
-    <line x1="10" x2="8" y1="9" y2="9"/>
+    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" x2="8" y1="13" y2="13" />
+    <line x1="16" x2="8" y1="17" y2="17" />
+    <line x1="10" x2="8" y1="9" y2="9" />
   </svg>
-)
+);
 
 const MessageCircleIcon = (props) => (
   <svg
@@ -99,9 +100,9 @@ const MessageCircleIcon = (props) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
   </svg>
-)
+);
 
 const SparklesIcon = (props) => (
   <svg
@@ -116,13 +117,13 @@ const SparklesIcon = (props) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-    <path d="M5 3v4"/>
-    <path d="M19 17v4"/>
-    <path d="M3 5h4"/>
-    <path d="M17 19h4"/>
+    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+    <path d="M5 3v4" />
+    <path d="M19 17v4" />
+    <path d="M3 5h4" />
+    <path d="M17 19h4" />
   </svg>
-)
+);
 
 const ZapIcon = (props) => (
   <svg
@@ -137,123 +138,158 @@ const ZapIcon = (props) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
   </svg>
-)
+);
 
 // --- Ultimate Auto-Play Image Gallery Component ---
-const AutoPlayImageGallery = ({ images, interval = 4000 }) => {
-  const [currentIndex, setCurrentIndex] = useState(0)
+const AutoPlayImageGallery = ({ images, interval = 4000, theme = "dark" }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length)
-    }, interval)
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, interval);
 
-    return () => clearInterval(timer)
-  }, [images.length, interval])
+    return () => clearInterval(timer);
+  }, [images.length, interval]);
+
+  const containerBg = theme === "dark" ? "bg-white/5" : "bg-gray-100"; // soft light background
+  const borderColor = theme === "dark" ? "border-white/10" : "border-gray-200";
 
   return (
     <div className="relative w-full max-w-6xl mx-auto px-4">
       {/* Premium Glass Container */}
       <div className="relative">
         {/* Ambient Glow */}
-        <div className="absolute -inset-4 bg-gradient-to-r from-violet-500/20 via-fuchsia-500/20 to-cyan-500/20 rounded-3xl blur-3xl opacity-0 group-hover:opacity-100 transition-all duration-1000" />
-        
+        <div
+          className={`absolute -inset-4 bg-gradient-to-r from-violet-500/20 via-fuchsia-500/20 to-cyan-500/20 rounded-3xl blur-3xl opacity-0 group-hover:opacity-30 transition-all duration-1000 ${
+            theme === "light" ? "mix-blend-multiply" : ""
+          }`}
+        />
+
         {/* Main Gallery Container */}
-        <div className="relative bg-white/5 backdrop-blur-3xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+        <div
+          className={`relative ${containerBg} backdrop-blur-3xl rounded-2xl border ${borderColor} shadow-2xl overflow-hidden`}
+        >
           {/* Animated Gradient Border */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-white/5 rounded-2xl animate-pulse-slow" />
-          
-          {/* Image Canvas */}
+          <div
+            className={`absolute inset-0 bg-gradient-to-br ${
+              theme === "dark"
+                ? "from-white/5 via-transparent to-white/5 animate-pulse-slow"
+                : "from-transparent to-transparent"
+            } rounded-2xl`}
+          />
+
           <div className="relative aspect-[16/9] w-full overflow-hidden">
             {images.map((image, index) => (
               <motion.div
                 key={index}
                 className="absolute inset-0 w-full h-full"
-                initial={{ 
+                initial={{
                   opacity: 0,
                   scale: 1.08,
-                  filter: "brightness(0.8) blur(8px)"
+                  filter: "brightness(0.85) blur(6px)",
                 }}
-                animate={{ 
+                animate={{
                   opacity: index === currentIndex ? 1 : 0,
                   scale: index === currentIndex ? 1 : 1.08,
-                  filter: index === currentIndex ? "brightness(1) blur(0px)" : "brightness(0.8) blur(8px)"
+                  filter:
+                    index === currentIndex
+                      ? "brightness(1) blur(0px)"
+                      : "brightness(0.85) blur(6px)",
                 }}
-                transition={{ 
-                  duration: 2.2,
-                  ease: [0.25, 0.46, 0.45, 0.94]
-                }}
+                transition={{ duration: 2.2, ease: [0.25, 0.46, 0.45, 0.94] }}
               >
-                {/* Premium Image Display */}
-                <div 
+                <div
                   className="w-full h-full bg-cover bg-center"
                   style={{ backgroundImage: `url(${image})` }}
                 />
-                
-                {/* Multi-layer Gradient Overlay */}
+
+                {/* Gradient Overlays */}
                 <div className="absolute inset-0">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/30" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
-                  <div className="absolute inset-0 bg-radial-gradient(circle at 30% 70%, transparent, black/40)" />
+                  {theme === "dark" ? (
+                    <>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/30" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+                      <div className="absolute inset-0 bg-radial-gradient(circle at 30% 70%, transparent, black/40)" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-transparent" />
+                    </>
+                  )}
                 </div>
 
-                {/* Crystal Shine Effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/3 to-transparent transform -skew-x-12 translate-x-[-100%] animate-shine-slow" />
-                
-                {/* Subtle Vignette */}
-                <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.3)]" />
+                {/* Crystal Shine */}
+                <div
+                  className={`absolute inset-0 bg-gradient-to-r from-transparent via-${
+                    theme === "dark" ? "white/3" : "black/5"
+                  } to-transparent transform -skew-x-12 translate-x-[-100%] animate-shine-slow`}
+                />
+
+                {/* Remove Vignette in light mode */}
+                {theme === "dark" && (
+                  <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.3)]" />
+                )}
               </motion.div>
             ))}
 
             {/* Floating Light Orbs */}
-            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-blue-400/10 rounded-full blur-2xl animate-float-slow" />
-            <div className="absolute bottom-1/3 right-1/4 w-40 h-40 bg-purple-400/10 rounded-full blur-2xl animate-float-slower" />
+            <div
+              className={`absolute top-1/4 left-1/4 w-32 h-32 ${
+                theme === "dark" ? "bg-blue-400/10" : "bg-blue-500/10"
+              } rounded-full blur-2xl animate-float-slow`}
+            />
+            <div
+              className={`absolute bottom-1/3 right-1/4 w-40 h-40 ${
+                theme === "dark" ? "bg-purple-400/10" : "bg-purple-500/10"
+              } rounded-full blur-2xl animate-float-slower`}
+            />
           </div>
         </div>
       </div>
     </div>
-  )
-}
-
+  );
+};
 
 // --- Custom Hook to load external scripts ---
 const useExternalScript = (url, callback) => {
   useEffect(() => {
-    if (!url) return
-    const script = document.createElement('script')
-    script.src = url
-    script.async = true
+    if (!url) return;
+    const script = document.createElement("script");
+    script.src = url;
+    script.async = true;
     script.onload = () => {
-      if (callback) callback()
-    }
-    document.body.appendChild(script)
+      if (callback) callback();
+    };
+    document.body.appendChild(script);
     return () => {
-      document.body.removeChild(script)
-    }
-  }, [url, callback])
-}
+      document.body.removeChild(script);
+    };
+  }, [url, callback]);
+};
 
 // --- Animated Magnetic Button Component ---
-const MagneticButton = ({ children }) => {
-  const ref = useRef(null)
-  const [position, setPosition] = useState({ x: 0, y: 0 })
+const MagneticButton = ({ children, theme = "dark" }) => {
+  const ref = useRef(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
 
   const handleMouse = (e) => {
-    if (!ref.current) return
-    const { clientX, clientY } = e
-    const { height, width, left, top } = ref.current.getBoundingClientRect()
-    const middleX = clientX - (left + width / 2)
-    const middleY = clientY - (top + height / 2)
-    setPosition({ x: middleX * 0.15, y: middleY * 0.15 })
-  }
+    if (!ref.current) return;
+    const { clientX, clientY } = e;
+    const { height, width, left, top } = ref.current.getBoundingClientRect();
+    const middleX = clientX - (left + width / 2);
+    const middleY = clientY - (top + height / 2);
+    setPosition({ x: middleX * 0.15, y: middleY * 0.15 });
+  };
 
   const reset = () => {
-    setPosition({ x: 0, y: 0 })
-  }
+    setPosition({ x: 0, y: 0 });
+  };
 
-  const { x, y } = position
+  const { x, y } = position;
 
   return (
     <motion.div
@@ -266,16 +302,24 @@ const MagneticButton = ({ children }) => {
     >
       {children}
     </motion.div>
-  )
-}
+  );
+};
 
 // --- Floating Icons ---
-const FloatingIcon = ({ icon: Icon, delay, position, size = "w-8 h-8" }) => (
+const FloatingIcon = ({
+  icon: Icon,
+  delay,
+  position,
+  size = "w-8 h-8",
+  theme = "dark",
+}) => (
   <motion.div
     initial={{ opacity: 0, scale: 0, y: 20 }}
     animate={{ opacity: 1, scale: 1, y: 0 }}
     transition={{ duration: 0.6, delay }}
-    className={`absolute ${position} ${size} text-white/20`}
+    className={`absolute ${position} ${size} ${
+      theme === "dark" ? "text-white/20" : "text-gray-600/20"
+    }`}
   >
     <motion.div
       animate={{ y: [0, -10, 0], rotate: [0, 5, 0] }}
@@ -284,129 +328,204 @@ const FloatingIcon = ({ icon: Icon, delay, position, size = "w-8 h-8" }) => (
       <Icon />
     </motion.div>
   </motion.div>
-)
+);
 
 // --- Main Hero Section Component ---
 export default function Hero() {
-  const heroRef = useRef(null)
-  const [isGsapReady, setIsGsapReady] = useState(false)
+  const heroRef = useRef(null);
+  const [isGsapReady, setIsGsapReady] = useState(false);
+  const { theme } = useTheme();
 
   // Your images array
   const galleryImages = [
-    '/heroimg/contract.png',
-    '/heroimg/contractgenerate.png',
-    '/heroimg/chathero.png',
-    '/heroimg/chatdashboard.png',
-    '/heroimg/groupchat.png',
-    '/heroimg/groupdashboard.png',
-  ]
+    "/heroimg/contract.png",
+    "/heroimg/contractgenerate.png",
+    "/heroimg/chathero.png",
+    "/heroimg/chatdashboard.png",
+    "/heroimg/groupchat.png",
+    "/heroimg/groupdashboard.png",
+  ];
 
   // Load GSAP and then set ready state
-  useExternalScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js', () => {
-    setIsGsapReady(true)
-  })
+  useExternalScript(
+    "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js",
+    () => {
+      setIsGsapReady(true);
+    }
+  );
 
-  const textGradient = `bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent`
+  // Theme-based styles
+  const textGradient =
+    theme === "dark"
+      ? `bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent`
+      : `bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 bg-clip-text text-transparent`;
+
+  const bgColor =
+    theme === "dark"
+      ? "bg-gray-900"
+      : "bg-gradient-to-br from-gray-50 via-white to-blue-50";
+  const textColor = theme === "dark" ? "text-white" : "text-gray-900";
+  const textMuted = theme === "dark" ? "text-gray-300" : "text-gray-600";
+  const badgeBg =
+    theme === "dark"
+      ? "bg-black/40 border-white/20"
+      : "bg-white/80 border-gray-300/50";
+  const featureCardBg =
+    theme === "dark"
+      ? "bg-white/5 border-white/10"
+      : "bg-white/80 border-gray-200/50";
+  const graphPattern =
+    theme === "dark"
+      ? "linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)"
+      : "linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)";
 
   // GSAP Animations
   useEffect(() => {
-    if (!isGsapReady || !heroRef.current) return
-    const gsap = window.gsap
-    
-    const tl = gsap.timeline({ defaults: { ease: 'power3.out' }})
+    if (!isGsapReady || !heroRef.current) return;
+    const gsap = window.gsap;
 
-    tl.fromTo('.hero-element', 
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+    tl.fromTo(
+      ".hero-element",
       { opacity: 0, y: 30 },
       { opacity: 1, y: 0, duration: 1, stagger: 0.2, delay: 0.5 }
-    )
-  }, [isGsapReady])
+    );
+  }, [isGsapReady]);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (!heroRef.current) return
-      const { clientX, clientY } = e
-      const x = (clientX / window.innerWidth) * 100
-      const y = (clientY / window.innerHeight) * 100
-      heroRef.current.style.setProperty('--x', `${x}%`)
-      heroRef.current.style.setProperty('--y', `${y}%`)
-    }
+      if (!heroRef.current) return;
+      const { clientX, clientY } = e;
+      const x = (clientX / window.innerWidth) * 100;
+      const y = (clientY / window.innerHeight) * 100;
+      heroRef.current.style.setProperty("--x", `${x}%`);
+      heroRef.current.style.setProperty("--y", `${y}%`);
+    };
 
-    window.addEventListener('mousemove', handleMouseMove)
-    return () => window.removeEventListener('mousemove', handleMouseMove)
-  }, [])
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
   return (
     <div className="relative">
       {/* Main Section with Graph Background */}
       <section
         ref={heroRef}
-        className="relative w-full bg-gray-900 text-white overflow-hidden"
-        style={{ '--x': '50%', '--y': '50%' }}
+        className={`relative w-full ${bgColor} ${textColor} overflow-hidden transition-colors duration-300`}
+        style={{ "--x": "50%", "--y": "50%" }}
       >
         {/* Graph Line Pattern Background */}
-        <div className="absolute inset-0 graph-pattern opacity-90"></div>
-        
-        {/* Enhanced Background Effects */}
-        <div className="absolute inset-0 -z-10 transition-all duration-300"
+        <div
+          className="absolute inset-0 opacity-90 transition-opacity duration-300"
           style={{
-            background: `radial-gradient(circle at var(--x) var(--y), rgba(139, 92, 246, 0.15), transparent 40%)`,
+            backgroundImage: graphPattern,
+            backgroundSize: "50px 50px",
           }}
         />
-        
+
+        {/* Enhanced Background Effects */}
+        <div
+          className="absolute inset-0 -z-10 transition-all duration-300"
+          style={{
+            background:
+              theme === "dark"
+                ? `radial-gradient(circle at var(--x) var(--y), rgba(139, 92, 246, 0.15), transparent 40%)`
+                : `radial-gradient(circle at var(--x) var(--y), rgba(139, 92, 246, 0.08), transparent 40%)`,
+          }}
+        />
+
         {/* Animated Orbs */}
         <motion.div
-          animate={{ 
+          animate={{
             x: [0, 100, 0],
             y: [0, -50, 0],
           }}
           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl -z-10"
+          className={`absolute top-1/4 left-1/4 w-64 h-64 ${
+            theme === "dark" ? "bg-purple-500/10" : "bg-purple-400/10"
+          } rounded-full blur-3xl -z-10`}
         />
         <motion.div
-          animate={{ 
+          animate={{
             x: [0, -80, 0],
             y: [0, 60, 0],
           }}
           transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -z-10"
+          className={`absolute bottom-1/4 right-1/4 w-96 h-96 ${
+            theme === "dark" ? "bg-blue-500/10" : "bg-blue-400/10"
+          } rounded-full blur-3xl -z-10`}
         />
 
         {/* Floating Icons */}
         <div className="hidden sm:block">
-          <FloatingIcon icon={SparklesIcon} delay={1.2} position="top-10 right-10" />
-          <FloatingIcon icon={ZapIcon} delay={1.4} position="bottom-20 left-10" />
-          <FloatingIcon icon={BotIcon} delay={1.6} position="top-20 left-20" size="w-10 h-10" />
-          <FloatingIcon icon={MessageCircleIcon} delay={1.8} position="bottom-32 right-20" />
+          <FloatingIcon
+            icon={SparklesIcon}
+            delay={1.2}
+            position="top-10 right-10"
+            theme={theme}
+          />
+          <FloatingIcon
+            icon={ZapIcon}
+            delay={1.4}
+            position="bottom-20 left-10"
+            theme={theme}
+          />
+          <FloatingIcon
+            icon={BotIcon}
+            delay={1.6}
+            position="top-20 left-20"
+            size="w-10 h-10"
+            theme={theme}
+          />
+          <FloatingIcon
+            icon={MessageCircleIcon}
+            delay={1.8}
+            position="bottom-32 right-20"
+            theme={theme}
+          />
         </div>
 
         {/* Hero Content */}
         <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-20 flex items-center justify-center min-h-screen">
           <div className="max-w-6xl mx-auto text-center">
             {/* Top Badge */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, ease: [0.25, 1, 0.5, 1], delay: 0.5 }}
-              className="hero-element inline-flex items-center gap-2 border border-white/20 bg-black/40 backdrop-blur-lg rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-4 sm:mb-8 shadow-2xl"
+              className={`hero-element inline-flex items-center gap-2 border ${badgeBg} backdrop-blur-lg rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-4 sm:mb-8 shadow-2xl`}
             >
-              <BotIcon className="text-purple-400 w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-xs sm:text-sm font-medium text-gray-300">
+              <BotIcon
+                className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                  theme === "dark" ? "text-purple-400" : "text-purple-600"
+                }`}
+              />
+              <span className={`text-xs sm:text-sm font-medium ${textMuted}`}>
                 Next-Gen AI Workspace
               </span>
             </motion.div>
-            
+
             {/* Main Heading */}
-            <h1 className="hero-element text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter mb-4 sm:mb-6 leading-tight">
-              Your All-in-One <span className={`${textGradient} animate-gradient`}>AI Workspace</span>
+            <h1
+              className={`hero-element text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter mb-4 sm:mb-6 leading-tight ${textColor}`}
+            >
+              Your All-in-One{" "}
+              <span className={`${textGradient} animate-gradient`}>
+                AI Workspace
+              </span>
             </h1>
 
             {/* Description */}
-            <p className="hero-element text-base sm:text-xl lg:text-2xl text-gray-300 max-w-2xl sm:max-w-4xl mx-auto mb-6 sm:mb-10 leading-relaxed px-2">
-              Generate contracts, collaborate in group chats, and leverage AI assistants—all in one intelligent platform for modern teams.
+            <p
+              className={`hero-element text-base sm:text-xl lg:text-2xl ${textMuted} max-w-2xl sm:max-w-4xl mx-auto mb-6 sm:mb-10 leading-relaxed px-2`}
+            >
+              Generate contracts, collaborate in group chats, and leverage AI
+              assistants—all in one intelligent platform for modern teams.
             </p>
 
             {/* Feature Highlights */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.8 }}
@@ -415,36 +534,52 @@ export default function Hero() {
               {[
                 { icon: FileTextIcon, text: "Smart Contracts" },
                 { icon: UsersIcon, text: "Group Chats" },
-                { icon: MessageCircleIcon, text: "AI Assistants" }
+                { icon: MessageCircleIcon, text: "AI Assistants" },
               ].map((feature, index) => (
                 <motion.div
                   key={feature.text}
                   whileHover={{ scale: 1.05 }}
-                  className="flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-4 rounded-lg sm:rounded-xl bg-white/5 backdrop-blur-sm border border-white/10"
+                  className={`flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-4 rounded-lg sm:rounded-xl ${featureCardBg} backdrop-blur-sm border transition-all duration-300`}
                 >
-                  <feature.icon className="w-4 h-4 sm:w-6 sm:h-6 text-purple-400" />
-                  <span className="text-xs sm:text-sm font-medium text-gray-300 text-center leading-tight">
-                    {feature.text.split(' ').map((word, i) => (
+                  <feature.icon
+                    className={`w-4 h-4 sm:w-6 sm:h-6 ${
+                      theme === "dark" ? "text-purple-400" : "text-purple-600"
+                    }`}
+                  />
+                  <span
+                    className={`text-xs sm:text-sm font-medium ${textMuted} text-center leading-tight`}
+                  >
+                    {feature.text.split(" ").map((word, i) => (
                       <span key={i}>
                         {word}
-                        {i < feature.text.split(' ').length - 1 && <br />}
+                        {i < feature.text.split(" ").length - 1 && <br />}
                       </span>
                     ))}
                   </span>
                 </motion.div>
               ))}
             </motion.div>
-            
+
             {/* CTA Buttons */}
             <div className="hero-element flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-2">
-              <MagneticButton>
-                <Link href="/chat" className="group relative flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-3 sm:py-4 px-6 sm:px-10 rounded-full transition-all duration-300 shadow-2xl hover:shadow-purple-500/50 hover:scale-105 text-sm sm:text-base">
+              <MagneticButton theme={theme}>
+                <Link
+                  href="/chat"
+                  className="group relative flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-3 sm:py-4 px-6 sm:px-10 rounded-full transition-all duration-300 shadow-2xl hover:shadow-purple-500/50 hover:scale-105 text-sm sm:text-base"
+                >
                   Start your journey
                   <ArrowRightIcon className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
               </MagneticButton>
-              <MagneticButton>
-                <Link href="/contract-generator" className="group relative flex items-center justify-center w-full sm:w-auto bg-transparent border-2 border-white/20 hover:bg-white/10 hover:border-white/30 text-gray-300 font-medium py-3 sm:py-4 px-6 sm:px-10 rounded-full transition-all duration-300 backdrop-blur-sm text-sm sm:text-base">
+              <MagneticButton theme={theme}>
+                <Link
+                  href="/contract-generator"
+                  className={`group relative flex items-center justify-center w-full sm:w-auto bg-transparent border-2 ${
+                    theme === "dark"
+                      ? "border-white/20 hover:bg-white/10 hover:border-white/30 text-gray-300"
+                      : "border-gray-300/50 hover:bg-gray-100/50 hover:border-gray-400/50 text-gray-700"
+                  } font-medium py-3 sm:py-4 px-6 sm:px-10 rounded-full transition-all duration-300 backdrop-blur-sm text-sm sm:text-base`}
+                >
                   Generate Contract
                 </Link>
               </MagneticButton>
@@ -454,44 +589,58 @@ export default function Hero() {
 
         {/* Image Gallery Section - Now part of the same background */}
         <section className="relative pb-32 -mt-10">
-          <AutoPlayImageGallery images={galleryImages} interval={4000} />
+          <AutoPlayImageGallery
+            images={galleryImages}
+            interval={4000}
+            theme={theme}
+          />
         </section>
       </section>
 
       {/* Enhanced Styles */}
       <style jsx>{`
-        .graph-pattern {
-          background-image: 
-            linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
-          background-size: 50px 50px;
-        }
         .animate-gradient {
           background-size: 200% 200%;
           animation: gradientMove 3s ease infinite;
         }
         @keyframes gradientMove {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
         }
         @keyframes borderFlow {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
         }
         .animate-border-flow {
           background-size: 200% 200%;
           animation: borderFlow 3s ease infinite;
         }
         @keyframes shine {
-          0% { transform: translateX(-100%) skewX(-12deg); }
-          100% { transform: translateX(200%) skewX(-12deg); }
+          0% {
+            transform: translateX(-100%) skewX(-12deg);
+          }
+          100% {
+            transform: translateX(200%) skewX(-12deg);
+          }
         }
         .animate-shine {
           animation: shine 3s ease-in-out infinite;
         }
       `}</style>
     </div>
-  )
+  );
 }

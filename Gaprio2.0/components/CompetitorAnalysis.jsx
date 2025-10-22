@@ -5,12 +5,14 @@ import { FiCheck, FiX, FiUser, FiUsers, FiLock, FiZap, FiDollarSign, FiAward, Fi
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
+import { useTheme } from '@/context/ThemeContext'
 
 export default function CompetitorAnalysis() {
   const sectionRef = useRef(null)
   const competitorCardsRef = useRef([])
   const featureRowsRef = useRef([])
   const takeawayCardsRef = useRef([])
+  const { theme } = useTheme()
 
   const competitors = [
     {
@@ -22,9 +24,9 @@ export default function CompetitorAnalysis() {
         encrypted: false,
         affordable: false
       },
-      color: "text-blue-400",
-      bgColor: "bg-blue-500/10",
-      borderColor: "border-blue-500/30"
+      color: theme === 'dark' ? "text-blue-400" : "text-blue-600",
+      bgColor: theme === 'dark' ? "bg-blue-500/10" : "bg-blue-500/10",
+      borderColor: theme === 'dark' ? "border-blue-500/30" : "border-blue-500/30"
     },
     {
       name: "Lawyer",
@@ -35,9 +37,9 @@ export default function CompetitorAnalysis() {
         encrypted: false,
         affordable: false
       },
-      color: "text-amber-400",
-      bgColor: "bg-amber-500/10",
-      borderColor: "border-amber-500/30"
+      color: theme === 'dark' ? "text-amber-400" : "text-amber-600",
+      bgColor: theme === 'dark' ? "bg-amber-500/10" : "bg-amber-500/10",
+      borderColor: theme === 'dark' ? "border-amber-500/30" : "border-amber-500/30"
     },
     {
       name: "Counselor",
@@ -48,9 +50,9 @@ export default function CompetitorAnalysis() {
         encrypted: false,
         affordable: false
       },
-      color: "text-purple-400",
-      bgColor: "bg-purple-500/10",
-      borderColor: "border-purple-500/30"
+      color: theme === 'dark' ? "text-purple-400" : "text-purple-600",
+      bgColor: theme === 'dark' ? "bg-purple-500/10" : "bg-purple-500/10",
+      borderColor: theme === 'dark' ? "border-purple-500/30" : "border-purple-500/30"
     },
     {
       name: "Gaprio",
@@ -61,9 +63,9 @@ export default function CompetitorAnalysis() {
         encrypted: true,
         affordable: true
       },
-      color: "text-emerald-400",
-      bgColor: "bg-emerald-500/10",
-      borderColor: "border-emerald-500/30",
+      color: theme === 'dark' ? "text-emerald-400" : "text-emerald-600",
+      bgColor: theme === 'dark' ? "bg-emerald-500/10" : "bg-emerald-500/10",
+      borderColor: theme === 'dark' ? "border-emerald-500/30" : "border-emerald-500/30",
       highlight: true
     }
   ]
@@ -90,6 +92,24 @@ export default function CompetitorAnalysis() {
       description: "Fraction of traditional service costs"
     }
   ]
+
+  // Theme-based styles
+  const sectionBackground = theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+  const tableBackground = theme === 'dark' ? 'bg-gray-900/50' : 'bg-white'
+  const tableBorder = theme === 'dark' ? 'border-gray-800' : 'border-gray-200'
+  const titleColor = theme === 'dark' ? 'text-white' : 'text-gray-900'
+  const subtitleColor = theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+  const textColor = theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+  const headerColor = theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+  const rowHover = theme === 'dark' ? 'hover:bg-gray-800/20' : 'hover:bg-gray-50'
+  const gradientFrom = theme === 'dark' ? 'from-indigo-400' : 'from-violet-600'
+  const gradientTo = theme === 'dark' ? 'to-purple-500' : 'to-purple-600'
+  const highlightBackground = theme === 'dark' ? 'bg-gradient-to-b from-gray-900 to-gray-900/80' : 'bg-gradient-to-b from-gray-50 to-white'
+  const takeawaysBackground = theme === 'dark' ? 'bg-gradient-to-r from-indigo-900/30 to-purple-900/30' : 'bg-gradient-to-r from-violet-50 to-purple-50'
+  const takeawaysBorder = theme === 'dark' ? 'border-gray-800' : 'border-gray-200'
+  const takeawayCardBackground = theme === 'dark' ? 'bg-gray-900/30' : 'bg-white/50'
+  const takeawayCardBorder = theme === 'dark' ? 'border-gray-800/50' : 'border-gray-200'
+  const takeawayCardHover = theme === 'dark' ? 'hover:border-indigo-500/30' : 'hover:border-violet-500/30'
 
   // Initialize Lenis smooth scroll and GSAP ScrollTrigger
   useEffect(() => {
@@ -208,7 +228,7 @@ export default function CompetitorAnalysis() {
       
       // Add pulse animation to Gaprio card
       gsap.to('.gaprio-highlight', {
-        boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)',
+        boxShadow: theme === 'dark' ? '0 0 20px rgba(16, 185, 129, 0.5)' : '0 0 20px rgba(5, 150, 105, 0.3)',
         duration: 2,
         repeat: -1,
         yoyo: true,
@@ -217,11 +237,10 @@ export default function CompetitorAnalysis() {
     }, sectionRef)
     
     return () => ctx.revert()
-  }, [])
+  }, [theme])
 
   return (
-    <section ref={sectionRef} className="relative py-24 overflow-hidden">
-
+    <section ref={sectionRef} className={`relative py-24 overflow-hidden ${sectionBackground}`}>
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-16 section-title">
@@ -230,16 +249,16 @@ export default function CompetitorAnalysis() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold text-white mb-4"
+            className={`text-3xl md:text-4xl font-bold ${titleColor} mb-4`}
           >
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">Competitor</span> Analysis
+            <span className={`text-transparent bg-clip-text bg-gradient-to-r ${gradientFrom} ${gradientTo}`}>Competitor</span> Analysis
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
-            className="text-lg text-gray-400 max-w-3xl mx-auto"
+            className={`text-lg ${subtitleColor} max-w-3xl mx-auto`}
           >
             How Gaprio outperforms traditional solutions across key metrics
           </motion.p>
@@ -252,18 +271,18 @@ export default function CompetitorAnalysis() {
             whileInView={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl min-w-[800px] transform-gpu"
+            className={`${tableBackground} backdrop-blur-sm border ${tableBorder} rounded-2xl min-w-[800px] transform-gpu shadow-sm`}
           >
             {/* Table header */}
-            <div className="grid grid-cols-5 border-b border-gray-800">
+            <div className={`grid grid-cols-5 border-b ${tableBorder}`}>
               <div className="col-span-1 p-6">
-                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Features</h3>
+                <h3 className={`text-sm font-semibold ${headerColor} uppercase tracking-wider`}>Features</h3>
               </div>
               {competitors.map((competitor, index) => (
                 <div 
                   key={index}
                   ref={el => competitorCardsRef.current[index] = el}
-                  className={`col-span-1 p-6 border-l border-gray-800 ${competitor.highlight ? 'gaprio-highlight bg-gradient-to-b from-gray-900 to-gray-900/80' : ''} ${competitor.bgColor} ${competitor.borderColor} border-l-2`}
+                  className={`col-span-1 p-6 border-l ${tableBorder} ${competitor.highlight ? 'gaprio-highlight' : ''} ${competitor.highlight ? highlightBackground : ''} ${competitor.bgColor} ${competitor.borderColor} border-l-2`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{competitor.icon}</span>
@@ -274,7 +293,7 @@ export default function CompetitorAnalysis() {
                         transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
                         className="ml-auto"
                       >
-                        <FiAward className="w-5 h-5 text-yellow-400" />
+                        <FiAward className="w-5 h-5 text-yellow-500" />
                       </motion.div>
                     )}
                   </div>
@@ -287,17 +306,17 @@ export default function CompetitorAnalysis() {
               <div
                 key={rowIndex}
                 ref={el => featureRowsRef.current[rowIndex] = el}
-                className="grid grid-cols-5 border-b border-gray-800 last:border-0 group hover:bg-gray-800/20 transition-all duration-300 transform hover:-translate-y-0.5"
+                className={`grid grid-cols-5 border-b ${tableBorder} last:border-0 group ${rowHover} transition-all duration-300 transform hover:-translate-y-0.5`}
               >
                 {/* Feature name */}
                 <div className="col-span-1 p-6">
                   <div className="flex items-center gap-3">
-                    <div className="text-indigo-400">
+                    <div className={theme === 'dark' ? 'text-indigo-400' : 'text-violet-600'}>
                       {feature.icon}
                     </div>
                     <div>
-                      <h4 className="text-lg font-medium text-white">{feature.name}</h4>
-                      <p className="text-sm text-gray-400 mt-1">{feature.description}</p>
+                      <h4 className={`text-lg font-medium ${titleColor}`}>{feature.name}</h4>
+                      <p className={`text-sm ${textColor} mt-1`}>{feature.description}</p>
                     </div>
                   </div>
                 </div>
@@ -306,14 +325,16 @@ export default function CompetitorAnalysis() {
                 {competitors.map((competitor, colIndex) => (
                   <div 
                     key={colIndex}
-                    className={`col-span-1 p-6 border-l border-gray-800 flex items-center justify-center ${
-                      competitor.highlight ? 'bg-gradient-to-b from-gray-900 to-gray-900/80' : ''
+                    className={`col-span-1 p-6 border-l ${tableBorder} flex items-center justify-center ${
+                      competitor.highlight ? highlightBackground : ''
                     } ${competitor.borderColor} border-l-2`}
                   >
                     {Object.values(competitor.features)[rowIndex] ? (
                       <motion.div
                         whileHover={{ scale: 1.2 }}
-                        className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400"
+                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/20 text-emerald-600'
+                        }`}
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: "spring", stiffness: 500, damping: 15, delay: 0.2 * rowIndex }}
@@ -323,7 +344,9 @@ export default function CompetitorAnalysis() {
                     ) : (
                       <motion.div
                         whileHover={{ scale: 1.1 }}
-                        className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-400"
+                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          theme === 'dark' ? 'bg-red-500/20 text-red-400' : 'bg-red-500/20 text-red-600'
+                        }`}
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: "spring", stiffness: 500, damping: 15, delay: 0.2 * rowIndex }}
@@ -346,12 +369,16 @@ export default function CompetitorAnalysis() {
           viewport={{ once: true }}
           className="mt-20"
         >
-          <div className="bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border border-gray-800 rounded-2xl p-8 relative overflow-hidden">
+          <div className={`${takeawaysBackground} border ${takeawaysBorder} rounded-2xl p-8 relative overflow-hidden shadow-sm`}>
             {/* Decorative elements */}
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/10 rounded-full filter blur-xl"></div>
-            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-indigo-500/10 rounded-full filter blur-xl"></div>
+            <div className={`absolute -top-20 -right-20 w-40 h-40 rounded-full filter blur-xl ${
+              theme === 'dark' ? 'bg-purple-500/10' : 'bg-purple-500/20'
+            }`}></div>
+            <div className={`absolute -bottom-20 -left-20 w-40 h-40 rounded-full filter blur-xl ${
+              theme === 'dark' ? 'bg-indigo-500/10' : 'bg-violet-500/20'
+            }`}></div>
             
-            <h3 className="text-2xl font-bold text-white mb-6 relative z-10">Why Gaprio Stands Out</h3>
+            <h3 className={`text-2xl font-bold ${titleColor} mb-6 relative z-10`}>Why Gaprio Stands Out</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
               {[
                 {
@@ -378,14 +405,16 @@ export default function CompetitorAnalysis() {
                 <div
                   key={index}
                   ref={el => takeawayCardsRef.current[index] = el}
-                  className="flex items-start gap-4 p-4 bg-gray-900/30 rounded-lg backdrop-blur-sm border border-gray-800/50 hover:border-indigo-500/30 transition-all duration-300 transform hover:-translate-y-1"
+                  className={`flex items-start gap-4 p-4 ${takeawayCardBackground} rounded-lg backdrop-blur-sm border ${takeawayCardBorder} ${takeawayCardHover} transition-all duration-300 transform hover:-translate-y-1`}
                 >
-                  <div className="flex-shrink-0 mt-1 w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <div className={`flex-shrink-0 mt-1 w-10 h-10 rounded-full flex items-center justify-center ${
+                    theme === 'dark' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/20 text-emerald-600'
+                  }`}>
                     {item.icon}
                   </div>
                   <div>
-                    <h4 className="text-lg font-medium text-white mb-2">{item.title}</h4>
-                    <p className="text-gray-400">{item.description}</p>
+                    <h4 className={`text-lg font-medium ${titleColor} mb-2`}>{item.title}</h4>
+                    <p className={textColor}>{item.description}</p>
                   </div>
                 </div>
               ))}

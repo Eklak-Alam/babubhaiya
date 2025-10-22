@@ -2,6 +2,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { FiPhone, FiGlobe, FiMail, FiGithub, FiLinkedin, FiTwitter, FiInstagram } from 'react-icons/fi'
+import { useTheme } from '@/context/ThemeContext'
 
 // Predefined particle data to avoid hydration mismatches
 const PARTICLE_DATA = [
@@ -19,10 +20,25 @@ export default function ContactSection() {
   const containerRef = useRef(null)
   const isInView = useInView(containerRef, { once: true, margin: "-100px" })
   const [isClient, setIsClient] = useState(false)
+  const { theme } = useTheme()
 
   useEffect(() => {
     setIsClient(true)
   }, [])
+
+  // Theme-based styles
+  const sectionBg = theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-gray-50 to-white'
+  const textColor = theme === 'dark' ? 'text-white' : 'text-gray-900'
+  const textMuted = theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+  const cardBg = theme === 'dark' ? 'bg-gray-900/80' : 'bg-white/90'
+  const cardBorder = theme === 'dark' ? 'border-gray-800' : 'border-gray-200/70'
+  const cardHoverBorder = theme === 'dark' ? 'hover:border-transparent' : 'hover:border-gray-300'
+  const visualBg = theme === 'dark' ? 'bg-gradient-to-br from-indigo-900/30 to-purple-900/30' : 'bg-gradient-to-br from-indigo-50 to-purple-50'
+  const circleBorder = theme === 'dark' ? 'border-indigo-500/30' : 'border-indigo-400/20'
+  const circleBorder2 = theme === 'dark' ? 'border-purple-500/20' : 'border-purple-400/15'
+  const socialBg = theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'
+  const socialBorder = theme === 'dark' ? 'border-gray-700' : 'border-gray-300'
+  const dividerBorder = theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
 
   const contactMethods = [
     {
@@ -52,10 +68,30 @@ export default function ContactSection() {
   ]
 
   const socialLinks = [
-    { icon: <FiGithub className="w-4 h-4 sm:w-5 sm:h-5" />, url: "#", name: "GitHub", hover: "hover:bg-gray-800 hover:text-white" },
-    { icon: <FiLinkedin className="w-4 h-4 sm:w-5 sm:h-5" />, url: "#", name: "LinkedIn", hover: "hover:bg-blue-600 hover:text-white" },
-    { icon: <FiTwitter className="w-4 h-4 sm:w-5 sm:h-5" />, url: "#", name: "Twitter", hover: "hover:bg-blue-400 hover:text-white" },
-    { icon: <FiInstagram className="w-4 h-4 sm:w-5 sm:h-5" />, url: "#", name: "Instagram", hover: "hover:bg-pink-600 hover:text-white" }
+    { 
+      icon: <FiGithub className="w-4 h-4 sm:w-5 sm:h-5" />, 
+      url: "#", 
+      name: "GitHub", 
+      hover: theme === 'dark' ? "hover:bg-gray-800 hover:text-white" : "hover:bg-gray-800 hover:text-white" 
+    },
+    { 
+      icon: <FiLinkedin className="w-4 h-4 sm:w-5 sm:h-5" />, 
+      url: "#", 
+      name: "LinkedIn", 
+      hover: theme === 'dark' ? "hover:bg-blue-600 hover:text-white" : "hover:bg-blue-600 hover:text-white" 
+    },
+    { 
+      icon: <FiTwitter className="w-4 h-4 sm:w-5 sm:h-5" />, 
+      url: "#", 
+      name: "Twitter", 
+      hover: theme === 'dark' ? "hover:bg-blue-400 hover:text-white" : "hover:bg-blue-400 hover:text-white" 
+    },
+    { 
+      icon: <FiInstagram className="w-4 h-4 sm:w-5 sm:h-5" />, 
+      url: "#", 
+      name: "Instagram", 
+      hover: theme === 'dark' ? "hover:bg-pink-600 hover:text-white" : "hover:bg-pink-600 hover:text-white" 
+    }
   ]
 
   const containerVariants = {
@@ -153,11 +189,12 @@ export default function ContactSection() {
         height: `${particle.height}px`,
         left: `${particle.left}%`,
         top: `${particle.top}%`,
-        backgroundColor: particle.color
+        backgroundColor: particle.color,
+        opacity: theme === 'light' ? 0.15 : 0.2
       }}
       animate={{
         y: [0, -20, 0],
-        opacity: [0.2, 0.4, 0.2]
+        opacity: theme === 'light' ? [0.15, 0.25, 0.15] : [0.2, 0.4, 0.2]
       }}
       transition={{
         duration: Math.random() * 3 + 2,
@@ -169,32 +206,35 @@ export default function ContactSection() {
   ))
 
   return (
-    <section ref={containerRef} className="relative min-h-screen w-full flex items-center justify-center overflow-hidden py-8 sm:py-16 md:py-20 px-4 sm:px-6">
+    <section ref={containerRef} className={`relative min-h-screen w-full flex items-center justify-center overflow-hidden py-8 sm:py-16 md:py-20 px-4 sm:px-6 transition-colors duration-300 ${sectionBg}`}>
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate={isInView ? "visible" : "hidden"}
         className="relative max-w-4xl lg:max-w-6xl mx-auto w-full"
       >
-        <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl lg:rounded-3xl overflow-hidden shadow-2xl">
+        <div className={`${cardBg} backdrop-blur-xl border ${cardBorder} rounded-2xl lg:rounded-3xl overflow-hidden shadow-2xl ${
+          theme === 'light' ? 'shadow-lg' : ''
+        }`}>
           <div className="grid grid-cols-1 lg:grid-cols-2">
             {/* Left Side - Visual (Hidden on mobile) */}
             <motion.div 
               variants={itemVariants}
-              className="hidden lg:block relative h-full min-h-[400px] lg:min-h-[500px] bg-gradient-to-br from-indigo-900/30 to-purple-900/30 overflow-hidden"
+              className="hidden lg:block relative h-full min-h-[400px] lg:min-h-[500px] overflow-hidden"
             >
+              <div className={`absolute inset-0 ${visualBg}`} />
               <div className="absolute inset-0 flex items-center justify-center p-8 lg:p-12">
                 <div className="relative w-full h-full">
                   {/* Animated Circles */}
                   <motion.div
                     variants={circleVariants}
                     animate="animate"
-                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 lg:w-64 lg:h-64 border-2 border-dashed border-indigo-500/30 rounded-full"
+                    className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 lg:w-64 lg:h-64 border-2 border-dashed ${circleBorder} rounded-full`}
                   />
                   <motion.div
                     variants={reverseCircleVariants}
                     animate="animate"
-                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-56 h-56 lg:w-80 lg:h-80 border-2 border-dashed border-purple-500/20 rounded-full"
+                    className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-56 h-56 lg:w-80 lg:h-80 border-2 border-dashed ${circleBorder2} rounded-full`}
                   />
                   
                   {/* Floating Particles - Only render on client */}
@@ -204,13 +244,13 @@ export default function ContactSection() {
                   <div className="relative z-10 text-center p-6 lg:p-8">
                     <motion.h3
                       variants={itemVariants}
-                      className="text-2xl lg:text-3xl font-bold text-white mb-3 lg:mb-4"
+                      className={`text-2xl lg:text-3xl font-bold ${textColor} mb-3 lg:mb-4`}
                     >
                       Let's Connect
                     </motion.h3>
                     <motion.p
                       variants={itemVariants}
-                      className="text-gray-400 text-sm lg:text-base max-w-xs lg:max-w-md mx-auto leading-relaxed"
+                      className={`${textMuted} text-sm lg:text-base max-w-xs lg:max-w-md mx-auto leading-relaxed`}
                     >
                       We're excited to hear from you and discuss how we can work together.
                     </motion.p>
@@ -224,12 +264,12 @@ export default function ContactSection() {
               <motion.div variants={containerVariants}>
                 {/* Header */}
                 <motion.div variants={itemVariants} className="mb-8 sm:mb-10">
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-3 sm:mb-4">
+                  <h2 className={`text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-3 sm:mb-4 ${textColor}`}>
                     <span className="bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
                       Thank You!
                     </span>
                   </h2>
-                  <p className="text-sm sm:text-base lg:text-lg text-gray-400 leading-relaxed">
+                  <p className={`text-sm sm:text-base lg:text-lg ${textMuted} leading-relaxed`}>
                     Reach out to us through any of these channels. We're always happy to help!
                   </p>
                 </motion.div>
@@ -246,17 +286,21 @@ export default function ContactSection() {
                       href={method.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`flex items-center gap-4 sm:gap-6 p-4 sm:p-6 rounded-xl bg-gray-800/50 backdrop-blur-sm border border-gray-700 hover:border-transparent shadow-lg ${method.hover} transition-all duration-300 cursor-pointer`}
+                      className={`flex items-center gap-4 sm:gap-6 p-4 sm:p-6 rounded-xl ${cardBg} backdrop-blur-sm border ${cardBorder} ${cardHoverBorder} shadow-lg ${method.hover} transition-all duration-300 cursor-pointer ${
+                        theme === 'light' ? 'hover:shadow-lg' : ''
+                      }`}
                       style={{ transitionDelay: `${index * 100}ms` }}
                     >
-                      <div className={`flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br ${method.color} text-white shadow-md flex-shrink-0`}>
+                      <div className={`flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br ${method.color} text-white shadow-md flex-shrink-0 ${
+                        theme === 'light' ? 'shadow-md' : 'shadow-lg'
+                      }`}>
                         {method.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg sm:text-xl font-semibold text-white mb-1 sm:mb-2">
+                        <h3 className={`text-lg sm:text-xl font-semibold ${textColor} mb-1 sm:mb-2`}>
                           {method.title}
                         </h3>
-                        <p className="text-gray-400 text-sm sm:text-base truncate">
+                        <p className={`${textMuted} text-sm sm:text-base truncate`}>
                           {method.value}
                         </p>
                       </div>
@@ -266,7 +310,7 @@ export default function ContactSection() {
 
                 {/* Social Links */}
                 <motion.div variants={itemVariants}>
-                  <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6">
+                  <h3 className={`text-lg sm:text-xl font-semibold ${textColor} mb-4 sm:mb-6`}>
                     Follow Us
                   </h3>
                   <div className="flex gap-3 sm:gap-4">
@@ -280,7 +324,7 @@ export default function ContactSection() {
                         href={social.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl bg-gray-800 text-gray-400 ${social.hover} border border-gray-700 hover:border-transparent transition-all duration-300 shadow-md`}
+                        className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl ${socialBg} ${textMuted} border ${socialBorder} hover:border-transparent transition-all duration-300 shadow-md ${social.hover}`}
                         aria-label={social.name}
                         style={{ transitionDelay: `${800 + index * 100}ms` }}
                       >
@@ -293,7 +337,7 @@ export default function ContactSection() {
                 {/* Mobile Visual Element */}
                 <motion.div 
                   variants={itemVariants}
-                  className="lg:hidden mt-8 pt-8 border-t border-gray-700"
+                  className={`lg:hidden mt-8 pt-8 border-t ${dividerBorder}`}
                 >
                   <div className="text-center">
                     <motion.div
@@ -306,11 +350,11 @@ export default function ContactSection() {
                         repeat: Infinity,
                         ease: "easeInOut"
                       }}
-                      className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center"
+                      className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg"
                     >
                       <FiMail className="w-8 h-8 text-white" />
                     </motion.div>
-                    <p className="text-sm text-gray-400">
+                    <p className={`text-sm ${textMuted}`}>
                       Ready to start a conversation?
                     </p>
                   </div>
@@ -322,7 +366,9 @@ export default function ContactSection() {
 
         {/* Background Decoration */}
         <motion.div
-          className="absolute -top-20 -right-20 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl -z-10"
+          className={`absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl -z-10 ${
+            theme === 'dark' ? 'bg-purple-500/10' : 'bg-purple-400/5'
+          }`}
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.5, 0.3]
@@ -334,7 +380,9 @@ export default function ContactSection() {
           }}
         />
         <motion.div
-          className="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl -z-10"
+          className={`absolute -bottom-20 -left-20 w-40 h-40 rounded-full blur-3xl -z-10 ${
+            theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-400/5'
+          }`}
           animate={{
             scale: [1.2, 1, 1.2],
             opacity: [0.5, 0.3, 0.5]

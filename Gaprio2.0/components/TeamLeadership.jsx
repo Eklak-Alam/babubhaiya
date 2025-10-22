@@ -5,8 +5,8 @@ import { FiGithub, FiLinkedin, FiTwitter, FiMail, FiInstagram } from 'react-icon
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Image from 'next/image'
-import { FiZap, FiUsers, FiArrowUpRight } from "react-icons/fi"; // Example icons
-
+import { FiZap, FiUsers, FiArrowUpRight } from "react-icons/fi"
+import { useTheme } from '@/context/ThemeContext'
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -18,6 +18,7 @@ export default function TeamLeadership() {
   const headingRef = useRef(null)
   const cardsRef = useRef([])
   const ethosRef = useRef(null)
+  const { theme } = useTheme()
 
   const teamMembers = [
     {
@@ -66,6 +67,19 @@ export default function TeamLeadership() {
       borderColor: "from-purple-500 to-indigo-500"
     }
   ]
+
+  // Theme-based styles
+  const sectionBg = theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-gray-50 to-white'
+  const textColor = theme === 'dark' ? 'text-white' : 'text-gray-900'
+  const textMuted = theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+  const cardBg = theme === 'dark' ? 'bg-gray-900/80' : 'bg-white/90'
+  const cardBorder = theme === 'dark' ? 'border-gray-800' : 'border-gray-200/70'
+  const socialBg = theme === 'dark' ? 'bg-gray-800/50' : 'bg-gray-100/70'
+  const socialBorder = theme === 'dark' ? 'border-gray-700' : 'border-gray-300'
+  const ethosBg = theme === 'dark' ? 'bg-gradient-to-r from-indigo-900/30 to-purple-900/30' : 'bg-gradient-to-r from-indigo-50 to-purple-50'
+  const ethosBorder = theme === 'dark' ? 'border-gray-800' : 'border-gray-200'
+  const iconBg = theme === 'dark' ? 'bg-purple-500/20' : 'bg-purple-500/15'
+  const iconColor = theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
 
   useEffect(() => {
     // Initialize Lenis for smooth scrolling
@@ -185,24 +199,48 @@ export default function TeamLeadership() {
     }, sectionRef)
 
     return () => ctx.revert()
-  }, [])
+  }, [theme])
 
   return (
-    <section ref={sectionRef} className="relative py-24 overflow-hidden">
+    <section ref={sectionRef} className={`relative py-24 overflow-hidden transition-colors duration-300 ${sectionBg}`}>
+      
+      {/* Background Orbs */}
+      <div className="absolute inset-0 overflow-hidden">
+        <motion.div
+          animate={{ 
+            x: [0, 100, 0],
+            y: [0, -50, 0],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          className={`absolute top-1/4 left-1/4 w-64 h-64 ${
+            theme === 'dark' ? 'bg-purple-500/10' : 'bg-purple-400/5'
+          } rounded-full blur-3xl -z-10`}
+        />
+        <motion.div
+          animate={{ 
+            x: [0, -80, 0],
+            y: [0, 60, 0],
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+          className={`absolute bottom-1/4 right-1/4 w-96 h-96 ${
+            theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-400/5'
+          } rounded-full blur-3xl -z-10`}
+        />
+      </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div ref={headingRef} className="text-center mb-16 opacity-0">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className={`text-3xl md:text-4xl font-bold ${textColor} mb-4`}>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">Team</span> Leadership
           </h2>
-          <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+          <p className={`text-lg ${textMuted} max-w-3xl mx-auto`}>
             The brilliant minds powering Gaprio's vision
           </p>
         </div>
 
         {/* Team grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {teamMembers.map((member, index) => (
             <div
               key={index}
@@ -210,39 +248,53 @@ export default function TeamLeadership() {
               className="relative group opacity-0"
             >
               {/* Electric border effect */}
-              <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${member.borderColor} opacity-0 group-hover:opacity-100 blur-md transition-opacity duration-500`}></div>
+              <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${member.borderColor} opacity-0 group-hover:opacity-100 blur-md transition-opacity duration-500 ${
+                theme === 'light' ? 'group-hover:opacity-70' : ''
+              }`}></div>
               
               {/* Main card */}
-              <div className="relative h-full bg-gray-900/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-800 group-hover:border-transparent transition-all duration-300 overflow-hidden">
+              <div className={`relative h-full ${cardBg} backdrop-blur-sm rounded-2xl p-6 border ${cardBorder} ${
+                theme === 'dark' ? 'group-hover:border-transparent' : 'group-hover:border-gray-300'
+              } transition-all duration-300 overflow-hidden ${
+                theme === 'light' ? 'shadow-sm hover:shadow-lg' : ''
+              }`}>
                 {/* Glowing corner */}
-                <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-br ${member.borderColor} opacity-0 group-hover:opacity-30 transition-opacity duration-500 rounded-bl-3xl`}></div>
+                <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-br ${member.borderColor} ${
+                  theme === 'dark' ? 'opacity-0 group-hover:opacity-30' : 'opacity-0 group-hover:opacity-20'
+                } transition-opacity duration-500 rounded-bl-3xl`}></div>
                 
                 {/* Profile image with shine effect */}
                 <motion.div 
-                  className="relative w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-2 border-gray-700 group-hover:border-transparent transition-all duration-300"
+                  className={`relative w-24 h-24 mx-auto mb-6 rounded-full overflow-hidden border-2 ${
+                    theme === 'dark' ? 'border-gray-700 group-hover:border-transparent' : 'border-gray-300 group-hover:border-gray-400'
+                  } transition-all duration-300`}
                   whileHover={{ scale: 1.05 }}
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${member.borderColor} opacity-0 group-hover:opacity-30 transition-opacity duration-500`}></div>
                   <img
                     src={member.image}
                     alt={member.name}
-                    width={128}
-                    height={128}
+                    width={96}
+                    height={96}
                     className="relative z-10 object-cover w-full h-full"
                   />
                   {/* Shine effect */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className={`absolute inset-0 bg-gradient-to-br from-transparent via-${
+                    theme === 'dark' ? 'white/10' : 'black/10'
+                  } to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
                 </motion.div>
                 
                 {/* Member details */}
                 <div className="text-center">
-                  <h3 className="text-xl font-bold text-white mb-1">{member.name}</h3>
-                  <p className={`text-sm font-medium mb-4 bg-clip-text text-transparent bg-gradient-to-r ${member.borderColor}`}>
+                  <h3 className={`text-lg font-bold ${textColor} mb-1`}>{member.name}</h3>
+                  <p className={`text-sm font-medium mb-3 bg-clip-text text-transparent bg-gradient-to-r ${member.borderColor}`}>
                     {member.role}
                   </p>
-                  <p className="text-gray-400 text-sm mb-6">
+                  <p className={`text-xs ${textMuted} mb-4 leading-relaxed`}>
                     {index === 2 ? (
                       "Full-stack architect bridging AI with human-centered design"
+                    ) : index === 3 ? (
+                      "Innovative developer creating cutting-edge solutions"
                     ) : (
                       "Visionary leader driving innovation and growth"
                     )}
@@ -250,7 +302,7 @@ export default function TeamLeadership() {
                 </div>
                 
                 {/* Social links with lightning effect */}
-                <div className="flex justify-center gap-4">
+                <div className="flex justify-center gap-3">
                   {member.social.map((social, i) => (
                     <motion.a
                       key={i}
@@ -258,26 +310,33 @@ export default function TeamLeadership() {
                       target="_blank"
                       rel="noopener noreferrer"
                       whileHover={{ 
-                        y: -5,
-                        scale: 1.2,
+                        y: -3,
+                        scale: 1.1,
                         color: index === 0 ? "#f59e0b" : index === 1 ? "#3b82f6" : "#8b5cf6"
                       }}
                       whileTap={{ scale: 0.9 }}
-                      className={`text-gray-400 hover:text-white p-2 rounded-full bg-gray-800/50 backdrop-blur-sm border border-gray-700 group-hover:border-transparent transition-all duration-300 ${index === 2 ? 'group-hover:shadow-[0_0_15px_-3px_rgba(139,92,246,0.5)]' : ''}`}
-                      style={{
-                        boxShadow: index === 2 ? '0 0 15px -3px rgba(139, 92, 246, 0)' : 'none'
-                      }}
+                      className={`${textMuted} hover:text-white p-2 rounded-full ${socialBg} backdrop-blur-sm border ${socialBorder} ${
+                        theme === 'dark' ? 'group-hover:border-transparent' : 'group-hover:border-gray-400'
+                      } transition-all duration-300 ${
+                        index === 2 ? `group-hover:shadow-[0_0_15px_-3px_${
+                          theme === 'dark' ? 'rgba(139,92,246,0.5)' : 'rgba(139,92,246,0.3)'
+                        }]` : ''
+                      }`}
                     >
                       {social.icon}
                     </motion.a>
                   ))}
                 </div>
                 
-                {/* Special lightning effect for your card */}
+                {/* Special lightning effect for Eklak's card */}
                 {index === 2 && (
                   <>
-                    <div className={`absolute -bottom-8 -right-8 w-32 h-32 rounded-full from-purple-500/20 to-indigo-500/20 bg-gradient-to-br z-0 group-hover:scale-150 transition-transform duration-700`}></div>
-                    <div className="absolute -bottom-20 -right-20 w-40 h-40 rounded-full from-purple-600/10 to-indigo-600/10 bg-gradient-to-br z-0 group-hover:scale-125 transition-transform duration-1000"></div>
+                    <div className={`absolute -bottom-8 -right-8 w-24 h-24 rounded-full from-purple-500/20 to-indigo-500/20 bg-gradient-to-br z-0 group-hover:scale-150 transition-transform duration-700 ${
+                      theme === 'light' ? 'from-purple-400/15 to-indigo-400/15' : ''
+                    }`}></div>
+                    <div className={`absolute -bottom-16 -right-16 w-32 h-32 rounded-full from-purple-600/10 to-indigo-600/10 bg-gradient-to-br z-0 group-hover:scale-125 transition-transform duration-1000 ${
+                      theme === 'light' ? 'from-purple-400/10 to-indigo-400/10' : ''
+                    }`}></div>
                   </>
                 )}
               </div>
@@ -286,43 +345,44 @@ export default function TeamLeadership() {
         </div>
 
         {/* Team ethos */}
-        
-<div ref={ethosRef} className="mt-20 bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border border-gray-800 rounded-2xl p-8 opacity-0">
-  <h3 className="text-2xl font-bold text-white mb-6">Our Leadership Ethos</h3>
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-    
-    <div className="flex items-start gap-4">
-      <div className="flex-shrink-0 mt-1 w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
-        <FiZap className="w-5 h-5" />
-      </div>
-      <div>
-        <h4 className="text-lg font-medium text-white mb-2">Innovation First</h4>
-        <p className="text-gray-400">Pushing boundaries in AI-human collaboration</p>
-      </div>
-    </div>
+        <div ref={ethosRef} className={`mt-16 ${ethosBg} border ${ethosBorder} rounded-2xl p-6 md:p-8 opacity-0 ${
+          theme === 'light' ? 'shadow-sm' : ''
+        }`}>
+          <h3 className={`text-xl md:text-2xl font-bold ${textColor} mb-6`}>Our Leadership Ethos</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className={`flex-shrink-0 mt-1 w-7 h-7 md:w-8 md:h-8 rounded-full ${iconBg} flex items-center justify-center ${iconColor}`}>
+                <FiZap className="w-4 h-4 md:w-5 md:h-5" />
+              </div>
+              <div>
+                <h4 className={`text-base md:text-lg font-medium ${textColor} mb-1 md:mb-2`}>Innovation First</h4>
+                <p className={`text-xs md:text-sm ${textMuted}`}>Pushing boundaries in AI-human collaboration</p>
+              </div>
+            </div>
 
-    <div className="flex items-start gap-4">
-      <div className="flex-shrink-0 mt-1 w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
-        <FiUsers className="w-5 h-5" />
-      </div>
-      <div>
-        <h4 className="text-lg font-medium text-white mb-2">Collaborative Spirit</h4>
-        <p className="text-gray-400">Strength through diverse perspectives</p>
-      </div>
-    </div>
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className="flex-shrink-0 mt-1 w-7 h-7 md:w-8 md:h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <FiUsers className="w-4 h-4 md:w-5 md:h-5" />
+              </div>
+              <div>
+                <h4 className={`text-base md:text-lg font-medium ${textColor} mb-1 md:mb-2`}>Collaborative Spirit</h4>
+                <p className={`text-xs md:text-sm ${textMuted}`}>Strength through diverse perspectives</p>
+              </div>
+            </div>
 
-    <div className="flex items-start gap-4">
-      <div className="flex-shrink-0 mt-1 w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-        <FiArrowUpRight className="w-5 h-5" />
-      </div>
-      <div>
-        <h4 className="text-lg font-medium text-white mb-2">Future Focused</h4>
-        <p className="text-gray-400">Building tomorrow's communication tools today</p>
-      </div>
-    </div>
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className="flex-shrink-0 mt-1 w-7 h-7 md:w-8 md:h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <FiArrowUpRight className="w-4 h-4 md:w-5 md:h-5" />
+              </div>
+              <div>
+                <h4 className={`text-base md:text-lg font-medium ${textColor} mb-1 md:mb-2`}>Future Focused</h4>
+                <p className={`text-xs md:text-sm ${textMuted}`}>Building tomorrow's communication tools today</p>
+              </div>
+            </div>
 
-  </div>
-</div>
+          </div>
+        </div>
       </div>
     </section>
   )

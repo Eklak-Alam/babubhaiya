@@ -7,6 +7,7 @@ import { gsap } from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Link from 'next/link'
+import { useTheme } from '@/context/ThemeContext'
 
 // Register ScrollTrigger plugin
 if (typeof window !== 'undefined') {
@@ -15,6 +16,8 @@ if (typeof window !== 'undefined') {
 
 export default function SolutionSection() {
   const sectionRef = useRef(null)
+  const { theme } = useTheme()
+
   const solutions = [
     {
       icon: <FiMic className="w-6 h-6" />,
@@ -27,7 +30,7 @@ export default function SolutionSection() {
         "Automated clause suggestions"
       ],
       principle: "Clarity > Complexity",
-      color: "from-indigo-500 to-purple-600"
+      color: theme === 'dark' ? "from-indigo-500 to-purple-600" : "from-violet-600 to-purple-600"
     },
     {
       icon: <FiHeart className="w-6 h-6" />,
@@ -40,7 +43,7 @@ export default function SolutionSection() {
         "Conflict resolution protocols"
       ],
       principle: "Understanding > Arguing",
-      color: "from-amber-500 to-pink-500"
+      color: theme === 'dark' ? "from-amber-500 to-pink-500" : "from-amber-500 to-pink-500"
     },
     {
       icon: <FiUsers className="w-6 h-6" />,
@@ -53,9 +56,26 @@ export default function SolutionSection() {
         "Automated meeting summaries"
       ],
       principle: "Directness > Diplomacy",
-      color: "from-emerald-500 to-cyan-500"
+      color: theme === 'dark' ? "from-emerald-500 to-cyan-500" : "from-emerald-500 to-cyan-500"
     }
   ]
+
+  // Theme-based styles
+  const sectionBackground = theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+  const cardBackground = theme === 'dark' ? 'bg-gray-900/80' : 'bg-white'
+  const cardBorder = theme === 'dark' ? 'border-gray-800' : 'border-gray-200'
+  const cardHoverBorder = theme === 'dark' ? 'group-hover:border-gray-700' : 'group-hover:border-gray-300'
+  const titleColor = theme === 'dark' ? 'text-white' : 'text-gray-900'
+  const subtitleColor = theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+  const descriptionColor = theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+  const taglineColor = theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+  const featureTextColor = theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+  const principleBackground = theme === 'dark' ? 'bg-gray-800/70' : 'bg-gray-100'
+  const principleBorder = theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+  const principleTextColor = theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+  const headerGradient = theme === 'dark' ? 'from-indigo-400 via-purple-500 to-pink-500' : 'from-violet-600 via-purple-600 to-pink-600'
+  const ctaGradient = theme === 'dark' ? 'from-indigo-600 to-purple-600' : 'from-violet-600 to-purple-600'
+  const ctaHoverGradient = theme === 'dark' ? 'from-indigo-700 to-purple-700' : 'from-violet-700 to-purple-700'
 
   // GSAP animations for the solution section
   useGSAP(() => {
@@ -130,7 +150,7 @@ export default function SolutionSection() {
           ease: 'power2.out'
         })
         gsap.to(card.querySelector('.gradient-border'), {
-          opacity: 0.25,
+          opacity: theme === 'dark' ? 0.25 : 0.15,
           duration: 0.3
         })
       })
@@ -142,15 +162,15 @@ export default function SolutionSection() {
           ease: 'power2.out'
         })
         gsap.to(card.querySelector('.gradient-border'), {
-          opacity: 0.1,
+          opacity: theme === 'dark' ? 0.1 : 0.05,
           duration: 0.3
         })
       })
     })
-  }, [])
+  }, [theme])
 
   return (
-    <section ref={sectionRef} className="solution-section relative py-20 md:py-24 overflow-hidden bg-gray-900">
+    <section ref={sectionRef} className={`solution-section relative py-20 md:py-24 overflow-hidden ${sectionBackground}`}>
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <motion.div
@@ -160,20 +180,22 @@ export default function SolutionSection() {
           viewport={{ once: true, margin: "-50px" }}
           className="solution-header text-center mb-16 md:mb-20 px-4"
         >
-          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6 leading-tight">
             The{" "}
             <span className="relative inline-block">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500">
+              <span className={`text-transparent bg-clip-text bg-gradient-to-r ${headerGradient}`}>
                 Solution
               </span>
-              <span className="absolute left-0 bottom-0 w-full h-[3px] bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 rounded-full shadow-lg" />
+              <span className={`absolute left-0 bottom-0 w-full h-[3px] bg-gradient-to-r ${headerGradient} rounded-full shadow-lg`} />
             </span>
           </h2>
 
-          <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Our <span className="text-white font-semibold">AI-powered tools</span> 
+          <p className={`text-lg md:text-xl ${subtitleColor} max-w-3xl mx-auto leading-relaxed`}>
+            Our <span className={`${titleColor} font-semibold`}>AI-powered tools</span> 
             transform negotiation challenges into{" "}
-            <span className="text-indigo-400 font-medium">seamless collaboration</span>, 
+            <span className={`${theme === 'dark' ? 'text-indigo-400' : 'text-violet-600'} font-medium`}>
+              seamless collaboration
+            </span>, 
             making complex discussions smooth, efficient, and results-driven.
           </p>
         </motion.div>
@@ -190,42 +212,42 @@ export default function SolutionSection() {
               }}
             >
               {/* Gradient border effect */}
-              <div className={`gradient-border absolute inset-0 rounded-2xl bg-gradient-to-br ${solution.color} opacity-10 blur-md transition-opacity duration-500 z-0`}></div>
+              <div className={`gradient-border absolute inset-0 rounded-2xl bg-gradient-to-br ${solution.color} opacity-${theme === 'dark' ? '10' : '5'} blur-md transition-opacity duration-500 z-0`}></div>
               
-              <div className="relative h-full bg-gray-900/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-gray-800 group-hover:border-gray-700 transition-all duration-300 overflow-hidden z-10">
+              <div className={`relative h-full ${cardBackground} backdrop-blur-sm rounded-2xl p-6 md:p-8 border ${cardBorder} ${cardHoverBorder} transition-all duration-300 overflow-hidden z-10 shadow-sm hover:shadow-md`}>
                 {/* Solution header */}
                 <div className="flex items-start mb-6">
                   <div className={`flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br ${solution.color} text-white shadow-lg flex-shrink-0`}>
                     {solution.icon}
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-xl font-bold text-white">{solution.name}</h3>
-                    <p className="text-sm text-gray-400 mt-1">{solution.tagline}</p>
+                    <h3 className={`text-xl font-bold ${titleColor}`}>{solution.name}</h3>
+                    <p className={`text-sm ${taglineColor} mt-1`}>{solution.tagline}</p>
                   </div>
                 </div>
 
                 {/* Description */}
-                <p className="text-gray-300 mb-6">{solution.description}</p>
+                <p className={`${descriptionColor} mb-6`}>{solution.description}</p>
 
                 {/* Features */}
                 <ul className="space-y-3 mb-8">
                   {solution.features.map((feature, i) => (
                     <li key={i} className="flex items-start">
-                      <FiCheckCircle className="flex-shrink-0 mt-1 mr-3 text-emerald-400" />
-                      <span className="text-gray-400 text-sm md:text-base">{feature}</span>
+                      <FiCheckCircle className={`flex-shrink-0 mt-1 mr-3 ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-500'}`} />
+                      <span className={`${featureTextColor} text-sm md:text-base`}>{feature}</span>
                     </li>
                   ))}
                 </ul>
 
                 {/* Principle badge */}
                 <div className="mt-auto pt-4">
-                  <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-800/70 border border-gray-700 backdrop-blur-sm">
-                    <span className="text-xs font-medium text-gray-300">{solution.principle}</span>
+                  <div className={`inline-flex items-center px-3 py-1 rounded-full ${principleBackground} border ${principleBorder} backdrop-blur-sm`}>
+                    <span className={`text-xs font-medium ${principleTextColor}`}>{solution.principle}</span>
                   </div>
                 </div>
 
                 {/* Animated hover element */}
-                <div className={`absolute -bottom-8 -right-8 w-32 h-32 rounded-full ${solution.color.split(' ')[0]}/20 z-0 group-hover:scale-150 transition-transform duration-700`}></div>
+                <div className={`absolute -bottom-8 -right-8 w-32 h-32 rounded-full ${solution.color.split(' ')[0]}/${theme === 'dark' ? '20' : '10'} z-0 group-hover:scale-150 transition-transform duration-700`}></div>
               </div>
             </motion.div>
           ))}
@@ -241,13 +263,13 @@ export default function SolutionSection() {
         >
           <Link
             href="/get-started"
-            className="group relative inline-flex items-center justify-center px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-lg shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden"
+            className={`group relative inline-flex items-center justify-center px-8 py-4 rounded-xl bg-gradient-to-r ${ctaGradient} hover:${ctaHoverGradient} text-white font-semibold text-lg shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden`}
           >
             <span className="relative z-10 flex items-center justify-center">
               Explore All Solutions
               <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
             </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className={`absolute inset-0 bg-gradient-to-r ${ctaHoverGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
           </Link>
         </motion.div>
 

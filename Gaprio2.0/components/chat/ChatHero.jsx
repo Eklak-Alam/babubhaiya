@@ -12,9 +12,10 @@ import {
   FiShield,
 } from "react-icons/fi";
 import { useState, useEffect } from "react";
+import { useTheme } from '@/context/ThemeContext';
 
 // Stable particle component with deterministic animations
-const FloatingParticle = ({ index, totalParticles }) => {
+const FloatingParticle = ({ index, totalParticles, theme }) => {
   // Use stable, deterministic values based on index
   const stableLeft = (index / totalParticles) * 100;
   const stableTop = (index * 7) % 100;
@@ -24,7 +25,7 @@ const FloatingParticle = ({ index, totalParticles }) => {
 
   return (
     <motion.div
-      className="absolute w-1 h-1 bg-white/40 rounded-full"
+      className={`absolute w-1 h-1 rounded-full ${theme === 'dark' ? 'bg-white/40' : 'bg-gray-600/40'}`}
       initial={{
         y: 0,
         x: 0,
@@ -53,10 +54,30 @@ const FloatingParticle = ({ index, totalParticles }) => {
 
 export default function ChatHero() {
   const [isMounted, setIsMounted] = useState(false);
+  const { theme } = useTheme();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Theme-based styles
+  const sectionBackground = theme === 'dark' ? 'bg-gray-900' : 'bg-white'
+  const textColor = theme === 'dark' ? 'text-white' : 'text-gray-900'
+  const subtitleColor = theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+  const badgeBackground = theme === 'dark' ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20' : 'bg-gradient-to-r from-blue-100 to-purple-100'
+  const badgeBorder = theme === 'dark' ? 'border-white/20' : 'border-gray-300'
+  const badgeText = theme === 'dark' ? 'text-white' : 'text-gray-900'
+  const featureBackground = theme === 'dark' ? 'bg-white/5' : 'bg-gray-50'
+  const featureBorder = theme === 'dark' ? 'border-white/10' : 'border-gray-200'
+  const featureHoverBorder = theme === 'dark' ? 'hover:border-white/20' : 'hover:border-gray-300'
+  const chatBackground = theme === 'dark' ? 'bg-gradient-to-br from-gray-800/60 to-gray-900/80' : 'bg-gradient-to-br from-gray-50/80 to-white/90'
+  const chatBorder = theme === 'dark' ? 'border-white/20' : 'border-gray-300'
+  const messageBackground = theme === 'dark' ? 'bg-white/5' : 'bg-gray-100'
+  const messageBorder = theme === 'dark' ? 'border-white/10' : 'border-gray-200'
+  const statsBackground = theme === 'dark' ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20' : 'bg-gradient-to-br from-blue-100 to-purple-100'
+  const statsBorder = theme === 'dark' ? 'border-white/20' : 'border-gray-300'
+  const secondaryButton = theme === 'dark' ? 'bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/30' : 'bg-gray-100 hover:bg-gray-200 border-gray-300 hover:border-gray-400'
+  const gridPattern = theme === 'dark' ? 'linear-gradient(#e5e7eb_1px, transparent_1px), linear-gradient(90deg, #e5e7eb_1px, transparent_1px)' : 'linear-gradient(#6b7280_1px, transparent_1px), linear-gradient(90deg, #6b7280_1px, transparent_1px)'
 
   const features = [
     {
@@ -88,12 +109,12 @@ export default function ChatHero() {
   // Don't render random content during SSR
   if (!isMounted) {
     return (
-      <section className="relative min-h-screen bg-gray-900 overflow-hidden">
+      <section className={`relative min-h-screen ${sectionBackground} overflow-hidden`}>
         <div className="relative max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 xl:gap-32 items-center">
             {/* Simple loading state */}
             <div className="text-center lg:text-left space-y-8 sm:space-y-12">
-              <div className="h-20 bg-gray-800 rounded-2xl animate-pulse"></div>
+              <div className={`h-20 ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'} rounded-2xl animate-pulse`}></div>
             </div>
           </div>
         </div>
@@ -102,7 +123,7 @@ export default function ChatHero() {
   }
 
   return (
-    <section className="relative min-h-screen bg-gray-900 overflow-hidden">
+    <section className={`relative min-h-screen ${sectionBackground} overflow-hidden`}>
       {/* Premium Background Effects */}
       <div className="absolute inset-0">
         {/* Animated Gradient Orbs - Fixed positions */}
@@ -120,7 +141,7 @@ export default function ChatHero() {
             repeat: Infinity,
             ease: "easeInOut",
           }}
-          className="absolute top-1/4 -left-20 w-80 h-80 bg-purple-600/30 rounded-full blur-4xl"
+          className={`absolute top-1/4 -left-20 w-80 h-80 rounded-full blur-4xl ${theme === 'dark' ? 'bg-purple-600/30' : 'bg-purple-400/20'}`}
         />
         <motion.div
           initial={{
@@ -137,25 +158,23 @@ export default function ChatHero() {
             ease: "easeInOut",
             delay: 2,
           }}
-          className="absolute bottom-1/4 -right-24 w-96 h-96 bg-blue-600/30 rounded-full blur-4xl"
+          className={`absolute bottom-1/4 -right-24 w-96 h-96 rounded-full blur-4xl ${theme === 'dark' ? 'bg-blue-600/30' : 'bg-blue-400/20'}`}
         />
 
         {/* Stable Floating Particles - Only render on client */}
         {isMounted && (
-  <div className="absolute inset-0">
-    {[...Array(15)].map((_, index) => (
-      <FloatingParticle key={index} index={index} totalParticles={15} />
-    ))}
-  </div>
-)}
-
+          <div className="absolute inset-0">
+            {[...Array(15)].map((_, index) => (
+              <FloatingParticle key={index} index={index} totalParticles={15} theme={theme} />
+            ))}
+          </div>
+        )}
 
         {/* Static Grid Pattern */}
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className={`absolute inset-0 ${theme === 'dark' ? 'opacity-[0.03]' : 'opacity-[0.08]'}`}
           style={{
-            backgroundImage:
-              "linear-gradient(#e5e7eb_1px, transparent_1px), linear-gradient(90deg, #e5e7eb_1px, transparent_1px)",
+            backgroundImage: gridPattern,
             backgroundSize: "64px 64px",
           }}
         />
@@ -176,35 +195,35 @@ export default function ChatHero() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
-              className="inline-flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-md px-4 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl border border-white/20 shadow-2xl"
+              className={`inline-flex items-center gap-2 sm:gap-3 ${badgeBackground} backdrop-blur-md px-4 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl border ${badgeBorder} shadow-2xl`}
             >
               <div className="flex items-center gap-1 sm:gap-2">
-                <FiStar className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
-                <span className="text-xs sm:text-sm font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                <FiStar className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
+                <span className={`text-xs sm:text-sm font-bold ${theme === 'dark' ? 'bg-gradient-to-r from-white to-gray-300' : 'bg-gradient-to-r from-gray-900 to-gray-700'} bg-clip-text text-transparent`}>
                   NEXT-GEN AI CHAT
                 </span>
               </div>
-              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full" />
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full" />
             </motion.div>
 
             {/* Main Heading */}
             <div className="space-y-4 sm:space-y-6">
               <motion.h1
-                className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-white leading-tight"
+                className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black leading-tight`}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.8 }}
               >
-                <span className="bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent block">
+                <span className={`bg-gradient-to-r ${theme === 'dark' ? 'from-white via-blue-100 to-cyan-100' : 'from-gray-900 via-blue-900 to-cyan-900'} bg-clip-text text-transparent block`}>
                   Group Chat
                 </span>
-                <span className="block bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                <span className={`bg-gradient-to-r ${theme === 'dark' ? 'from-blue-400 via-purple-400 to-cyan-400' : 'from-blue-600 via-purple-600 to-cyan-600'} bg-clip-text text-transparent block`}>
                   Reimagined
                 </span>
               </motion.h1>
 
               <motion.p
-                className="text-lg sm:text-xl lg:text-2xl text-gray-300 leading-relaxed max-w-2xl font-light px-2 sm:px-0"
+                className={`text-lg sm:text-xl lg:text-2xl ${subtitleColor} leading-relaxed max-w-2xl font-light px-2 sm:px-0`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
@@ -227,7 +246,7 @@ export default function ChatHero() {
                   key={index}
                   whileHover={{ scale: 1.05, y: -5 }}
                   whileTap={{ scale: 0.95 }}
-                  className="group relative bg-white/5 backdrop-blur-md rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-white/10 hover:border-white/20 transition-all duration-300 shadow-lg hover:shadow-2xl"
+                  className={`group relative ${featureBackground} backdrop-blur-md rounded-xl sm:rounded-2xl p-3 sm:p-4 border ${featureBorder} ${featureHoverBorder} transition-all duration-300 shadow-lg hover:shadow-2xl`}
                 >
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div
@@ -236,10 +255,10 @@ export default function ChatHero() {
                       <feature.icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
                     <div className="text-left flex-1 min-w-0">
-                      <div className="font-bold text-white text-sm sm:text-base truncate">
+                      <div className={`font-bold ${textColor} text-sm sm:text-base truncate`}>
                         {feature.text}
                       </div>
-                      <div className="text-xs text-gray-400 mt-0.5 sm:mt-1 truncate">
+                      <div className={`text-xs ${subtitleColor} mt-0.5 sm:mt-1 truncate`}>
                         {feature.desc}
                       </div>
                     </div>
@@ -267,7 +286,7 @@ export default function ChatHero() {
 
               <Link
                 href="/chat/login"
-                className="group bg-white/10 hover:bg-white/20 text-white font-bold py-4 sm:py-5 px-8 sm:px-10 rounded-xl sm:rounded-2xl transition-all duration-300 flex items-center justify-center backdrop-blur-sm border border-white/20 hover:border-white/30 shadow-xl hover:shadow-2xl transform hover:scale-105 w-full sm:w-auto min-w-[160px] sm:min-w-[200px]"
+                className={`group ${secondaryButton} ${textColor} font-bold py-4 sm:py-5 px-8 sm:px-10 rounded-xl sm:rounded-2xl transition-all duration-300 flex items-center justify-center backdrop-blur-sm shadow-xl hover:shadow-2xl transform hover:scale-105 w-full sm:w-auto min-w-[160px] sm:min-w-[200px]`}
               >
                 <span className="text-base sm:text-lg">Existing Account</span>
               </Link>
@@ -278,7 +297,7 @@ export default function ChatHero() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9, duration: 0.8 }}
-              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 sm:gap-8 text-sm text-gray-400 pt-4 sm:pt-6"
+              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 sm:gap-8 text-sm pt-4 sm:pt-6"
             >
               <div className="flex items-center gap-3 sm:gap-4">
                 <div className="flex -space-x-2 sm:-space-x-3">
@@ -296,20 +315,20 @@ export default function ChatHero() {
                 </div>
 
                 <div className="text-left">
-                  <div className="font-bold text-white text-sm sm:text-base">
+                  <div className={`font-bold ${textColor} text-sm sm:text-base`}>
                     3+ Teams
                   </div>
-                  <div className="text-xs">Trusted worldwide</div>
+                  <div className={subtitleColor}>Trusted worldwide</div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 sm:gap-3 bg-white/5 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 sm:py-3 border border-white/10">
-                <FiCheck className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+              <div className={`flex items-center gap-2 sm:gap-3 ${featureBackground} rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 sm:py-3 border ${featureBorder}`}>
+                <FiCheck className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                 <div className="text-left">
-                  <div className="font-bold text-white text-sm sm:text-base">
+                  <div className={`font-bold ${textColor} text-sm sm:text-base`}>
                     99.9% Uptime
                   </div>
-                  <div className="text-xs">Always available</div>
+                  <div className={subtitleColor}>Always available</div>
                 </div>
               </div>
             </motion.div>
@@ -325,7 +344,7 @@ export default function ChatHero() {
             {/* Main Chat Container */}
             <motion.div
               whileHover={{ scale: 1.02 }}
-              className="relative bg-gradient-to-br from-gray-800/60 to-gray-900/80 backdrop-blur-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 border border-white/20 shadow-2xl mx-auto max-w-md lg:max-w-full"
+              className={`relative ${chatBackground} backdrop-blur-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 border ${chatBorder} shadow-2xl mx-auto max-w-md lg:max-w-full`}
             >
               {/* Chat Header */}
               <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
@@ -333,18 +352,18 @@ export default function ChatHero() {
                   <FiMessageSquare className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-bold text-lg sm:text-xl lg:text-2xl truncate">
+                  <h3 className={`${textColor} font-bold text-lg sm:text-xl lg:text-2xl truncate`}>
                     AI Team Space
                   </h3>
-                  <p className="text-gray-400 text-xs sm:text-sm flex items-center gap-1 sm:gap-2">
-                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full"></span>
+                  <p className={`${subtitleColor} text-xs sm:text-sm flex items-center gap-1 sm:gap-2`}>
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full"></span>
                     3 members • Live
                   </p>
                 </div>
                 <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-400 rounded-full" />
-                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-400 rounded-full" />
-                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-400 rounded-full" />
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full" />
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-500 rounded-full" />
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full" />
                 </div>
               </div>
 
@@ -389,14 +408,14 @@ export default function ChatHero() {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                        <span className="text-white font-bold text-sm sm:text-base truncate">
+                        <span className={`${textColor} font-bold text-sm sm:text-base truncate`}>
                           {msg.user}
                         </span>
-                        <span className="text-gray-500 text-xs flex-shrink-0">
+                        <span className={`${subtitleColor} text-xs flex-shrink-0`}>
                           {msg.time}
                         </span>
                       </div>
-                      <p className="text-gray-300 text-xs sm:text-sm leading-relaxed bg-white/5 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-white/10">
+                      <p className={`${subtitleColor} text-xs sm:text-sm leading-relaxed ${messageBackground} rounded-xl sm:rounded-2xl p-3 sm:p-4 border ${messageBorder}`}>
                         {msg.message}
                       </p>
                     </div>
@@ -409,16 +428,16 @@ export default function ChatHero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.5 }}
-                className="flex items-center gap-2 sm:gap-3 mt-6 sm:mt-8 text-gray-400 bg-white/5 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-white/10"
+                className={`flex items-center gap-2 sm:gap-3 mt-6 sm:mt-8 ${subtitleColor} ${messageBackground} rounded-xl sm:rounded-2xl p-3 sm:p-4 border ${messageBorder}`}
               >
                 <div className="flex gap-1">
-                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-400 rounded-full animate-bounce" />
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full animate-bounce" />
                   <div
-                    className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-400 rounded-full animate-bounce"
+                    className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full animate-bounce"
                     style={{ animationDelay: "0.1s" }}
                   />
                   <div
-                    className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-cyan-400 rounded-full animate-bounce"
+                    className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-cyan-500 rounded-full animate-bounce"
                     style={{ animationDelay: "0.2s" }}
                   />
                 </div>
@@ -433,13 +452,13 @@ export default function ChatHero() {
               initial={{ opacity: 0, y: 30, scale: 0.8 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ delay: 1, type: "spring", stiffness: 100 }}
-              className="absolute -top-4 -right-4 sm:-top-6 sm:-right-6 bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-2xl rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 border border-white/20 shadow-2xl"
+              className={`absolute -top-4 -right-4 sm:-top-6 sm:-right-6 ${statsBackground} backdrop-blur-2xl rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 border ${statsBorder} shadow-2xl`}
             >
               <div className="text-center">
-                <div className="text-lg sm:text-xl lg:text-2xl font-black text-white">
+                <div className={`text-lg sm:text-xl lg:text-2xl font-black ${textColor}`}>
                   50ms
                 </div>
-                <div className="text-xs text-gray-300 font-medium">
+                <div className={`text-xs ${subtitleColor} font-medium`}>
                   Response Time
                 </div>
               </div>
@@ -449,13 +468,13 @@ export default function ChatHero() {
               initial={{ opacity: 0, y: -30, scale: 0.8 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ delay: 1.2, type: "spring", stiffness: 100 }}
-              className="absolute -bottom-4 -left-4 sm:-bottom-6 sm:-left-6 bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-2xl rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 border border-white/20 shadow-2xl"
+              className={`absolute -bottom-4 -left-4 sm:-bottom-6 sm:-left-6 ${theme === 'dark' ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20' : 'bg-gradient-to-br from-green-100 to-emerald-100'} backdrop-blur-2xl rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 border ${statsBorder} shadow-2xl`}
             >
               <div className="text-center">
-                <div className="text-lg sm:text-xl lg:text-2xl font-black text-white">
+                <div className={`text-lg sm:text-xl lg:text-2xl font-black ${textColor}`}>
                   24/7
                 </div>
-                <div className="text-xs text-gray-300 font-medium">
+                <div className={`text-xs ${subtitleColor} font-medium`}>
                   AI Online
                 </div>
               </div>
@@ -476,14 +495,14 @@ export default function ChatHero() {
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           className="flex flex-col items-center gap-1 sm:gap-2"
         >
-          <span className="text-xs sm:text-sm text-gray-400 font-medium">
+          <span className={`text-xs sm:text-sm ${subtitleColor} font-medium`}>
             Scroll to explore
           </span>
-          <div className="w-5 h-8 sm:w-6 sm:h-10 border-2 border-white/30 rounded-full flex justify-center">
+          <div className={`w-5 h-8 sm:w-6 sm:h-10 border-2 ${theme === 'dark' ? 'border-white/30' : 'border-gray-400'} rounded-full flex justify-center`}>
             <motion.div
               animate={{ y: [0, 12, 0] }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="w-1 h-2 sm:h-3 bg-white/60 rounded-full mt-1 sm:mt-2"
+              className={`w-1 h-2 sm:h-3 rounded-full mt-1 sm:mt-2 ${theme === 'dark' ? 'bg-white/60' : 'bg-gray-600'}`}
             />
           </div>
         </motion.div>

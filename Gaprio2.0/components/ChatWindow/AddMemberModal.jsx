@@ -9,6 +9,7 @@ import {
   FaSpinner
 } from "react-icons/fa";
 import { IoClose, IoPeople } from "react-icons/io5";
+import { useTheme } from '@/context/ThemeContext';
 
 export default function AddMemberModal({
   isOpen,
@@ -22,10 +23,38 @@ export default function AddMemberModal({
   onAddMember,
   selectedUser
 }) {
+  const { theme } = useTheme();
   const modalRef = useRef(null);
   const [localError, setLocalError] = useState("");
   const [addingUserId, setAddingUserId] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Theme-based styles
+  const themeStyles = {
+    background: theme === 'dark' ? 'bg-gray-800' : 'bg-white',
+    modalBackground: theme === 'dark' ? 'bg-gray-800' : 'bg-white',
+    modalBorder: theme === 'dark' ? 'border-gray-700' : 'border-gray-200',
+    headerBackground: theme === 'dark' ? 'bg-gradient-to-r from-blue-600 to-blue-700' : 'bg-gradient-to-r from-blue-500 to-blue-600',
+    text: {
+      primary: theme === 'dark' ? 'text-white' : 'text-gray-900',
+      secondary: theme === 'dark' ? 'text-gray-400' : 'text-gray-600',
+      tertiary: theme === 'dark' ? 'text-gray-500' : 'text-gray-500',
+    },
+    input: {
+      background: theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50',
+      border: theme === 'dark' ? 'border-gray-600' : 'border-gray-300',
+      focus: 'focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+    },
+    card: {
+      background: theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-100/80',
+      border: theme === 'dark' ? 'border-gray-700' : 'border-gray-300',
+    },
+    button: {
+      secondary: theme === 'dark' ? 'text-gray-300 border-gray-600 hover:bg-gray-700' : 'text-gray-700 border-gray-300 hover:bg-gray-100',
+    },
+    error: theme === 'dark' ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-red-50 border-red-200 text-red-700',
+    success: theme === 'dark' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-green-50 border-green-200 text-green-700'
+  };
 
   // Close modal on outside click or Escape key
   useEffect(() => {
@@ -115,19 +144,21 @@ export default function AddMemberModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+        className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${
+          theme === 'dark' ? 'bg-black/70' : 'bg-black/50'
+        } backdrop-blur-sm`}
       >
         <motion.div
           ref={modalRef}
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="relative w-full max-w-md bg-gray-800 rounded-2xl shadow-xl border border-gray-700 max-h-[90vh] overflow-hidden"
+          className={`relative w-full max-w-md ${themeStyles.modalBackground} rounded-2xl shadow-xl border ${themeStyles.modalBorder} max-h-[90vh] overflow-hidden`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-700 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+          <div className={`flex items-center justify-between p-6 border-b ${themeStyles.modalBorder} ${themeStyles.headerBackground} text-white`}>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
+              <div className="p-2 bg-white/20 rounded-lg">
                 <IoPeople className="text-xl" />
               </div>
               <div>
@@ -137,7 +168,7 @@ export default function AddMemberModal({
             </div>
             <button
               onClick={handleClose}
-              className="p-2 hover:bg-blue-600/30 rounded-xl transition-all"
+              className="p-2 hover:bg-white/20 rounded-xl transition-all"
             >
               <IoClose size={20} />
             </button>
@@ -147,7 +178,7 @@ export default function AddMemberModal({
           <div className="p-6 space-y-4">
             {/* Error Message */}
             {localError && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 text-red-400">
+              <div className={`p-3 rounded-xl flex items-center gap-2 ${themeStyles.error}`}>
                 <FaExclamationTriangle />
                 <span className="text-sm">{localError}</span>
               </div>
@@ -155,7 +186,7 @@ export default function AddMemberModal({
 
             {/* Success Message */}
             {successMessage && (
-              <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center gap-2 text-green-400">
+              <div className={`p-3 rounded-xl flex items-center gap-2 ${themeStyles.success}`}>
                 <FaCheck />
                 <span className="text-sm">{successMessage}</span>
               </div>
@@ -173,7 +204,9 @@ export default function AddMemberModal({
                     onSearchQueryChange(e.target.value);
                     setLocalError("");
                   }}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-gray-400"
+                  className={`w-full pl-10 pr-4 py-3 ${themeStyles.input.background} border ${themeStyles.input.border} rounded-xl ${themeStyles.input.focus} ${
+                    themeStyles.text.primary
+                  } placeholder-gray-400`}
                 />
               </div>
               <button
@@ -200,15 +233,19 @@ export default function AddMemberModal({
                   return (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between p-3 bg-gray-700/50 rounded-xl hover:bg-gray-700 transition-all"
+                      className={`flex items-center justify-between p-3 ${
+                        theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-100/50'
+                      } rounded-xl ${
+                        theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'
+                      } transition-all`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center text-white font-semibold">
                           {getInitials(user.name)}
                         </div>
                         <div>
-                          <div className="font-semibold text-white">{user.name}</div>
-                          <div className="text-sm text-gray-400">@{user.username}</div>
+                          <div className={`font-semibold ${themeStyles.text.primary}`}>{user.name}</div>
+                          <div className={`text-sm ${themeStyles.text.secondary}`}>@{user.username}</div>
                         </div>
                       </div>
                       <button
@@ -235,7 +272,7 @@ export default function AddMemberModal({
                   );
                 })
               ) : searchQuery.trim() && !isSearching ? (
-                <div className="text-center py-4 text-gray-400">
+                <div className={`text-center py-4 ${themeStyles.text.secondary}`}>
                   No users found matching "{searchQuery}"
                 </div>
               ) : null}
@@ -243,7 +280,7 @@ export default function AddMemberModal({
 
             {/* Current Members */}
             <div className="pt-4 border-t border-gray-700">
-              <h3 className="font-semibold text-gray-200 mb-3 flex items-center gap-2">
+              <h3 className={`font-semibold ${themeStyles.text.primary} mb-3 flex items-center gap-2`}>
                 <FaCheck className="text-green-400" />
                 Current Members ({groupMembers.length})
               </h3>
@@ -251,23 +288,25 @@ export default function AddMemberModal({
                 {groupMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-3 p-2 bg-gray-700/30 rounded-lg"
+                    className={`flex items-center gap-3 p-2 ${
+                      theme === 'dark' ? 'bg-gray-700/30' : 'bg-gray-100/50'
+                    } rounded-lg`}
                   >
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center text-white text-sm font-semibold">
                       {getInitials(member.name)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-white text-sm truncate">
+                      <div className={`font-medium ${themeStyles.text.primary} text-sm truncate`}>
                         {member.name}
                       </div>
-                      <div className="text-xs text-gray-400 truncate">
+                      <div className={`text-xs ${themeStyles.text.secondary} truncate`}>
                         @{member.username}
                       </div>
                     </div>
                   </div>
                 ))}
                 {groupMembers.length === 0 && (
-                  <div className="text-center py-2 text-gray-400 text-sm">
+                  <div className={`text-center py-2 ${themeStyles.text.secondary} text-sm`}>
                     No members yet
                   </div>
                 )}
@@ -276,10 +315,12 @@ export default function AddMemberModal({
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-700 p-4 bg-gray-800/50">
+          <div className={`border-t ${themeStyles.modalBorder} p-4 ${
+            theme === 'dark' ? 'bg-gray-800/50' : 'bg-gray-50/80'
+          }`}>
             <button
               onClick={handleClose}
-              className="w-full py-3 text-gray-300 border border-gray-600 rounded-xl hover:bg-gray-700 transition-all"
+              className={`w-full py-3 rounded-xl transition-all ${themeStyles.button.secondary}`}
             >
               Close
             </button>

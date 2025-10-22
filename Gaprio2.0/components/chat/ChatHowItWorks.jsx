@@ -4,9 +4,10 @@ import { FiUser, FiSearch, FiMessageSquare, FiUsers, FiCheck, FiArrowRight } fro
 import { FaRobot, FaHandshake } from 'react-icons/fa'
 import { RiShieldKeyholeLine } from 'react-icons/ri'
 import { useState, useEffect } from 'react'
+import { useTheme } from '@/context/ThemeContext'
 
 // Stable floating element component with deterministic values
-const StableFloatingElement = ({ index, total }) => {
+const StableFloatingElement = ({ index, total, theme }) => {
   // Use deterministic values based on index to avoid hydration mismatches
   const positions = [
     { x: -60, y: -20, w: 80, h: 90 },
@@ -24,9 +25,11 @@ const StableFloatingElement = ({ index, total }) => {
   const move = movements[index] || movements[0]
   const duration = 8 + (index * 2)
 
+  const elementColor = theme === 'dark' ? 'bg-purple-500/10' : 'bg-purple-400/20'
+
   return (
     <motion.div
-      className="absolute bg-purple-500/10 rounded-full"
+      className={`absolute ${elementColor} rounded-full`}
       initial={{ 
         opacity: 0.5,
         x: pos.x,
@@ -47,10 +50,22 @@ const StableFloatingElement = ({ index, total }) => {
 
 export default function ChatHowItWorks() {
   const [isMounted, setIsMounted] = useState(false)
+  const { theme } = useTheme()
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  // Theme-based styles
+  const bgColor = theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-gray-50 via-white to-blue-50'
+  const textColor = theme === 'dark' ? 'text-white' : 'text-gray-900'
+  const textMuted = theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+  const cardBg = theme === 'dark' ? 'bg-gray-800/80' : 'bg-white/90'
+  const cardBorder = theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+  const accentColor = theme === 'dark' ? 'text-purple-400' : 'text-purple-600'
+  const sectionBg = theme === 'dark' ? 'bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900' : 'bg-gradient-to-b from-white via-blue-50/30 to-white'
+  const gradientFrom = theme === 'dark' ? 'from-indigo-500' : 'from-indigo-400'
+  const gradientTo = theme === 'dark' ? 'to-purple-600' : 'to-purple-500'
 
   const steps = [
     {
@@ -108,34 +123,34 @@ export default function ChatHowItWorks() {
   // Don't render animated content during SSR
   if (!isMounted) {
     return (
-      <section className="relative py-20 overflow-hidden bg-gray-900">
+      <section className={`relative py-16 overflow-hidden transition-colors duration-500 ${bgColor}`}>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Loading state */}
-          <div className="text-center mb-16">
-            <div className="h-12 bg-gray-800 rounded-lg max-w-md mx-auto mb-4 animate-pulse"></div>
-            <div className="h-6 bg-gray-800 rounded max-w-2xl mx-auto animate-pulse"></div>
+          <div className="text-center mb-12">
+            <div className={`h-12 ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'} rounded-lg max-w-md mx-auto mb-4 animate-pulse`}></div>
+            <div className={`h-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'} rounded max-w-2xl mx-auto animate-pulse`}></div>
           </div>
           
           <div className="relative">
-            <div className="hidden md:block absolute left-1/2 top-0 h-full w-0.5 bg-gray-800 transform -translate-x-1/2"></div>
+            <div className={`hidden md:block absolute left-1/2 top-0 h-full w-0.5 ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-300'} transform -translate-x-1/2`}></div>
             
-            <div className="space-y-16 md:space-y-0">
+            <div className="space-y-12">
               {steps.map((_, index) => (
-                <div key={index} className={`relative flex flex-col md:flex-row items-center ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-8 md:gap-16`}>
-                  <div className="absolute -top-8 left-0 md:left-1/2 md:-translate-x-1/2 flex items-center justify-center w-12 h-12 rounded-full bg-gray-800 border-4 border-gray-900 z-10"></div>
+                <div key={index} className={`relative flex flex-col md:flex-row items-center ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-6 md:gap-12`}>
+                  <div className={`absolute -top-6 left-0 md:left-1/2 md:-translate-x-1/2 flex items-center justify-center w-10 h-10 rounded-full ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'} border-4 ${theme === 'dark' ? 'border-gray-900' : 'border-white'} z-10`}></div>
                   
-                  <div className={`flex-1 ${index % 2 === 0 ? 'md:pr-8 md:text-right' : 'md:pl-8 md:text-left'} order-2 md:order-none`}>
-                    <div className="w-14 h-14 bg-gray-700 rounded-xl mb-4 animate-pulse"></div>
-                    <div className="h-7 bg-gray-700 rounded mb-3 animate-pulse"></div>
-                    <div className="h-4 bg-gray-700 rounded mb-4 animate-pulse"></div>
+                  <div className={`flex-1 ${index % 2 === 0 ? 'md:pr-6 md:text-right' : 'md:pl-6 md:text-left'} order-2 md:order-none`}>
+                    <div className={`w-12 h-12 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-300'} rounded-xl mb-3 animate-pulse`}></div>
+                    <div className={`h-6 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-300'} rounded mb-2 animate-pulse`}></div>
+                    <div className={`h-4 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-300'} rounded mb-3 animate-pulse`}></div>
                     <div className="space-y-2">
                       {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-4 bg-gray-700 rounded animate-pulse"></div>
+                        <div key={i} className={`h-4 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-300'} rounded animate-pulse`}></div>
                       ))}
                     </div>
                   </div>
 
-                  <div className={`flex-1 order-1 ${index % 2 === 0 ? 'md:order-3' : 'md:order-1'} rounded-xl border border-gray-700 bg-gray-800 h-64 animate-pulse`}></div>
+                  <div className={`flex-1 order-1 ${index % 2 === 0 ? 'md:order-3' : 'md:order-1'} rounded-xl border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-300'} ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'} h-48 animate-pulse`}></div>
                 </div>
               ))}
             </div>
@@ -146,9 +161,9 @@ export default function ChatHowItWorks() {
   }
 
   return (
-    <section className="relative py-20 overflow-hidden bg-gray-900">
+    <section className={`relative py-16 overflow-hidden transition-colors duration-500 ${bgColor}`}>
       {/* Background elements */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
+      <div className={`absolute inset-0 ${theme === 'dark' ? 'opacity-10' : 'opacity-5'} pointer-events-none`}>
         <motion.div
           initial={{ scale: 1, opacity: 0.2 }}
           animate={{
@@ -160,7 +175,9 @@ export default function ChatHowItWorks() {
             repeat: Infinity,
             ease: "easeInOut",
           }}
-          className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl"
+          className={`absolute top-1/4 left-1/4 w-64 h-64 ${
+            theme === 'dark' ? 'bg-purple-600' : 'bg-purple-400'
+          } rounded-full mix-blend-multiply filter blur-3xl`}
         />
         <motion.div
           initial={{ scale: 1.3, opacity: 0.3 }}
@@ -174,7 +191,9 @@ export default function ChatHowItWorks() {
             ease: "easeInOut",
             delay: 2,
           }}
-          className="absolute bottom-1/3 right-1/3 w-64 h-64 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl"
+          className={`absolute bottom-1/3 right-1/3 w-64 h-64 ${
+            theme === 'dark' ? 'bg-indigo-600' : 'bg-indigo-400'
+          } rounded-full mix-blend-multiply filter blur-3xl`}
         />
       </div>
 
@@ -185,22 +204,22 @@ export default function ChatHowItWorks() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
           <motion.h2
-            className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 relative inline-block"
+            className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4 relative inline-block"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <span className="bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent drop-shadow-lg">
+            <span className={`bg-gradient-to-r ${gradientFrom} ${gradientTo} bg-clip-text text-transparent`}>
               How Our AI Chat Works
             </span>
             <motion.span 
-              className="block h-1 w-20 mx-auto mt-3 bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 rounded-full"
+              className={`block h-1 w-16 mx-auto mt-3 bg-gradient-to-r ${gradientFrom} ${gradientTo} rounded-full`}
               initial={{ width: 0 }}
-              whileInView={{ width: 80 }}
+              whileInView={{ width: 64 }}
               transition={{ duration: 0.8, delay: 0.3 }}
               viewport={{ once: true }}
             />
@@ -211,7 +230,7 @@ export default function ChatHowItWorks() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             viewport={{ once: true }}
-            className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed tracking-wide"
+            className={`text-base md:text-lg ${textMuted} max-w-3xl mx-auto leading-relaxed`}
           >
             From registration to successful negotiations - see how our platform revolutionizes communication
           </motion.p>
@@ -220,18 +239,22 @@ export default function ChatHowItWorks() {
         {/* Process timeline */}
         <div className="relative">
           {/* Connecting line */}
-          <div className="hidden md:block absolute left-1/2 top-0 h-full w-0.5 bg-gradient-to-b from-indigo-500/20 via-purple-500/50 to-pink-500/20 transform -translate-x-1/2"></div>
+          <div className={`hidden md:block absolute left-1/2 top-0 h-full w-0.5 bg-gradient-to-b ${
+            theme === 'dark' 
+              ? 'from-indigo-500/20 via-purple-500/50 to-pink-500/20' 
+              : 'from-indigo-400/20 via-purple-400/50 to-pink-400/20'
+          } transform -translate-x-1/2`}></div>
 
           {/* Steps */}
-          <div className="space-y-16 md:space-y-0">
+          <div className="space-y-12">
             {steps.map((step, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.15 }}
-                viewport={{ once: true, margin: "-100px" }}
-                className={`relative flex flex-col md:flex-row items-center ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-8 md:gap-16`}
+                viewport={{ once: true, margin: "-50px" }}
+                className={`relative flex flex-col md:flex-row items-center ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-6 md:gap-12`}
               >
                 {/* Step number */}
                 <motion.div 
@@ -239,7 +262,9 @@ export default function ChatHowItWorks() {
                   whileInView={{ scale: 1 }}
                   transition={{ duration: 0.5, delay: index * 0.2, type: "spring" }}
                   viewport={{ once: true }}
-                  className="absolute -top-8 left-0 md:left-1/2 md:-translate-x-1/2 flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-lg border-4 border-gray-900 z-10"
+                  className={`absolute -top-6 left-0 md:left-1/2 md:-translate-x-1/2 flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br ${gradientFrom} ${gradientTo} text-white font-bold text-sm border-4 ${
+                    theme === 'dark' ? 'border-gray-900' : 'border-white'
+                  } z-10 shadow-lg`}
                 >
                   {index + 1}
                 </motion.div>
@@ -251,26 +276,30 @@ export default function ChatHowItWorks() {
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.5, delay: index * 0.15 }}
                   viewport={{ once: true }}
-                  className={`flex-1 ${index % 2 === 0 ? 'md:pr-8 md:text-right' : 'md:pl-8 md:text-left'} order-2 md:order-none`}
+                  className={`flex-1 ${index % 2 === 0 ? 'md:pr-6 md:text-right' : 'md:pl-6 md:text-left'} order-2 md:order-none`}
                 >
                   <motion.div 
                     initial={{ y: 0 }}
-                    whileHover={{ y: -5 }}
-                    className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-600/20 mb-4 text-purple-400 border border-purple-500/20 shadow-lg ${index % 2 === 0 ? 'md:ml-auto' : 'md:mr-auto'}`}
+                    whileHover={{ y: -3 }}
+                    className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${
+                      theme === 'dark' ? 'from-indigo-500/20 to-purple-600/20' : 'from-indigo-400/20 to-purple-500/20'
+                    } mb-3 ${
+                      theme === 'dark' ? 'text-purple-400 border-purple-500/20' : 'text-purple-500 border-purple-400/20'
+                    } border shadow-lg ${index % 2 === 0 ? 'md:ml-auto' : 'md:mr-auto'}`}
                   >
                     <motion.div
                       initial={{ rotate: 0, scale: 1 }}
-                      whileHover={{ rotate: 10, scale: 1.2 }}
+                      whileHover={{ rotate: 5, scale: 1.1 }}
                       transition={{ type: "spring" }}
                     >
                       {step.icon}
                     </motion.div>
                   </motion.div>
                   
-                  <h3 className="text-2xl font-bold text-white mb-3">{step.title}</h3>
-                  <p className="text-gray-400 mb-4">{step.description}</p>
+                  <h3 className={`text-xl font-bold ${textColor} mb-2`}>{step.title}</h3>
+                  <p className={`${textMuted} mb-3 text-sm`}>{step.description}</p>
                   
-                  <ul className="space-y-2">
+                  <ul className="space-y-1">
                     {step.features.map((feature, i) => (
                       <motion.li 
                         key={i}
@@ -278,10 +307,12 @@ export default function ChatHowItWorks() {
                         whileInView={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.4, delay: (index * 0.15) + (i * 0.1) }}
                         viewport={{ once: true }}
-                        className="flex items-start"
+                        className="flex items-start text-sm"
                       >
-                        <FiCheck className="flex-shrink-0 mt-1 mr-2 text-purple-400" />
-                        <span className="text-gray-300">{feature}</span>
+                        <FiCheck className={`flex-shrink-0 mt-0.5 mr-2 ${
+                          theme === 'dark' ? 'text-purple-400' : 'text-purple-500'
+                        }`} />
+                        <span className={textMuted}>{feature}</span>
                       </motion.li>
                     ))}
                   </ul>
@@ -289,10 +320,12 @@ export default function ChatHowItWorks() {
                   <motion.div 
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
-                    whileHover={{ x: 5 }}
+                    whileHover={{ x: 3 }}
                     transition={{ duration: 0.4, delay: index * 0.15 + 0.3 }}
                     viewport={{ once: true }}
-                    className="mt-4 inline-flex items-center text-sm text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
+                    className={`mt-3 inline-flex items-center text-xs ${
+                      theme === 'dark' ? 'text-purple-400 hover:text-purple-300' : 'text-purple-500 hover:text-purple-600'
+                    } transition-colors cursor-pointer`}
                   >
                     <span>Learn details</span>
                     <FiArrowRight className="ml-1 transition-transform group-hover:translate-x-1" />
@@ -306,20 +339,28 @@ export default function ChatHowItWorks() {
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.5, delay: index * 0.15 }}
                   viewport={{ once: true }}
-                  className={`relative flex-1 order-1 ${index % 2 === 0 ? 'md:order-3' : 'md:order-1'} rounded-xl overflow-hidden border border-gray-700/50 bg-gray-800/50 backdrop-blur-sm h-64 group`}
+                  className={`relative flex-1 order-1 ${
+                    index % 2 === 0 ? 'md:order-3' : 'md:order-1'
+                  } rounded-xl overflow-hidden border ${
+                    theme === 'dark' ? 'border-gray-700/50' : 'border-gray-300/50'
+                  } ${cardBg} backdrop-blur-sm h-48 group shadow-lg`}
                 >
                   {/* Placeholder for step-specific demo */}
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                    <div className="text-center p-6">
-                      <div className="text-4xl mb-3 text-purple-400">{step.icon}</div>
-                      <h4 className="font-medium text-white">{step.title} Demo</h4>
+                  <div className={`absolute inset-0 flex items-center justify-center ${
+                    theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                  }`}>
+                    <div className="text-center p-4">
+                      <div className={`text-2xl mb-2 ${
+                        theme === 'dark' ? 'text-purple-400' : 'text-purple-500'
+                      }`}>{step.icon}</div>
+                      <h4 className={`font-medium ${textColor} text-sm`}>{step.title} Demo</h4>
                     </div>
                   </div>
                   
                   {/* Stable floating elements */}
                   <div className="absolute inset-0 overflow-hidden">
                     {[...Array(3)].map((_, i) => (
-                      <StableFloatingElement key={i} index={i} total={3} />
+                      <StableFloatingElement key={i} index={i} total={3} theme={theme} />
                     ))}
                   </div>
                 </motion.div>
@@ -334,13 +375,19 @@ export default function ChatHowItWorks() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
           viewport={{ once: true }}
-          className="mt-20 flex flex-col items-center"
+          className="mt-16 flex flex-col items-center"
         >
-          <div className="inline-flex items-center px-6 py-4 rounded-2xl bg-gradient-to-r from-indigo-500/10 to-purple-600/10 border border-indigo-500/20 shadow-lg max-w-2xl">
-            <RiShieldKeyholeLine className="w-8 h-8 text-purple-400 mr-4" />
+          <div className={`inline-flex items-center px-6 py-3 rounded-xl bg-gradient-to-r ${
+            theme === 'dark' 
+              ? 'from-indigo-500/10 to-purple-600/10 border-indigo-500/20' 
+              : 'from-indigo-400/10 to-purple-500/10 border-indigo-400/20'
+          } border shadow-lg max-w-2xl`}>
+            <RiShieldKeyholeLine className={`w-6 h-6 ${
+              theme === 'dark' ? 'text-purple-400' : 'text-purple-500'
+            } mr-3`} />
             <div>
-              <h4 className="text-lg font-bold text-white">Enterprise-grade Security</h4>
-              <p className="text-gray-400">All communications are end-to-end encrypted with 256-bit AES</p>
+              <h4 className={`text-base font-bold ${textColor}`}>Enterprise-grade Security</h4>
+              <p className={`text-sm ${textMuted}`}>All communications are end-to-end encrypted with 256-bit AES</p>
             </div>
           </div>
         </motion.div>

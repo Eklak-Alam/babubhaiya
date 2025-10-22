@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { FaUser, FaRobot, FaSearch, FaUsers, FaExclamationTriangle, FaMagic } from "react-icons/fa";
 import { useAuth } from "@/context/ApiContext";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function TaggingDropdown({
   query,
@@ -14,11 +15,59 @@ export default function TaggingDropdown({
   API,
 }) {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [error, setError] = useState(null);
   const dropdownRef = useRef(null);
+
+  // Theme-based styles
+  const getStyles = (theme) => ({
+    // Container
+    container: theme === 'dark' 
+      ? 'bg-gray-800 border-gray-600' 
+      : 'bg-white border-gray-300 shadow-2xl',
+    
+    // Text colors
+    text: {
+      primary: theme === 'dark' ? 'text-white' : 'text-gray-900',
+      secondary: theme === 'dark' ? 'text-gray-400' : 'text-gray-600',
+      muted: theme === 'dark' ? 'text-gray-500' : 'text-gray-500',
+      accent: theme === 'dark' ? 'text-gray-400' : 'text-gray-500',
+    },
+    
+    // Borders
+    border: theme === 'dark' ? 'border-gray-700' : 'border-gray-200',
+    
+    // Buttons and items
+    item: {
+      base: 'w-full p-3 text-left transition-colors flex items-center gap-3',
+      hover: theme === 'dark' ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100',
+      selected: theme === 'dark' ? 'bg-gray-700/70' : 'bg-gray-200',
+    },
+    
+    // Quick prompt buttons
+    quickPrompt: theme === 'dark' 
+      ? 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-300' 
+      : 'bg-purple-100 hover:bg-purple-200 text-purple-700',
+    
+    // Badges
+    badge: {
+      ai: theme === 'dark' 
+        ? 'bg-purple-500/20 text-purple-400' 
+        : 'bg-purple-100 text-purple-700',
+      group: theme === 'dark' 
+        ? 'bg-green-500/20 text-green-400' 
+        : 'bg-green-100 text-green-700',
+    },
+    
+    // Loading and error states
+    loading: theme === 'dark' ? 'text-gray-400' : 'text-gray-500',
+    error: theme === 'dark' ? 'text-amber-400' : 'text-amber-600',
+  });
+
+  const STYLES = getStyles(theme);
 
   // AI prompt suggestions for quick access
   const aiQuickPrompts = [
@@ -202,29 +251,30 @@ export default function TaggingDropdown({
   return (
     <div 
       ref={dropdownRef}
-      className="absolute bottom-full mb-2 left-0 right-0 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-h-80 overflow-y-auto z-50"
+      className={`absolute bottom-full mb-2 left-0 right-0 border rounded-lg max-h-80 overflow-y-auto z-50 transition-colors duration-200 ${STYLES.container} ${STYLES.border}`}
       tabIndex={-1}
     >
-      <div className="p-2 border-b border-gray-700">
-        <div className="text-xs text-gray-400 font-medium flex items-center gap-2">
-          <FaSearch size={10} />
+      {/* Header */}
+      <div className={`p-3 border-b transition-colors duration-200 ${STYLES.border}`}>
+        <div className={`text-sm font-medium flex items-center gap-2 transition-colors duration-200 ${STYLES.text.secondary}`}>
+          <FaSearch size={12} />
           Mention someone or ask AI
         </div>
       </div>
 
       {/* Quick AI Prompts Section */}
       {(!query || query.trim().length === 0) && (
-        <div className="p-2 border-b border-gray-700">
-          <div className="text-xs text-purple-400 font-medium flex items-center gap-2 mb-2">
-            <FaMagic size={10} />
+        <div className={`p-3 border-b transition-colors duration-200 ${STYLES.border}`}>
+          <div className={`text-sm font-medium flex items-center gap-2 mb-2 transition-colors duration-200 ${STYLES.text.secondary}`}>
+            <FaMagic size={12} />
             Quick AI Prompts
           </div>
-          <div className="grid grid-cols-2 gap-1">
+          <div className="grid grid-cols-2 gap-2">
             {aiQuickPrompts.map((prompt) => (
               <button
                 key={prompt.id}
                 onClick={() => handleSelect(prompt)}
-                className="text-xs p-2 text-left bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 rounded transition-colors truncate"
+                className={`text-xs p-2 text-left rounded transition-colors duration-200 truncate ${STYLES.quickPrompt}`}
                 title={prompt.description}
               >
                 {prompt.name}
@@ -234,54 +284,58 @@ export default function TaggingDropdown({
         </div>
       )}
 
+      {/* Loading State */}
       {isLoading && (
-        <div className="p-3 text-gray-400 text-sm flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+        <div className={`p-3 text-sm flex items-center gap-2 transition-colors duration-200 ${STYLES.loading}`}>
+          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
           Searching for "{query}"...
         </div>
       )}
 
+      {/* Error State */}
       {error && !isLoading && (
-        <div className="p-3 text-amber-400 text-sm flex items-center gap-2">
+        <div className={`p-3 text-sm flex items-center gap-2 transition-colors duration-200 ${STYLES.error}`}>
           <FaExclamationTriangle size={12} />
           {error}
         </div>
       )}
 
+      {/* No Results */}
       {!isLoading && !error && suggestions.length === 0 && query && (
-        <div className="p-3 text-gray-400 text-sm">
+        <div className={`p-3 text-sm transition-colors duration-200 ${STYLES.text.muted}`}>
           No users found for "{query}"
         </div>
       )}
 
+      {/* Suggestions List */}
       {!isLoading && suggestions.length > 0 && (
         <div className="py-1">
           {suggestions.map((item, index) => (
             <button
               key={item.id || item.type}
-              className={`w-full p-3 text-left hover:bg-gray-700/50 transition-colors flex items-center gap-3 ${
-                index === selectedIndex ? 'bg-gray-700/70' : ''
-              }`}
+              className={`${STYLES.item.base} ${
+                index === selectedIndex ? STYLES.item.selected : STYLES.item.hover
+              } transition-colors duration-200`}
               onClick={() => handleSelect(item)}
             >
               <div className="flex-shrink-0">
                 {getIcon(item.type)}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-white font-medium truncate text-sm">
+                <div className={`font-medium truncate text-sm transition-colors duration-200 ${STYLES.text.primary}`}>
                   {getDisplayName(item)}
                 </div>
-                <div className="text-gray-400 text-xs truncate">
+                <div className={`text-xs truncate transition-colors duration-200 ${STYLES.text.secondary}`}>
                   {getDisplayUsername(item)}
                 </div>
               </div>
               {item.type === "all" && (
-                <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded flex-shrink-0">
+                <span className={`text-xs px-2 py-1 rounded transition-colors duration-200 ${STYLES.badge.group}`}>
                   Group
                 </span>
               )}
               {item.type === "ai" && (
-                <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded flex-shrink-0">
+                <span className={`text-xs px-2 py-1 rounded transition-colors duration-200 ${STYLES.badge.ai}`}>
                   AI
                 </span>
               )}
@@ -290,32 +344,33 @@ export default function TaggingDropdown({
         </div>
       )}
 
+      {/* Default Suggestions */}
       {!isLoading && !error && suggestions.length === 0 && !query && (
         <div className="py-1">
           <button
-            className="w-full p-3 text-left hover:bg-gray-700/50 transition-colors flex items-center gap-3"
+            className={`${STYLES.item.base} ${STYLES.item.hover} transition-colors duration-200`}
             onClick={safeOnSelectAI}
           >
             <FaRobot className="text-purple-400" size={14} />
             <div className="flex-1 min-w-0">
-              <div className="text-white font-medium text-sm">AI Assistant</div>
-              <div className="text-gray-400 text-xs">Ask AI anything - summarize, analyze, help</div>
+              <div className={`font-medium text-sm transition-colors duration-200 ${STYLES.text.primary}`}>AI Assistant</div>
+              <div className={`text-xs transition-colors duration-200 ${STYLES.text.secondary}`}>Ask AI anything - summarize, analyze, help</div>
             </div>
-            <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">
+            <span className={`text-xs px-2 py-1 rounded transition-colors duration-200 ${STYLES.badge.ai}`}>
               AI
             </span>
           </button>
           {isGroup && (
             <button
-              className="w-full p-3 text-left hover:bg-gray-700/50 transition-colors flex items-center gap-3"
+              className={`${STYLES.item.base} ${STYLES.item.hover} transition-colors duration-200`}
               onClick={safeOnSelectEveryone}
             >
               <FaUsers className="text-green-400" size={14} />
               <div className="flex-1 min-w-0">
-                <div className="text-white font-medium text-sm">Everyone</div>
-                <div className="text-gray-400 text-xs">Notify all group members</div>
+                <div className={`font-medium text-sm transition-colors duration-200 ${STYLES.text.primary}`}>Everyone</div>
+                <div className={`text-xs transition-colors duration-200 ${STYLES.text.secondary}`}>Notify all group members</div>
               </div>
-              <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
+              <span className={`text-xs px-2 py-1 rounded transition-colors duration-200 ${STYLES.badge.group}`}>
                 Group
               </span>
             </button>
@@ -323,8 +378,9 @@ export default function TaggingDropdown({
         </div>
       )}
 
-      <div className="p-2 border-t border-gray-700">
-        <div className="text-xs text-gray-500">
+      {/* Footer */}
+      <div className={`p-3 border-t transition-colors duration-200 ${STYLES.border}`}>
+        <div className={`text-xs transition-colors duration-200 ${STYLES.text.accent}`}>
           ↑↓ to navigate • Enter to select • Esc to close
         </div>
       </div>

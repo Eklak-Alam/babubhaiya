@@ -7,14 +7,21 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/chat/dashboard/Sidebar';
 import { useAuth } from '@/context/ApiContext';
 import ChatWindow from '@/components/ChatWindow';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function ChatPage() {
   const { user, API } = useAuth();
+  const { theme } = useTheme();
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const socket = useRef(null);
   const router = useRouter();
+
+  // Theme-based styles
+  const pageBg = theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100';
+  const textColor = theme === 'dark' ? 'text-white' : 'text-gray-900';
 
   // ✅ Check for token or user, otherwise redirect to /chat/login
   useEffect(() => {
@@ -59,6 +66,8 @@ export default function ChatPage() {
   // ✅ Handle user or group selection
   const handleSelectUser = async (userToSelect) => {
     setSelectedUser(userToSelect);
+    setIsMobileSidebarOpen(false); // Close sidebar on mobile when selecting a chat
+    
     try {
       let response;
       if (userToSelect.type === 'group') {
@@ -103,21 +112,110 @@ export default function ChatPage() {
     }
   }, [selectedUser]);
 
+  // ✅ Close sidebar when resizing to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMobileSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // ✅ Show empty state when no chat is selected
+  const renderEmptyState = () => (
+    <div className={`flex-1 flex flex-col items-center justify-center p-8 transition-colors duration-200 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'}`}>
+      <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 transition-colors duration-200 ${
+        theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'
+      }`}>
+        <svg 
+          className={`w-12 h-12 transition-colors duration-200 ${
+            theme === 'dark' ? 'text-gray-600' : 'text-gray-400'
+          }`} 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={1.5} 
+            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" 
+          />
+        </svg>
+      </div>
+      <h3 className={`text-xl font-semibold mb-2 transition-colors duration-200 ${
+        theme === 'dark' ? 'text-white' : 'text-gray-900'
+      }`}>
+        Welcome to Chat
+      </h3>
+      <p className={`text-center mb-6 max-w-md transition-colors duration-200 ${
+        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+      }`}>
+        Select a conversation from the sidebar to start messaging. 
+        You can chat with individual users or create groups for team conversations.
+      </p>
+      <div className="flex flex-col sm:flex-row gap-4">
+        <button
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 md:hidden ${
+            theme === 'dark' 
+              ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+              : 'bg-blue-600 hover:bg-blue-700 text-white'
+          }`}
+        >
+          Open Conversations
+        </button>
+        <button
+          onClick={() => document.querySelector('input[placeholder="Search users..."]')?.focus()}
+          className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+            theme === 'dark' 
+              ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700' 
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300'
+          }`}
+        >
+          Search Users
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+    <div className={`flex h-screen ${pageBg} ${textColor} transition-colors duration-200`}>
+      {/* Sidebar */}
       <Sidebar
         onSelectUser={handleSelectUser}
-        groups={groups}
-        setGroups={setGroups}
         onGroupDelete={handleGroupDelete}
-      />
-      <ChatWindow
         selectedUser={selectedUser}
-        messages={messages}
-        socket={socket.current}
-        onGroupUpdate={handleGroupUpdate}
-        onGroupDelete={handleGroupDelete}
+        isMobileOpen={isMobileSidebarOpen}
+        onMobileToggle={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
       />
-    </div> 
+      
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {selectedUser ? (
+          <ChatWindow
+            selectedUser={selectedUser}
+            messages={messages}
+            socket={socket.current}
+            onGroupUpdate={handleGroupUpdate}
+            onGroupDelete={handleGroupDelete}
+            onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
+          />
+        ) : (
+          renderEmptyState()
+        )}
+      </div>
+
+      {/* Mobile sidebar backdrop */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-20 md:hidden transition-opacity duration-200"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+    </div>
   );
 }

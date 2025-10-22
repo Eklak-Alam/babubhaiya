@@ -13,6 +13,7 @@ import { formatTime, formatDate } from "./styles";
 import ReactionPicker from "./ReactionPicker";
 import ReactionsDisplay from "./ReactionsDisplay";
 import AILoadingIndicator from "./AILoadingIndicator";
+import { useTheme } from '@/context/ThemeContext';
 
 export default function MessageItem({
   message,
@@ -29,8 +30,9 @@ export default function MessageItem({
   onOpenMessageActions,
   onAddReaction,
   onRemoveReaction,
-  isAIResponding = false, // NEW: Add this prop
+  isAIResponding = false,
 }) {
+  const { theme } = useTheme();
   const isAIMessage = message.is_ai_response || message.sender_id === 5;
   const isOwnMessage = message.sender_id === user.id && !isAIMessage;
   const showSenderInfo = isGroup && !isOwnMessage;
@@ -51,7 +53,52 @@ export default function MessageItem({
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionPosition, setReactionPosition] = useState({ x: 0, y: 0 });
 
-  // NEW: Check if this is a pending AI response
+  // Theme-based styles
+  const themeStyles = {
+    background: {
+      own: theme === 'dark' 
+        ? 'bg-gradient-to-r from-blue-500 to-blue-600' 
+        : 'bg-gradient-to-r from-blue-500 to-blue-600',
+      ai: theme === 'dark' 
+        ? 'bg-gradient-to-r from-purple-500 to-purple-600' 
+        : 'bg-gradient-to-r from-purple-500 to-purple-600',
+      other: theme === 'dark' 
+        ? 'bg-gray-800/50' 
+        : 'bg-gray-100/80',
+    },
+    text: {
+      primary: theme === 'dark' ? 'text-white' : 'text-gray-900',
+      secondary: theme === 'dark' ? 'text-gray-300' : 'text-gray-600',
+      tertiary: theme === 'dark' ? 'text-gray-400' : 'text-gray-500',
+      timestamp: {
+        own: theme === 'dark' ? 'text-blue-100/70' : 'text-blue-50/90',
+        ai: theme === 'dark' ? 'text-purple-100/70' : 'text-purple-50/90',
+        other: theme === 'dark' ? 'text-gray-400' : 'text-gray-500',
+      }
+    },
+    border: {
+      own: theme === 'dark' ? 'border-blue-400/20' : 'border-blue-400/30',
+      ai: theme === 'dark' ? 'border-purple-400/20' : 'border-purple-400/30',
+      other: theme === 'dark' ? 'border-gray-700/50' : 'border-gray-300/50',
+    },
+    card: {
+      background: theme === 'dark' ? 'bg-gray-800/30' : 'bg-gray-200/50',
+      border: theme === 'dark' ? 'border-gray-700/50' : 'border-gray-300/50',
+    },
+    button: {
+      own: theme === 'dark' 
+        ? 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30' 
+        : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30',
+      ai: theme === 'dark' 
+        ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30' 
+        : 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30',
+      other: theme === 'dark' 
+        ? 'bg-gray-600/20 text-gray-400 hover:bg-gray-600/30' 
+        : 'bg-gray-400/20 text-gray-500 hover:bg-gray-400/30',
+    }
+  };
+
+  // Check if this is a pending AI response
   const isPendingAI = message.is_pending_ai && isAIResponding;
 
   // Parse tags from message
@@ -64,15 +111,15 @@ export default function MessageItem({
     return parts.map((part, index) => {
       if (part.startsWith("@")) {
         const mentionText = part.toLowerCase();
-        let bgColor = "bg-blue-500/20";
-        let textColor = "text-blue-400";
+        let bgColor = theme === 'dark' ? "bg-blue-500/20" : "bg-blue-500/15";
+        let textColor = theme === 'dark' ? "text-blue-400" : "text-blue-600";
 
         if (mentionText === "@ai" || mentionText === "@bot") {
-          bgColor = "bg-purple-500/20";
-          textColor = "text-purple-400";
+          bgColor = theme === 'dark' ? "bg-purple-500/20" : "bg-purple-500/15";
+          textColor = theme === 'dark' ? "text-purple-400" : "text-purple-600";
         } else if (mentionText === "@all" || mentionText === "@everyone") {
-          bgColor = "bg-green-500/20";
-          textColor = "text-green-400";
+          bgColor = theme === 'dark' ? "bg-green-500/20" : "bg-green-500/15";
+          textColor = theme === 'dark' ? "text-green-400" : "text-green-600";
         }
 
         return (
@@ -164,7 +211,11 @@ export default function MessageItem({
       {showDateSeparator && (
         <div className="flex justify-center my-6">
           <span
-            className={`px-4 py-2 text-xs text-gray-400 bg-gray-800/50 rounded-full border border-gray-700 backdrop-blur-sm`}
+            className={`px-4 py-2 text-xs ${
+              theme === 'dark' ? 'text-gray-400 bg-gray-800/50' : 'text-gray-500 bg-gray-200/80'
+            } rounded-full border ${
+              theme === 'dark' ? 'border-gray-700' : 'border-gray-300'
+            } backdrop-blur-sm`}
           >
             {formatDate(message.timestamp)}
           </span>
@@ -176,17 +227,19 @@ export default function MessageItem({
           isConsecutive ? "mt-1" : "mt-3"
         } group relative`}
       >
-        {/* NEW: Show AI Loading Indicator for pending AI responses */}
+        {/* Show AI Loading Indicator for pending AI responses */}
         {isPendingAI ? (
           <AILoadingIndicator />
         ) : (
           <div
             className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-lg transition-all duration-200 backdrop-blur-sm relative ${
               isOwnMessage
-                ? `bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md`
+                ? `${themeStyles.background.own} text-white rounded-br-md`
                 : isAIMessage
-                ? `bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-bl-md`
-                : `bg-gray-800/50 text-white rounded-bl-md border border-gray-700/50`
+                ? `${themeStyles.background.ai} text-white rounded-bl-md`
+                : `${themeStyles.background.other} ${
+                    themeStyles.text.primary
+                  } rounded-bl-md border ${themeStyles.border.other}`
             } ${
               isConsecutive ? "mt-1" : "mt-2"
             } hover:bg-opacity-80 message-reaction-trigger`}
@@ -195,7 +248,11 @@ export default function MessageItem({
             {/* AI Badge - Show for AI messages */}
             {isAIMessage && !isConsecutive && (
               <div className="flex items-center gap-1 mb-1">
-                <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full flex items-center gap-1">
+                <span className={`text-xs ${
+                  theme === 'dark' 
+                    ? 'bg-purple-500/20 text-purple-300' 
+                    : 'bg-purple-500/15 text-purple-600'
+                } px-2 py-1 rounded-full flex items-center gap-1`}>
                   <FaRobot size={10} />
                   Accord AI
                 </span>
@@ -207,19 +264,35 @@ export default function MessageItem({
               <div
                 className={`text-xs mb-2 p-2 rounded-lg border-l-2 ${
                   isOwnMessage
-                    ? "border-blue-300 bg-blue-400/20"
+                    ? `${
+                        theme === 'dark' 
+                          ? "border-blue-300 bg-blue-400/20" 
+                          : "border-blue-400 bg-blue-500/15"
+                      }`
                     : isAIMessage
-                    ? "border-purple-300 bg-purple-400/20"
-                    : "border-gray-500 bg-gray-700/30"
+                    ? `${
+                        theme === 'dark' 
+                          ? "border-purple-300 bg-purple-400/20" 
+                          : "border-purple-400 bg-purple-500/15"
+                      }`
+                    : `${
+                        theme === 'dark' 
+                          ? "border-gray-500 bg-gray-700/30" 
+                          : "border-gray-400 bg-gray-300/50"
+                      }`
                 }`}
               >
-                <div className="font-medium truncate flex items-center gap-1">
+                <div className={`font-medium truncate flex items-center gap-1 ${
+                  themeStyles.text.primary
+                }`}>
                   <FaReply size={10} className="flex-shrink-0" />
                   <span>
                     Replying to {message.reply_to_sender_name || "a message"}
                   </span>
                 </div>
-                <div className="truncate text-gray-400 mt-1">
+                <div className={`truncate mt-1 ${
+                  themeStyles.text.tertiary
+                }`}>
                   {message.reply_to_content}
                 </div>
               </div>
@@ -227,7 +300,9 @@ export default function MessageItem({
 
             {showSenderInfo && !isConsecutive && !isAIMessage && (
               <div
-                className={`text-xs font-semibold text-gray-300 mb-1 flex items-center gap-1`}
+                className={`text-xs font-semibold mb-1 flex items-center gap-1 ${
+                  themeStyles.text.secondary
+                }`}
               >
                 <span className="truncate">{message.sender_name}</span>
                 {message.sender_id === selectedUser.owner_id && (
@@ -247,7 +322,13 @@ export default function MessageItem({
                   data-editing="true"
                   value={editMessageContent}
                   onChange={(e) => onEditMessageContent(e.target.value)}
-                  className="w-full p-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className={`w-full p-3 ${
+                    themeStyles.card.background
+                  } border ${
+                    themeStyles.card.border
+                  } rounded-lg ${
+                    themeStyles.text.primary
+                  } resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
                   rows="3"
                   placeholder="Edit your message..."
                   onKeyDown={handleKeyDown}
@@ -259,7 +340,13 @@ export default function MessageItem({
                       onEditMessage(null);
                       onEditMessageContent("");
                     }}
-                    className="px-3 py-2 text-gray-300 bg-gray-600/50 hover:bg-gray-600 rounded-lg transition-all duration-200"
+                    className={`px-3 py-2 ${
+                      themeStyles.text.secondary
+                    } ${
+                      theme === 'dark' 
+                        ? 'bg-gray-600/50 hover:bg-gray-600' 
+                        : 'bg-gray-300/50 hover:bg-gray-400/50'
+                    } rounded-lg transition-all duration-200`}
                   >
                     Cancel
                   </button>
@@ -274,7 +361,9 @@ export default function MessageItem({
               </div>
             ) : (
               <>
-                <div className="break-words leading-relaxed text-white/90 whitespace-pre-wrap">
+                <div className={`break-words leading-relaxed whitespace-pre-wrap ${
+                  isOwnMessage || isAIMessage ? 'text-white/90' : themeStyles.text.primary
+                }`}>
                   {renderMessageWithMentions(message.message_content)}
                 </div>
 
@@ -295,17 +384,17 @@ export default function MessageItem({
                 <div
                   className={`text-xs mt-2 flex items-center justify-between ${
                     isOwnMessage
-                      ? "text-blue-100/70"
+                      ? themeStyles.text.timestamp.own
                       : isAIMessage
-                      ? "text-purple-100/70"
-                      : "text-gray-400"
+                      ? themeStyles.text.timestamp.ai
+                      : themeStyles.text.timestamp.other
                   }`}
                 >
                   <span>{formatTime(message.timestamp)}</span>
                   <div className="flex items-center gap-2">
                     {message.edited_at && (
                       <span
-                        className="text-gray-400 italic"
+                        className={themeStyles.text.tertiary}
                         title={`Edited at ${formatTime(message.edited_at)}`}
                       >
                         (edited)
@@ -327,13 +416,17 @@ export default function MessageItem({
                         onClick={handleReactionClick}
                         className={`p-1.5 rounded-lg transition-all duration-200 message-reaction-trigger ${
                           isOwnMessage
-                            ? "bg-blue-500/20 text-blue-300 hover:bg-blue-500/30"
+                            ? themeStyles.button.own
                             : isAIMessage
-                            ? "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
-                            : "bg-gray-600/20 text-gray-400 hover:bg-gray-600/30"
+                            ? themeStyles.button.ai
+                            : themeStyles.button.other
                         } ${
                           userReaction
-                            ? "!bg-yellow-500/20 !text-yellow-300"
+                            ? `${
+                                theme === 'dark' 
+                                  ? "!bg-yellow-500/20 !text-yellow-300" 
+                                  : "!bg-yellow-500/15 !text-yellow-600"
+                              }`
                             : ""
                         }`}
                         title="Add reaction"
@@ -347,10 +440,10 @@ export default function MessageItem({
                         }}
                         className={`p-1.5 rounded-lg transition-all duration-200 ${
                           isOwnMessage
-                            ? "bg-blue-500/20 text-blue-300 hover:bg-blue-500/30"
+                            ? themeStyles.button.own
                             : isAIMessage
-                            ? "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
-                            : "bg-gray-600/20 text-gray-400 hover:bg-gray-600/30"
+                            ? themeStyles.button.ai
+                            : themeStyles.button.other
                         }`}
                         title="Message actions"
                       >

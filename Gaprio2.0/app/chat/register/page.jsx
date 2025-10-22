@@ -6,10 +6,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/ApiContext'
-import { FaCheckCircle, FaEye, FaEyeSlash, FaFacebook, FaGoogle, FaRocket, FaShieldAlt, FaTwitter, FaUser, FaUserCheck } from 'react-icons/fa'
+import { useTheme } from '@/context/ThemeContext'
+import { FaCheckCircle, FaEye, FaEyeSlash, FaGoogle, FaGithub, FaShieldAlt, FaRocket, FaUser, FaUserCheck } from 'react-icons/fa'
 
 // Client-only particles component to prevent hydration errors
-function ClientOnlyParticles() {
+function ClientOnlyParticles({ isDark }) {
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
@@ -20,16 +21,16 @@ function ClientOnlyParticles() {
 
   return (
     <div className="absolute inset-0">
-      {[...Array(8)].map((_, i) => (
+      {[...Array(6)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute w-1 h-1 bg-white/30 rounded-full"
+          className={`absolute w-1 h-1 rounded-full ${isDark ? 'bg-white/20' : 'bg-gray-600/30'}`}
           animate={{
-            y: [0, -30, 0],
+            y: [0, -40, 0],
             opacity: [0, 1, 0],
           }}
           transition={{
-            duration: 3 + Math.random() * 2,
+            duration: 4 + Math.random() * 3,
             repeat: Infinity,
             delay: Math.random() * 2,
           }}
@@ -46,6 +47,7 @@ function ClientOnlyParticles() {
 export default function Signup() {
   const router = useRouter();
   const { user, register } = useAuth();
+  const { theme } = useTheme();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -55,10 +57,32 @@ export default function Signup() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
   const [formErrors, setFormErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
   const [registerSuccess, setRegisterSuccess] = useState(false)
+
+  // Theme-based styles
+  const themeStyles = {
+    background: theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50',
+    card: theme === 'dark' ? 'bg-gray-800/40' : 'bg-white/80',
+    cardBorder: theme === 'dark' ? 'border-white/10' : 'border-gray-200/50',
+    text: {
+      primary: theme === 'dark' ? 'text-white' : 'text-gray-900',
+      secondary: theme === 'dark' ? 'text-gray-300' : 'text-gray-600',
+      tertiary: theme === 'dark' ? 'text-gray-400' : 'text-gray-500',
+    },
+    input: {
+      background: theme === 'dark' ? 'bg-gray-700/50' : 'bg-white/60',
+      border: theme === 'dark' ? 'border-gray-600' : 'border-gray-300',
+      focus: 'focus:ring-2 focus:ring-purple-500 focus:border-transparent',
+    },
+    button: {
+      primary: 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white',
+      secondary: theme === 'dark' ? 'bg-gray-700/50 border-gray-600 text-gray-300' : 'bg-gray-100 border-gray-300 text-gray-700',
+    },
+    error: theme === 'dark' ? 'bg-red-500/20 border-red-500/50 text-red-300' : 'bg-red-100 border-red-300 text-red-700',
+    success: theme === 'dark' ? 'bg-green-500/20 border-green-500/50 text-green-300' : 'bg-green-100 border-green-300 text-green-700'
+  };
 
   // Redirect if already logged in
   useEffect(() => {
@@ -118,11 +142,9 @@ export default function Signup() {
     
     setLoading(true)
     setError('')
-    setSuccessMessage('')
     
     try {
       await register(formData.name, formData.username, formData.email, formData.password)
-      setSuccessMessage('Account created successfully! Redirecting to login...')
       setRegisterSuccess(true)
     } catch (err) {
       console.error('Registration error:', err)
@@ -139,25 +161,22 @@ export default function Signup() {
   // Enhanced Success Screen
   if (registerSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
+      <div className={`min-h-screen flex items-center justify-center ${themeStyles.background} p-4 transition-colors duration-300`}>
         <Head>
-          <title>Gaprio - Registration Successful</title>
+          <title>Registration Successful - Gaprio</title>
         </Head>
         
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center p-8 bg-gradient-to-br from-purple-900/50 to-blue-900/50 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10 max-w-md w-full"
+          className={`text-center p-8 rounded-3xl shadow-2xl border ${themeStyles.cardBorder} backdrop-blur-xl max-w-md w-full ${
+            theme === 'dark' ? 'bg-gradient-to-br from-purple-900/50 to-blue-900/50' : 'bg-gradient-to-br from-purple-50 to-blue-50'
+          }`}
         >
-          {/* Animated Checkmark */}
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ 
-              type: "spring", 
-              stiffness: 200, 
-              delay: 0.2 
-            }}
+            transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
             className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg"
           >
             <FaUserCheck size={32} className="text-white" />
@@ -167,7 +186,7 @@ export default function Signup() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="text-3xl font-bold text-white mb-3"
+            className={`text-2xl font-bold ${themeStyles.text.primary} mb-3`}
           >
             Welcome to Gaprio!
           </motion.h2>
@@ -176,26 +195,25 @@ export default function Signup() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="text-gray-300 mb-2 text-lg"
+            className={`${themeStyles.text.secondary} mb-2`}
           >
-            Hello, <span className="text-purple-300 font-semibold">{formData.name}</span>
+            Hello, <span className="text-purple-500 font-semibold">{formData.name}</span>
           </motion.p>
 
           <motion.p
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="text-gray-400 mb-6 text-sm"
+            className={`${themeStyles.text.tertiary} mb-6 text-sm`}
           >
             Your account has been created successfully
           </motion.p>
 
-          {/* Progress Bar */}
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: "100%" }}
             transition={{ duration: 2, ease: "easeInOut" }}
-            className="w-full bg-gray-700 rounded-full h-2 mb-2 overflow-hidden"
+            className={`w-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-2 mb-2 overflow-hidden`}
           >
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full" />
           </motion.div>
@@ -204,7 +222,7 @@ export default function Signup() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
-            className="text-gray-400 text-sm"
+            className={`${themeStyles.text.tertiary} text-sm`}
           >
             Redirecting to login...
           </motion.p>
@@ -214,82 +232,61 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-900 text-white relative overflow-hidden">
+    <div className={`min-h-screen flex ${themeStyles.background} transition-colors duration-300 relative overflow-hidden`}>
       <Head>
-        <title>Gaprio - Sign Up</title>
+        <title>Sign Up - Gaprio</title>
         <meta name="description" content="Create your Gaprio account" />
       </Head>
 
-      {/* Enhanced Background Effects */}
+      {/* Background Effects */}
       <div className="absolute inset-0 -z-10">
-        {/* Animated Gradient Orbs */}
         <motion.div
           animate={{ 
             x: [0, 100, 0],
             y: [0, -50, 0],
           }}
-          transition={{ 
-            duration: 20, 
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl"
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          className={`absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl ${
+            theme === 'dark' ? 'bg-purple-600/20' : 'bg-purple-400/20'
+          }`}
         />
         <motion.div
           animate={{ 
             x: [0, -80, 0],
             y: [0, 60, 0],
           }}
-          transition={{ 
-            duration: 25, 
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2
-          }}
-          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl"
+          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className={`absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-3xl ${
+            theme === 'dark' ? 'bg-blue-600/20' : 'bg-blue-400/20'
+          }`}
         />
         
         {/* Floating Particles - Client Only */}
-        <ClientOnlyParticles />
+        <ClientOnlyParticles isDark={theme === 'dark'} />
       </div>
 
-      {/* Left Side - Enhanced Branding */}
+      {/* Left Side - Branding */}
       <motion.div
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8 }}
-        className="hidden lg:flex w-1/2 flex-col items-center justify-center p-12 relative"
+        transition={{ duration: 0.6 }}
+        className="hidden lg:flex w-1/2 flex-col items-center justify-center p-8 relative"
       >
         <motion.div
-          initial={{ scale: 0.8, rotate: -10 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 100,
-            delay: 0.3
-          }}
-          className="mb-8 relative"
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
+          className="mb-8"
         >
           <div className="relative">
-            <motion.div
-              animate={{ 
-                rotate: [0, 5, 0, -5, 0],
-              }}
-              transition={{ 
-                duration: 8, 
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-              className="absolute inset-0 rounded-2xl blur-md opacity-50"
-            />
             <Image
               src="/logo.png"
               alt="Gaprio Logo"
-              width={140}
-              height={140}
-              className="rounded-2xl relative z-10 shadow-2xl"
+              width={100}
+              height={100}
+              className="rounded-xl shadow-lg"
               onError={(e) => { 
-                e.currentTarget.src = 'https://placehold.co/140x140/7c3aed/ffffff?text=Gaprio'; 
+                e.currentTarget.src = `https://placehold.co/100x100/${theme === 'dark' ? '7c3aed' : '8b5cf6'}/ffffff?text=G`; 
               }}
               priority
             />
@@ -297,10 +294,14 @@ export default function Signup() {
         </motion.div>
 
         <motion.h1
-          initial={{ y: 30, opacity: 0 }}
+          initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-6xl font-black mb-4 bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent"
+          transition={{ delay: 0.4 }}
+          className={`text-4xl font-bold mb-4 bg-gradient-to-r ${
+            theme === 'dark' 
+              ? 'from-white to-purple-200' 
+              : 'from-gray-900 to-purple-600'
+          } bg-clip-text text-transparent`}
         >
           Gaprio
         </motion.h1>
@@ -308,8 +309,8 @@ export default function Signup() {
         <motion.p
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="text-gray-300 text-xl mb-8 text-center max-w-md leading-relaxed"
+          transition={{ delay: 0.6 }}
+          className={`text-center max-w-sm leading-relaxed ${themeStyles.text.secondary}`}
         >
           Join our community and start connecting with amazing people worldwide
         </motion.p>
@@ -318,20 +319,20 @@ export default function Signup() {
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.9 }}
-          className="space-y-3 text-left"
+          transition={{ delay: 0.8 }}
+          className="space-y-3 text-left mt-8"
         >
           {[
-            { icon: FaShieldAlt, text: "Secure & Encrypted", color: "text-green-400" },
-            { icon: FaRocket, text: "Lightning Fast", color: "text-blue-400" },
-            { icon: FaCheckCircle, text: "Easy to Use", color: "text-purple-400" }
+            { icon: FaShieldAlt, text: "Secure & Encrypted", color: "text-green-500" },
+            { icon: FaRocket, text: "Lightning Fast", color: "text-blue-500" },
+            { icon: FaCheckCircle, text: "Easy to Use", color: "text-purple-500" }
           ].map((feature, index) => (
             <motion.div
               key={index}
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 1 + index * 0.1 }}
-              className="flex items-center gap-3 text-gray-300"
+              className={`flex items-center gap-3 ${themeStyles.text.secondary}`}
             >
               <feature.icon className={`${feature.color} text-lg`} />
               <span className="text-sm">{feature.text}</span>
@@ -340,25 +341,25 @@ export default function Signup() {
         </motion.div>
       </motion.div>
 
-      {/* Right Side - Enhanced Signup Form */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6">
+      {/* Right Side - Signup Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6">
         <motion.div
           initial={{ x: 50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="w-full max-w-md bg-gray-800/40 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10"
+          className={`w-full max-w-md rounded-2xl p-6 sm:p-8 shadow-xl border backdrop-blur-xl ${themeStyles.card} ${themeStyles.cardBorder}`}
         >
           {/* Header */}
           <motion.div
-            initial={{ y: -20, opacity: 0 }}
+            initial={{ y: -10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
             className="text-center mb-8"
           >
-            <h2 className="text-4xl font-bold text-white mb-3">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               Join Gaprio
             </h2>
-            <p className="text-gray-400 text-lg">
+            <p className={themeStyles.text.secondary}>
               Create your account in seconds
             </p>
           </motion.div>
@@ -370,37 +371,26 @@ export default function Signup() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-sm backdrop-blur-sm"
+                className={`mb-6 p-3 rounded-lg border ${themeStyles.error} text-sm backdrop-blur-sm`}
               >
-                {error}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Success Message */}
-          <AnimatePresence>
-            {successMessage && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-6 p-4 bg-green-500/20 border border-green-500/50 rounded-xl text-green-300 text-sm backdrop-blur-sm"
-              >
-                {successMessage}
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-current rounded-full"></div>
+                  {error}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Signup Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Field */}
             <motion.div
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.6 }}
             >
-              <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
-                <FaUser className="inline mr-2 text-purple-400" />
+              <label htmlFor="name" className={`block text-sm font-medium mb-2 ${themeStyles.text.secondary}`}>
+                <FaUser className="inline mr-2 text-purple-500" />
                 Full Name
               </label>
               <input
@@ -410,7 +400,9 @@ export default function Signup() {
                 value={formData.name} 
                 onChange={handleChange} 
                 required
-                className="w-full px-4 py-3 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 backdrop-blur-sm"
+                className={`w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 outline-none placeholder-gray-400 backdrop-blur-sm ${
+                  themeStyles.input.background
+                } ${themeStyles.input.border} ${themeStyles.input.focus} ${themeStyles.text.primary}`}
                 placeholder="Enter your full name"
                 disabled={loading}
               />
@@ -418,7 +410,7 @@ export default function Signup() {
                 <motion.p 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-red-400 text-xs mt-2"
+                  className="text-red-500 text-xs mt-2"
                 >
                   {formErrors.name}
                 </motion.p>
@@ -431,7 +423,7 @@ export default function Signup() {
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.65 }}
             >
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="username" className={`block text-sm font-medium mb-2 ${themeStyles.text.secondary}`}>
                 Username
               </label>
               <input
@@ -441,7 +433,9 @@ export default function Signup() {
                 value={formData.username} 
                 onChange={handleChange} 
                 required
-                className="w-full px-4 py-3 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 backdrop-blur-sm"
+                className={`w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 outline-none placeholder-gray-400 backdrop-blur-sm ${
+                  themeStyles.input.background
+                } ${themeStyles.input.border} ${themeStyles.input.focus} ${themeStyles.text.primary}`}
                 placeholder="Choose a username"
                 disabled={loading}
               />
@@ -449,7 +443,7 @@ export default function Signup() {
                 <motion.p 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-red-400 text-xs mt-2"
+                  className="text-red-500 text-xs mt-2"
                 >
                   {formErrors.username}
                 </motion.p>
@@ -462,7 +456,7 @@ export default function Signup() {
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.7 }}
             >
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="email" className={`block text-sm font-medium mb-2 ${themeStyles.text.secondary}`}>
                 Email Address
               </label>
               <input
@@ -472,7 +466,9 @@ export default function Signup() {
                 value={formData.email} 
                 onChange={handleChange} 
                 required
-                className="w-full px-4 py-3 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 backdrop-blur-sm"
+                className={`w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 outline-none placeholder-gray-400 backdrop-blur-sm ${
+                  themeStyles.input.background
+                } ${themeStyles.input.border} ${themeStyles.input.focus} ${themeStyles.text.primary}`}
                 placeholder="you@example.com"
                 disabled={loading}
               />
@@ -480,7 +476,7 @@ export default function Signup() {
                 <motion.p 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-red-400 text-xs mt-2"
+                  className="text-red-500 text-xs mt-2"
                 >
                   {formErrors.email}
                 </motion.p>
@@ -493,7 +489,7 @@ export default function Signup() {
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.75 }}
             >
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="password" className={`block text-sm font-medium mb-2 ${themeStyles.text.secondary}`}>
                 Password
               </label>
               <div className="relative">
@@ -504,24 +500,31 @@ export default function Signup() {
                   value={formData.password} 
                   onChange={handleChange} 
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-gray-600 bg-gray-700/50 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-300 placeholder-gray-400 pr-12 backdrop-blur-sm"
+                  className={`w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 outline-none placeholder-gray-400 pr-12 backdrop-blur-sm ${
+                    themeStyles.input.background
+                  } ${themeStyles.input.border} ${themeStyles.input.focus} ${themeStyles.text.primary}`}
                   placeholder="Create a strong password"
                   disabled={loading}
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10"
+                  className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1.5 rounded-lg transition-colors ${
+                    theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-100'
+                  }`}
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={loading}
                 >
-                  {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                  {showPassword ? 
+                    <FaEyeSlash size={16} className={themeStyles.text.tertiary} /> : 
+                    <FaEye size={16} className={themeStyles.text.tertiary} />
+                  }
                 </button>
               </div>
               {formErrors.password && (
                 <motion.p 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-red-400 text-xs mt-2"
+                  className="text-red-500 text-xs mt-2"
                 >
                   {formErrors.password}
                 </motion.p>
@@ -530,54 +533,87 @@ export default function Signup() {
             
             {/* Submit Button */}
             <motion.button
-              initial={{ y: 20, opacity: 0 }}
+              initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.8 }}
               whileHover={{ scale: loading ? 1 : 1.02 }}
               whileTap={{ scale: loading ? 1 : 0.98 }}
               type="submit"
-              disabled={loading || !!successMessage}
-              className="w-full flex justify-center items-center gap-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-4 px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-300 group"
+              disabled={loading}
+              className={`w-full flex justify-center items-center gap-2 py-3.5 px-6 rounded-xl font-semibold text-sm shadow-lg transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed ${
+                themeStyles.button.primary
+              }`}
             >
               {loading ? (
                 <>
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                    className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
                   />
                   Creating Account...
                 </>
               ) : (
-                <>
-                  <span>Create Account</span>
-                  <motion.span
-                    initial={{ x: -5, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="group-hover:translate-x-1 transition-transform"
-                  >
-                    →
-                  </motion.span>
-                </>
+                'Create Account'
               )}
             </motion.button>
           </form>
 
+          {/* Divider */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9 }}
+            className="relative flex items-center my-6"
+          >
+            <div className={`flex-grow border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-300'}`}></div>
+            <span className={`flex-shrink mx-4 text-sm ${themeStyles.text.tertiary}`}>or continue with</span>
+            <div className={`flex-grow border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-300'}`}></div>
+          </motion.div>
+
+          {/* Social Signup */}
+          <motion.div
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="grid grid-cols-2 gap-3"
+          >
+            <button
+              type="button"
+              disabled={loading}
+              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-medium transition-all duration-200 disabled:opacity-50 ${
+                themeStyles.button.secondary
+              }`}
+            >
+              <FaGoogle className="text-red-500" size={16} />
+              Google
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border text-sm font-medium transition-all duration-200 disabled:opacity-50 ${
+                themeStyles.button.secondary
+              }`}
+            >
+              <FaGithub size={16} />
+              GitHub
+            </button>
+          </motion.div>
+
           {/* Login Link */}
           <motion.div
-            initial={{ y: 20, opacity: 0 }}
+            initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.9 }}
-            className="mt-8 text-center"
+            transition={{ delay: 1.1 }}
+            className="mt-6 text-center"
           >
-            <p className="text-sm text-gray-400">
+            <p className={`text-sm ${themeStyles.text.secondary}`}>
               Already have an account?{' '}
               <Link 
                 href="/chat/login" 
-                className="font-semibold text-purple-400 hover:text-purple-300 transition-colors underline"
+                className="font-semibold text-purple-500 hover:text-purple-600 transition-colors"
               >
-                Sign In
+                Sign in
               </Link>
             </p>
           </motion.div>
