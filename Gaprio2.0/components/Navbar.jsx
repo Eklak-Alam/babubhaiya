@@ -213,24 +213,24 @@ export default function PremiumNavbar() {
     <motion.button
       onClick={toggleTheme}
       className={`
-        relative transition-all duration-300 focus-visible:outline-none
+        relative transition-all duration-300 focus-visible:outline-none cursor-pointer
         ${mobile 
           ? 'w-full justify-center p-4 rounded-2xl border text-lg font-semibold flex items-center gap-3'
           : compact
           ? 'p-2 rounded-xl'
-          : 'p-2.5 rounded-xl border'
+          : 'p-2.5'
         }
         ${theme === 'dark'
           ? mobile
             ? 'text-gray-300 hover:text-white hover:bg-gray-800/60 border-gray-700'
             : compact
-            ? 'text-gray-400 hover:text-white hover:bg-gray-800/50'
-            : 'text-gray-400 hover:text-white hover:bg-gray-800/50 border-gray-700 hover:border-gray-600'
+            ? 'text-gray-400 hover:text-white'
+            : 'text-gray-400 hover:text-white border-gray-700 hover:border-gray-600'
           : mobile
           ? 'text-gray-700 hover:text-gray-900 hover:bg-gray-100/60 border-gray-300'
           : compact
-          ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50'
-          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50 border-gray-300 hover:border-gray-400'
+          ? 'text-gray-600 hover:text-gray-900'
+          : 'text-gray-600 hover:text-gray-900 border-gray-300 hover:border-gray-400'
         }
         flex items-center gap-2
       `}
